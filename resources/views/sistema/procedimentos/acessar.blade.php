@@ -1,0 +1,641 @@
+@php
+$template = "layout.".session()->get('layout');
+@endphp
+@extends($template)
+
+@section('conteudo')
+
+@if($mensagem = Session::get('mensagem'))
+    <div class="alert alert-success alert-dismissible mt-3" role="alert">
+        {{ $mensagem }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+@if($mensagem = Session::get('mensagem_erro'))
+    <div class="alert alert-danger alert-dismissible mt-3" role="alert">
+        {{ $mensagem }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+@if($procedimento->st_pagamento != 'Sim')
+<div class="card card-border-shadow-primary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <h4 class="card-title">Pagamento - Valor Procedimento: R${{ valorDbForm($procedimento->valor) }}</h4>
+        </div>
+        @if($financeiro->vl_consulta_pagamento < $financeiro->vl_consulta)
+            <div class="alert alert-danger alert-dismissible mt-3" role="alert">
+                Valor pendente da consulta de R$ {{ valorDbform($financeiro->vl_consulta - $financeiro->vl_consulta_pagamento) }}
+            </div>
+        @endif
+        <form id="formulario_pagamento" action="{{ route('sistema.procedimentos.setar_pagamento') }}" method="post">
+            @csrf
+            <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
+            <input type="hidden" name="retorno" value="{{ $retorno }}">
+            <input type="hidden" name="contador_formas" id="contador_formas" value="1">
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="form-floating form-floating-outline">
+                        <input class="form-control" type="text" id="obs_pagamento" name="obs_pagamento"/>
+                        <label for="obs_pagamento">Obs Pagamento:</label>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+                <h6 class="card-title">Forma de Pagamento</h6>
+                <button type="button" onclick="adicionar_forma()" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
+                    <span class="tf-icons mdi mdi-plus me-1"></span>
+                    Forma Pgt
+                </button>
+            </div>
+            <div class="table-responsive mt-3">
+                <table class="table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Numero</th>
+                            <th>Forma Pagamento</th>
+                            <th>Parcelas</th>
+                            <th>Valor</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela_formas">
+                        <tr id="linha_forma_1">
+                            <td>1</td>
+                            <td>
+                                <select required id="forma_pagamento_1" onchange="controle_parcelas(1)" name='forma_pagamento_1' class="form-control">
+                                    <option value="">Opções</option>
+                                    <option value="Dinheiro">Dinheiro</option>
+                                    <option value="Débito">Débito</option>
+                                    <option value="Crédito">Crédito</option>
+                                    <option value="Pix">Pix</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select disabled id="parcelas_1" name='parcelas_1' class="form-control">
+                                    <option value="">Opções</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </td>
+                            <td><input required class="form-control valor" type="text" id="vl_pagamento_1" name="vl_pagamento_1" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/></td>
+                            <td>
+                                <button title="Excluir Forma de Pagamento" onclick="excluir_forma(1)" type="button" class="btn btn-icon btn-outline-danger waves-effect">
+                                    <span class="tf-icons mdi mdi-delete"></span>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6 form-group">
+                    <button type="button" id='botao_setar_pagamento' class="btn btn-primary me-2">Setar Pagamento</button>
+                </div>
+            </div>
+        </form>
+        <script>
+        document.getElementById('botao_setar_pagamento').addEventListener('click', ()=>{
+            //vamos somar todos os valores de pagamentos
+            //let somatorio = 0;
+            //let variavel = "input.valor";
+
+            //inputs = document.querySelectorAll(variavel);
+            //[].forEach.call(inputs, function(input) {
+            //    valor = input.value;
+            //    valor = valor.replaceAll('.','');
+            //    valor = parseFloat(valor.replace(',','.'));
+            //    somatorio = somatorio + valor;
+            //});
+
+            //if({{ $procedimento->valor }} == somatorio){
+                document.getElementById('formulario_pagamento').submit();
+            //}
+            //else{
+            //    alert('Valor do pagamento e soma dos valores da forma de pagamento não confere.');
+            //}
+        });
+
+        function adicionar_forma(){
+            contador = parseInt(document.getElementById('contador_formas').value);
+            contador++;
+            document.getElementById('contador_formas').value = contador;
+            tr = document.createElement('tr');
+            tr.setAttribute('id', 'linha_forma_' + contador);
+            tr.innerHTML = `
+                <td>${contador}</td>
+                <td>
+                    <select required id="forma_pagamento_${contador}" onchange="controle_parcelas(${contador})" name='forma_pagamento_${contador}' class="form-control">
+                        <option value="">Opções</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Débito">Débito</option>
+                        <option value="Crédito">Crédito</option>
+                        <option value="Pix">Pix</option>
+                    </select>
+                </td>
+                <td>
+                    <select disabled id="parcelas_${contador}" name='parcelas_${contador}' class="form-control">
+                        <option value="">Opções</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </td>
+                <td><input required class="form-control valor" type="text" id="vl_pagamento_${contador}" name="vl_pagamento_${contador}" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/></td>
+                <td>
+                    <button title="Excluir Forma de Pagamento" onclick="excluir_forma(${contador})" type="button" class="btn btn-icon btn-outline-danger waves-effect">
+                        <span class="tf-icons mdi mdi-delete"></span>
+                    </button>
+                </td>
+            `;
+
+            document.getElementById('tabela_formas').appendChild(tr);
+
+        }
+
+        function excluir_forma(linha){
+            if(confirm('Tem certeza que deseja excluir a linha de pagamentp?')){
+                document.getElementById('linha_forma_' + linha).remove();
+            }
+        }
+
+        function controle_parcelas(linha){
+            if(document.getElementById('forma_pagamento_' + linha).value == "Crédito"){
+                document.getElementById('parcelas_' + linha).removeAttribute('disabled');
+                document.getElementById('parcelas_' + linha).setAttribute('required','required');
+            }
+            else{
+                document.getElementById('parcelas_' + linha).setAttribute('disabled','disabled');
+                document.getElementById('parcelas_' + linha).removeAttribute('required');
+            }
+        }
+        </script>
+        <hr>
+        <form autocomplete="off" action="{{ route('sistema.procedimentos.enviar_fila_aplicacao_sem_pagamento') }}" method="post">
+            @csrf
+            <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
+            <input type="hidden" name="retorno" value="{{ $retorno }}">
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6 class="card-title mt-1">Enviar Para Fila de Aplicação</h6>
+                    <p>Para esta ação é necessário informar os dados de um administrador para liberação.</p>
+                </div>
+            </div>
+            @if($controle_aviso_coleta == 'ultimo')
+                <div class="alert alert-danger alert-dismissible mt-3" role="alert">
+                    Último aplicação do conjunto de procedimentos.
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <select required id="consulta_tratamento_agendada" name='consulta_tratamento_agendada' class="select2 form-select">
+                                <option value="">Opções</option>
+                                <option value="Sim">Sim</option>
+                                <option value="Não">Não</option>
+                            </select>
+                            <label for="consulta_tratamento_agendada">Consulta Tratamento Agendado:</label>
+                        </div>
+                    </div>
+                </div>
+            @elseif($controle_aviso_coleta == 'penultimo')
+                <div class="alert alert-danger alert-dismissible mt-3" role="alert">
+                    Penúltimo aplicação do conjunto de procedimentos.
+                </div>
+            @endif
+            <div class="row align-items-end">
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline mb-3">
+                        <input required type="email" class="form-control" name="autorizador_email"/>
+                        <label for="autorizador_email">Email:</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline mb-3">
+                        <input required type="password" class="form-control" name="autorizador_senha"/>
+                        <label for="autorizador_senha">Senha:</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline">
+                        <select id="exames" name='exames' class="select2 form-select">
+                            <option value="">Opções</option>
+                            <option value="Biopedância">Biopedância</option>
+                            <option value="Coleta">Coleta</option>
+                            <option value="Biopedância e Coleta">Biopedância e Coleta</option>
+                        </select>
+                        <label for="exames">Exames Adicionais:</label>
+                    </div>
+                </div>
+                <div class="col-md-6 form-group">
+                    <button type="submit" class="btn btn-primary me-2">Enviar Para Fila de Aplicação</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
+@if($procedimento->st_pagamento == 'Sim' && ($procedimento->situacao == 'Agendado' || $procedimento->situacao == 'Pendente'))
+    <div class="card card-border-shadow-primary mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <h4 class="card-title">Procedimento</h4>
+            </div>
+            <form action="{{ route('sistema.procedimentos.enviar_fila_aplicacao') }}" method="post">
+                @csrf
+                <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
+                <input type="hidden" name="retorno" value="{{ $retorno }}">
+                @if($controle_aviso_coleta == 'ultimo')
+                    <div class="alert alert-danger alert-dismissible mt-3" role="alert">
+                        Último aplicação do conjunto de procedimentos.
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <select required id="consulta_tratamento_agendada" name='consulta_tratamento_agendada' class="select2 form-select">
+                                    <option value="">Opções</option>
+                                    <option value="Sim">Sim</option>
+                                    <option value="Não">Não</option>
+                                </select>
+                                <label for="consulta_tratamento_agendada">Consulta Tratamento Agendado:</label>
+                            </div>
+                        </div>
+                    </div>
+                @elseif($controle_aviso_coleta == 'penultimo')
+                    <div class="alert alert-danger alert-dismissible mt-3" role="alert">
+                        Penúltimo aplicação do conjunto de procedimentos.
+                    </div>
+                @endif
+                <div class="row mt-2 gy-4 align-items-end">
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <select id="exames" name='exames' class="select2 form-select">
+                                <option value="">Opções</option>
+                                <option value="Biopedância">Biopedância</option>
+                                <option value="Coleta">Coleta</option>
+                                <option value="Biopedância e Coleta">Biopedância e Coleta</option>
+                            </select>
+                            <label for="exames">Exames Adicionais:</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <button type="submit" class="btn btn-primary me-2">Enviar Para Fila de Aplicação</button>
+                    </div>
+                </div>
+            </form>
+            {{--
+            <div class="row mt-2 gy-4 align-items-end">
+                <div class="col-md-4 form-group">
+                    <a href="{{ route('sistema.procedimentos.enviar_fila_aplicacao', [$procedimento->id,$retorno]) }}" class="btn btn-sm btn-primary">Enviar para Fila de Aplicação</a>
+                </div>
+            </div>
+            --}}
+        </div>
+    </div>
+@endif
+@php
+if($procedimento->situacao == "Agendado"){
+    $situacao = '<span class="badge rounded-pill bg-label-warning">Agendado</span>';
+}
+elseif($procedimento->situacao == "Fila de Aplicação"){
+    $situacao = '<span class="badge rounded-pill bg-label-primary">Fila de Aplicação</span>';
+}
+elseif($procedimento->situacao == "Atendimento"){
+    $situacao = '<span class="badge rounded-pill bg-label-danger">Fila de Aplicação</span>';
+}
+elseif($procedimento->situacao == "Aplicado"){
+    $situacao = '<span class="badge rounded-pill bg-label-success">Aplicado</span>';
+}
+elseif($procedimento->situacao == "Pendente"){
+    $situacao = '<span class="badge rounded-pill bg-label-warning">Pendente</span>';
+}
+
+if($procedimento->st_pagamento == 'Sim'){
+    $st_pagamento = "<span class='badge bg-success'>$procedimento->st_pagamento</span>";
+}
+else{
+    $st_pagamento = "<span class='badge bg-danger'>$procedimento->st_pagamento</span>";
+}
+
+@endphp
+<div class="card card-border-shadow-primary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <h4 class="card-title">Procedimento</h4>
+        </div>
+        <div class="row mt-2 gy-4 align-items-end">
+            <div class="col-md-3 form-group">
+                <label for="">Procedimento:</label><br>
+                <strong>{{ $procedimento->codigo }}</strong>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Número Procedimento:</label><br>
+                <strong>{{ $procedimento->nr_procedimento }}</strong>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Data Cadastro:</label><br>
+                <strong>{{ dataDbForm($procedimento->data_cad) }}</strong>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Clinica Cadastro:</label><br>
+                <strong>{{ $procedimento->clinica->nome }}</strong>
+            </div>
+        </div>
+        <div class="row mt-2 gy-4 align-items-end">
+            <div class="col-md-3 form-group">
+                <label for="">Paciente:</label><br>
+                <strong>{{ $procedimento->paciente->nm_paciente }}</strong>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Médico:</label><br>
+                <strong>{{ $procedimento->medico }}</strong>
+            </div>
+            <div class="col-md-2 form-group">
+                <label for="">Situação:</label><br>
+                {!! $situacao !!}
+            </div>
+            <div class="col-md-2 form-group">
+                <label for="">Data Aplicação:</label><br>
+                <strong>{{ dataDbForm($procedimento->data_aplicacao) }}</strong>
+            </div>
+        </div>
+        @if($controle_aviso_coleta == 'ultimo')
+        <div class="row mt-2 gy-4 align-items-end">
+            <div class="col-md-3 form-group">
+                <label for="">Consulta Tratamento Agendado:</label><br>
+                <strong>{{ $procedimento->consulta_tratamento_agendada }}</strong>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Coleta:</label><br>
+                <strong>{{ $procedimento->st_coleta }}</strong>
+            </div>
+        </div>
+        @endif
+    </div>
+</div>
+<div class="card card-border-shadow-primary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <h4 class="card-title">Financeiro</h4>
+        </div>
+        <a href="{{ route('sistema.financeiros.acessar', $financeiro->id) }}" class="btn btn-primary" target="_blank">Acessar Financeiro</a>
+        {{--
+        <div class="row mt-2 gy-4">
+            <div class="col-md-3 form-group">
+                <label for="">Situação Pagamento:</label><br>
+                <strong>{!! $st_pagamento !!}</strong>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Data Pagamento:</label><br>
+                <strong>{{ dataDbForm($procedimento->data_pagamento) }}</strong>
+            </div>
+            <div class="col-md-12 form-group">
+                <label for="">Obs Pagamento:</label><br>
+                <strong>{{ $procedimento->obs_pagamento }}</strong>
+            </div>
+        </div>
+        @if($procedimento->st_pagamento == 'Sim')
+            <div class="table-responsive mt-3">
+                <table class="table">
+                    <thead class="table-light">
+                        <tr>
+                            <th></th>
+                            <th>Forma Pagamento</th>
+                            <th>Parcelas</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                        $i=0;
+                        @endphp
+                        @foreach($financeiro->formas as $forma)
+                            <tr>
+                                <td>{{ ++$i }}</td>
+                                <td>{{ $forma->forma_pagamento }}</td>
+                                <td>{{ $forma->parcelas }}</td>
+                                <td>R$ {{ valorDbForm($forma->vl_pagamento) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+        --}}
+    </div>
+</div>
+<div class="card card-border-shadow-primary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <h4 class="card-title">Anexos</h4>
+        </div>
+        <div class="row">
+            <div class="col-12 col-md-6 mb-4 mb-xl-0">
+                <div class="demo-inline-spacing mt-3">
+                    <div class="list-group">
+                        @if($procedimento->anexos->count() == 0)
+                            <div class="list-group-item list-group-item-action d-flex align-items-center waves-effect" style='cursor: default !important'>
+                                <div class="w-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="user-info">
+                                            <h6 class="mt-2 mb-0">Nenhum anexo para este procedimento.</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                        @foreach($procedimento->anexos as $arquivo)
+                            <div class="list-group-item list-group-item-action d-flex align-items-center waves-effect" style='cursor: default !important'>
+                                <div class="w-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="user-info">
+                                            <a target="_blank" href="/public/procedimentos/{{ $procedimento->id }}/anexos/{{ $arquivo->anexo }}">
+                                                <h6 class="mt-2 mb-0">{{ $arquivo->nm_anexo }}</h6>
+                                            </a>
+                                        </div>
+                                        {{--
+                                        <div class="add-btn">
+                                            <button onclick="excluir_arquivo({{ $arquivo->id }})" class="btn btn-danger btn-sm waves-effect waves-light">Excluir</button>
+                                        </div>
+                                        --}}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@if($procedimento->st_biopedancia == "Sim")
+    <div class="card card-border-shadow-primary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <h4 class="card-title">Biopedância</h4>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <p>{{ $procedimento->obs_biopedancia }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+@if($procedimento->st_coleta == 'Sim')
+    <div class="card card-border-shadow-primary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <h4 class="card-title">Coleta</h4>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <p>{{ $procedimento->obs_coleta }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+<div class="card card-border-shadow-primary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <h4 class="card-title">Aplicações</h4>
+        </div>
+        <div class="row">
+            <div class="col-md-12 form-group">
+                <label for="">Obs Prévia:</label><br>
+                <b>{{ $procedimento->obs }}</b>
+            </div>
+        </div>
+        <div class="table-responsive mt-3">
+            <table class="table table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>Medicamento</th>
+                        <th>Unidade</th>
+                        <th>Quantidade</th>
+                        <th>Valor</th>
+                        <th>Total</th>
+                        <th>Obs</th>
+                        <th>Situação</th>
+                        <th>Data Aplicação</th>
+                        <th>Lote Aplicação</th>
+                        <th>C.Barras</th>
+                        <th>Enfermagem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($procedimento->aplicacaos as $aplicacao)
+                        @php
+                        $dt_aplicacao = null;
+                        if($aplicacao->lote){
+                            $var = explode(' ',$aplicacao->lote->created_at);
+                            $dt_aplicacao = dataDbForm($var[0]);
+                        }
+                        @endphp
+                        <tr>
+                            <th>{{ $aplicacao->medicamento->nome }}</th>
+                            <th>{{ $aplicacao->medicamento->unidade }}</th>
+                            <th>{{ $aplicacao->quantidade }}</th>
+                            <th>R$ {{ valorDbForm($aplicacao->valor) }}</th>
+                            <th>R$ {{ valorDbForm($aplicacao->total) }}</th>
+                            <th>{{ $aplicacao->obs }}</th>
+                            <th>{{ $aplicacao->situacao }}</th>
+                            <th>{{ $dt_aplicacao }}</th>
+                            <th>{{ $aplicacao->lotes() }}</th>
+                            <th>{!! $aplicacao->codigos() !!}</th>
+                            <th>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</th>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="card card-border-shadow-primary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <h4 class="card-title">Procedimentos Vinculados</h4>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th></th>
+                        <th>Dt Cad</th>
+                        <th>Paciente</th>
+                        <th>Procedimento</th>
+                        <th>Numero</th>
+                        <th>Médico</th>
+                        <th>Dt Aplicação</th>
+                        <th>Valor</th>
+                        <th>Situação Pg</th>
+                        <th>Situação</th>
+                    </tr>
+                </thead>
+                @foreach($procedimentos_vinculados as $proc)
+                    @php
+                    if($proc->situacao == "Agendado"){
+                        $situacao = '<span class="badge rounded-pill bg-label-warning">Agendado</span>';
+                    }
+                    elseif($proc->situacao == "Fila de Aplicação"){
+                        $situacao = '<span class="badge rounded-pill bg-label-primary">Fila de Aplicação</span>';
+                    }
+                    elseif($proc->situacao == "Atendimento"){
+                        $situacao = '<span class="badge rounded-pill bg-label-danger">Fila de Aplicação</span>';
+                    }
+                    elseif($proc->situacao == "Aplicado"){
+                        $situacao = '<span class="badge rounded-pill bg-label-success">Aplicado</span>';
+                    }
+
+                    if($proc->st_pagamento == 'Sim'){
+                        $st_pagamento = "<span class='badge bg-success'>$proc->st_pagamento</span>";
+                    }
+                    else{
+                        $st_pagamento = "<span class='badge bg-danger'>$proc->st_pagamento</span>";
+                    }
+
+                    @endphp
+                    <tr>
+                        <td>
+                            <div class="dropdown">
+                                <button type="button" class="btn p-0 dropdown-toggle hide-arrow show" data-bs-toggle="dropdown" aria-expanded="true">
+                                    <i class="mdi mdi-dots-vertical"></i>
+                                </button>
+                                <div class="dropdown-menu" data-popper-placement="bottom-end">
+                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.acessar', $proc->id) }}"><i class="mdi mdi-eye me-1"></i> Acessar</a>
+                                </div>
+                            </div>
+                        </td>
+                        <td> <span style='display: none'>{{ strtotime($proc->data_cad) }}</span> {{ dataDbForm($proc->data_cad) }}</td>
+                        <td>{{ $proc->paciente->nm_paciente }}</td>
+                        <td>{{ $proc->codigo }}</td>
+                        <td>{{ $proc->nr_procedimento }}</td>
+                        <td>{{ $proc->medico }}</td>
+                        <td>{{ dataDbForm($proc->data_aplicacao) }}</td>
+                        <td>{{ valorDbForm($proc->valor) }}</td>
+                        <td>{!! $st_pagamento !!}</td>
+                        <td>{!! $situacao !!}</td>
+                    </tr>
+                @endforeach
+            </table>
+        </div>
+    </div>
+</div>
+@endsection
