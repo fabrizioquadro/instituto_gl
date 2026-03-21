@@ -46,8 +46,28 @@ class DashboardSistemaController extends Controller
             //})
             //->orderBy('updated_at')
             //->get();
+
+            $array_abertos = array();
+            $estoques = EstoqueAberto::where('clinica_id', $user->clinica_id)
+            ->where('situacao','Aberto')
+            ->get();
+            $clinica = Clinica::where('id', $user->clinica_id)->first();
+            foreach($estoques as $estoque){
+                $array = [
+                    'clinica' => $clinica->nome,
+                    'medicamento' => $estoque->medicamento->nome,
+                    'abertura' => dataDbForm($estoque->dt_cadastro),
+                    'usuario' => $estoque->user->nome,
+                    'frasco' => $estoque->qt_inical." (mg)",
+                    'restante' => $estoque->qt_restante." (mg)",
+                    'lote' => $estoque->lote,
+                    'codigo_barras' => $estoque->codigo_barras,
+                ];
+                $array_abertos[] = $array;
+            }
+
             return view('sistema/dashboard/index_enfermeira', compact('procedimentos_aguardando',
-            'procedimentos_atendimento','procedimentos_aplicadas','user'));
+            'procedimentos_atendimento','procedimentos_aplicadas','user','array_abertos'));
         }
         else{
             $paciente_id = null;
@@ -74,7 +94,7 @@ class DashboardSistemaController extends Controller
                 $procedimentos = Procedimento::where('clinica_id', $user->clinica_id)
                 ->where('data_aplicacao', $data)
                 ->where('situacao', 'Agendado')
-                ->where('situacao', 'Pendente')
+                ->where('situacao', 'Aplicação Parcial')
                 ->get();
             }
 
@@ -148,7 +168,7 @@ class DashboardSistemaController extends Controller
         }
         $procedimento = Procedimento::where('id', $id)->first();
 
-        if($procedimento->st_pagamento != "Sim" && !$procedimento->autorizador_sem_pagamento){
+        if($procedimento->st_pagamento != "Sim" && !$procedimento->autorizador_sem_pagamento && $procedimento->valor > 0){
             echo "Esse procedimento não esta pago para fazer a aplicação";
             die();
         }
@@ -157,6 +177,7 @@ class DashboardSistemaController extends Controller
             return redirect()->route('sistema.dashboard')->with('mensagem_erro', 'Este Paciente já esta sendo atendido!');
         }
         $procedimento->situacao = "Atendimento";
+        $procedimento->dt_hr_atendimento = date('Y-m-d H:i:s');
         $procedimento->user_id_aplicacao = $user->id;
         $procedimento->save();
         $procedimentos_vinculados = Procedimento::where('codigo', $procedimento->codigo)
@@ -172,21 +193,54 @@ class DashboardSistemaController extends Controller
 
         $api = api();
         $nascimento = $api->get_nascimento_paciente($procedimento->paciente->paciente_id_feegow);
+
+        $array_abertos = array();
+        $estoques = EstoqueAberto::where('clinica_id', $user->clinica_id)
+        ->where('situacao','Aberto')
+        ->get();
+        $clinica = Clinica::where('id', $user->clinica_id)->first();
+        foreach($estoques as $estoque){
+            $array = [
+                'clinica' => $clinica->nome,
+                'medicamento' => $estoque->medicamento->nome,
+                'abertura' => dataDbForm($estoque->dt_cadastro),
+                'usuario' => $estoque->user->nome,
+                'frasco' => $estoque->qt_inical." (mg)",
+                'restante' => $estoque->qt_restante." (mg)",
+                'lote' => $estoque->lote,
+                'codigo_barras' => $estoque->codigo_barras,
+            ];
+            $array_abertos[] = $array;
+        }
+
         if(isset($_GET['controle'])){
             return view('sistema/dashboard/enfermeira_acessar_procedimento_new', compact('procedimento','user','controle','procedimentos_vinculados','nascimento'));
         }
         else{
-            return view('sistema/dashboard/enfermeira_acessar_procedimento', compact('procedimento','user','controle','procedimentos_vinculados','nascimento'));
+            return view('sistema/dashboard/enfermeira_acessar_procedimento', compact('procedimento','user','controle','procedimentos_vinculados','nascimento','array_abertos'));
         }
     }
 
     public function busca_lote_por_codigo(){
-        $estoque = Estoque::where('codigo_barras', $_GET['codigo'])->first();
+        $estoque = Estoque::where('codigo_barras', $_GET['codigo'])
+        ->where('clinica_id', $_GET['clinica_id'])
+        ->first();
+
         if($estoque){
-            $retorno['lote'] = $estoque->lote;
+            //vamos verificar se este medicamento possui saldo
+            $saldo = Estoque::get_saldo_med_cb_clinica($_GET['codigo'], $_GET['clinica_id']);
+            if($_GET['quantidade'] > $saldo){
+                $retorno['controle'] = 'insuficiente';
+                $retorno['lote'] = '';
+            }
+            else{
+                $retorno['lote'] = $estoque->lote;
+                $retorno['controle'] = 'true';
+            }
         }
         else{
             $retorno['lote'] = '';
+            $retorno['controle'] = 'false';
         }
         echo json_encode($retorno);
     }
@@ -197,11 +251,27 @@ class DashboardSistemaController extends Controller
             $user = session()->get('user');
         }
 
-        $estoque = EstoqueAberto::where('clinica_id', $user->clinica_id)
-        ->where('medicamento_id', $_GET['medicamento_id'])
-        ->where('codigo_barras', $_GET['codigo'])
-        ->where('situacao','Aberto')
-        ->first();
+        $medicamento = Medicamento::where('id', $_GET['medicamento_id'])->first();
+        if($medicamento->grupo_id){
+            $medicamentos = Medicamento::where('grupo_id', $medicamento->grupo_id)->get();
+            $in = array();
+            foreach($medicamentos as $med){
+                $in[] = $med->id;
+            }
+
+            $estoque = EstoqueAberto::where('clinica_id', $user->clinica_id)
+            ->whereIn('medicamento_id', $in)
+            ->where('codigo_barras', $_GET['codigo'])
+            ->where('situacao','Aberto')
+            ->first();
+        }
+        else{
+            $estoque = EstoqueAberto::where('clinica_id', $user->clinica_id)
+            ->where('medicamento_id', $_GET['medicamento_id'])
+            ->where('codigo_barras', $_GET['codigo'])
+            ->where('situacao','Aberto')
+            ->first();
+        }
 
         if($estoque){
             if($estoque->qt_restante < $_GET['quantidade']){
@@ -423,6 +493,11 @@ class DashboardSistemaController extends Controller
 
     public function set_aplicacao(Request $request){
         try {
+            $api_aplicacao = false;
+            $array_aplicacao = array();
+            $api_coleta = false;
+            $api_biopedancia = false;
+
             $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
             $user = auth()->user();
             if(!$user){
@@ -440,20 +515,25 @@ class DashboardSistemaController extends Controller
                         $aplicacao->save();
                     }
                     else{
+                        $api_aplicacao = true;
+                        $array_aplicacao[] = $aplicacao->id;
+
                         $var = 'lote_'.$aplicacao->medicamento->id;
                         $lote = $request->$var;
 
+                        $var = 'codigo_barras_'.$aplicacao->medicamento->id;
+                        $codigo_barras = $request->$var;
+
                         if($aplicacao->medicamento->unidade == "Ampola"){
                             //vamos setar a aplicaçao
-                            $estoque_var = Estoque::where('medicamento_id', $aplicacao->medicamento->id)
-                            ->where('lote', $lote)->first();
                             $dados = [
                                 'aplicacao_id' => $aplicacao->id,
                                 'quantidade' => $aplicacao->quantidade,
                                 'lote' => $lote,
-                                'codigo_barras' => $estoque_var->codigo_barras,
+                                'codigo_barras' => $codigo_barras,
                             ];
                             AplicacaoLote::create($dados);
+
                             $aplicacao->user_id_aplicacao = $user->id;
                             $aplicacao->situacao = 'Aplicada';
                             $aplicacao->obs = $request->obs_aplicacao;
@@ -462,9 +542,13 @@ class DashboardSistemaController extends Controller
                             //vamos dar baixa no estoque
                             $estoque = Estoque::where('medicamento_id', $aplicacao->medicamento->id)
                             ->where('lote', $lote)
+                            ->where('codigo_barras', $codigo_barras)
+                            ->where('clinica_id', $user->clinica_id)
                             ->first();
+
                             $dados = [
                                 'clinica_id' => $user->clinica_id,
+                                'procedimento_id' => $procedimento->id,
                                 'medicamento_id' => $aplicacao->medicamento->id,
                                 'origem' => 'Procedimento',
                                 'tipo' => 'Saida',
@@ -473,17 +557,18 @@ class DashboardSistemaController extends Controller
                                 'total' => 0,
                                 'lote' => $lote,
                                 'dt_vencimento' => $estoque->dt_vencimento,
-                                'codigo_barras' => $estoque->codigo_barras,
+                                'codigo_barras' => $codigo_barras,
                             ];
                             Estoque::create($dados);
                         }
-                        else{
+                        elseif($aplicacao->medicamento->unidade == "Miligrama"){
                             $var = "controle_med_".$aplicacao->medicamento->id;
                             $controle = $request->$var;
-                            if($lote && $controle != "2_codigo"){
-                                $var = 'codigo_barras_'.$aplicacao->medicamento->id;
-                                $codigo_barras = $request->$var;
-                                $aberto = EstoqueAberto::where('codigo_barras', $codigo_barras)->first();
+                            if($lote && $codigo_barras && $controle != "2_codigo"){
+                                $aberto = EstoqueAberto::where('codigo_barras', $codigo_barras)
+                                ->where('clinica_id', $user->clinica_id)
+                                ->first();
+
                                 $aberto->qt_utilizado += $aplicacao->quantidade;
                                 $aberto->qt_restante -= $aplicacao->quantidade;
                                 if($aberto->qt_restante <= 0){
@@ -496,11 +581,15 @@ class DashboardSistemaController extends Controller
                                     'quantidade' => $aplicacao->quantidade,
                                     'lote' => $aberto->lote,
                                     'codigo_barras' => $aberto->codigo_barras,
+                                    'estoque_aberto_id' => $aberto->id,
                                 ];
                                 AplicacaoLote::create($dados);
                                 $aplicacao->user_id_aplicacao = $user->id;
                                 $aplicacao->situacao = 'Aplicada';
                                 $aplicacao->obs = $request->obs_aplicacao;
+                                if($aberto->medicamento_id != $aplicacao->medicamento_id){
+                                    $aplicacao->medicamento_id = $aberto->medicamento_id;
+                                }
                                 $aplicacao->save();
                             }
                             elseif($controle == '2_codigo'){
@@ -512,6 +601,7 @@ class DashboardSistemaController extends Controller
 
                                 $aberto = EstoqueAberto::where('codigo_barras', $codigo_b)
                                 ->where('medicamento_id', $aplicacao->medicamento->id)
+                                ->where('clinica_id', $user->clinica_id)
                                 ->first();
                                 $aberto->qt_utilizado += $quantidade;
                                 $aberto->qt_restante -= $quantidade;
@@ -525,6 +615,7 @@ class DashboardSistemaController extends Controller
                                     'quantidade' => $quantidade,
                                     'lote' => $aberto->lote,
                                     'codigo_barras' => $aberto->codigo_barras,
+                                    'estoque_aberto_id' => $aberto->id,
                                 ];
                                 AplicacaoLote::create($dados);
 
@@ -536,6 +627,7 @@ class DashboardSistemaController extends Controller
 
                                 $aberto = EstoqueAberto::where('codigo_barras', $codigo_b)
                                 ->where('medicamento_id', $aplicacao->medicamento->id)
+                                ->where('clinica_id', $user->clinica_id)
                                 ->first();
                                 $aberto->qt_utilizado += $quantidade;
                                 $aberto->qt_restante -= $quantidade;
@@ -549,13 +641,25 @@ class DashboardSistemaController extends Controller
                                     'quantidade' => $quantidade,
                                     'lote' => $aberto->lote,
                                     'codigo_barras' => $aberto->codigo_barras,
+                                    'estoque_aberto_id' => $aberto->id,
                                 ];
                                 AplicacaoLote::create($dados);
 
                                 $aplicacao->situacao = 'Aplicada';
                                 $aplicacao->obs = $request->obs_aplicacao;
+
+                                if($aberto->medicamento_id != $aplicacao->medicamento_id){
+                                    $aplicacao->medicamento_id = $aberto->medicamento_id;
+                                }
+
                                 $aplicacao->save();
                             }
+                        }
+                        elseif($aplicacao->medicamento->unidade == "Procedimento"){
+                            $aplicacao->user_id_aplicacao = $user->id;
+                            $aplicacao->situacao = 'Aplicada';
+                            $aplicacao->obs = $codigo_barras;
+                            $aplicacao->save();
                         }
                     }
                 }
@@ -563,18 +667,59 @@ class DashboardSistemaController extends Controller
 
             $procedimento->situacao = 'Aplicado';
             $procedimento->data_aplicacao = date('Y-m-d');
+            $procedimento->dt_hr_finalizacao = date('Y-m-d H:i:s');
             if($procedimento_pendente){
-                $procedimento->situacao = 'Pendente';
+                $procedimento->situacao = 'Aplicação Parcial';
             }
             if($procedimento->st_biopedancia == 'Sim'){
+                $api_biopedancia = true;
                 $procedimento->obs_biopedancia = $request->obs_biopedancia;
             }
             if($procedimento->st_coleta == 'Sim'){
+                $api_coleta = true;
                 $procedimento->tp_coleta = $request->tp_coleta;
                 $procedimento->obs_coleta = $request->obs_coleta;
             }
 
             $procedimento->save();
+
+            $api = new ApiFlegowController();
+
+            if($api_aplicacao){
+                $api->register_aplicacao($procedimento, 52, $array_aplicacao);
+            }
+
+            if($api_biopedancia){
+                $api->register_aplicacao($procedimento, 31);
+            }
+
+            if($api_coleta){
+                if($procedimento->tp_coleta == 'Coleta Completa Feminina'){
+                    $api->register_aplicacao($procedimento, 36);
+                }
+                elseif($procedimento->tp_coleta == 'Coleta Retorno Feminina'){
+                    $api->register_aplicacao($procedimento, 37);
+                }
+                elseif($procedimento->tp_coleta == 'Coleta Completa Masculina'){
+                    $api->register_aplicacao($procedimento, 38);
+                }
+                elseif($procedimento->tp_coleta == 'Coleta Retorno Masculina'){
+                    $api->register_aplicacao($procedimento, 39);
+                }
+                elseif($procedimento->tp_coleta == 'Coleta Cortesia'){
+                    $api->register_aplicacao($procedimento, 54);
+                }
+                elseif($procedimento->tp_coleta == 'Coleta Particular'){
+                    $api->register_aplicacao($procedimento, 59);
+                }
+                elseif($procedimento->tp_coleta == 'Coleta Reduzida'){
+                    $api->register_aplicacao($procedimento, 116);
+                }
+                elseif($procedimento->tp_coleta == 'Coleta Reduzida 2'){
+                    $api->register_aplicacao($procedimento, 117);
+                }
+            }
+
             return redirect()->route('sistema.dashboard')->with('mensagem', 'Aplicação Realizada');
         } catch (\Exception $e) {
             return redirect()->route('sistema.dashboard')->with('mensagem_erro', $e->getMessage());
@@ -609,6 +754,7 @@ class DashboardSistemaController extends Controller
                 'tipo_pagamento' => 'Procedimento isento de pagamento.',
                 'st_biopedancia' => $request->exames == "Biopedância" || $request->exames == "Biopedância e Coleta" ? 'Sim' : 'Não',
                 'st_coleta' => $request->exames == "Coleta" || $request->exames == "Biopedância e Coleta" ? 'Sim' : 'Não',
+                'user_id_cadastro' => $user->id,
             ];
 
             Procedimento::create($dados);
@@ -697,6 +843,31 @@ class DashboardSistemaController extends Controller
         $retorno['html'] = $html;
 
         echo json_encode($retorno);
+    }
+
+    public function fila_atendimento(){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+
+        $procedimentos_aguardando = Procedimento::where('clinica_id_aplicacao', $user->clinica_id)
+        ->where('situacao','Fila de Aplicação')
+        ->orderBy('updated_at')
+        ->get();
+
+        $procedimentos_atendimento = Procedimento::where('clinica_id_aplicacao', $user->clinica_id)
+        ->where('situacao','Atendimento')
+        ->orderBy('updated_at')
+        ->get();
+
+        $procedimentos_aplicadas = Procedimento::where('clinica_id_aplicacao', $user->clinica_id)
+        ->where('situacao','Aplicado')
+        ->where('data_aplicacao',date('Y-m-d'))
+        ->orderBy('updated_at')
+        ->get();
+
+        return view('sistema/dashboard/fila_atendimento', compact('procedimentos_aguardando','procedimentos_atendimento','procedimentos_aplicadas','user'));
     }
 
 

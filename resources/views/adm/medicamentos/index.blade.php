@@ -32,7 +32,10 @@
                         <th>Ult. Valor Pg.</th>
                         <th>Vl Venda</th>
                         <th>Estoque Minimo</th>
+                        <th>Aplicação</th>
                         <th>Situação</th>
+                        <th>Feegow A. Id</th>
+                        <th>Grupo</th>
                     </tr>
                 </thead>
                 @foreach($medicamentos as $med)
@@ -55,7 +58,10 @@
                         <td>R$ {{ valorDbForm($med->ultimo_valor_pg) }}</td>
                         <td>R$ {{ valorDbForm($med->vl_venda) }}</td>
                         <td>{{ $med->estoque_minimo }}</td>
+                        <td>{{ $med->aplicacao }}</td>
                         <td>{{ $med->situacao }}</td>
+                        <td>{{ $med->aplicacao_feegow_id }}</td>
+                        <td>{{ $med->grupo ? $med->grupo->nome : '' }}</td>
                     </tr>
                 @endforeach
             </table>

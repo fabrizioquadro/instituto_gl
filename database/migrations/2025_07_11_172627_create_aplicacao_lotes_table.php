@@ -17,6 +17,7 @@ return new class extends Migration
             $table->double('quantidade');
             $table->string('lote');
             $table->string('codigo_barras')->nullable();
+            $table->unsignedBigInteger('estoque_aberto_id')->nullable();
             $table->foreign('aplicacao_id')->references('id')->on('aplicacaos');
             $table->timestamps();
         });

@@ -14,6 +14,7 @@ class Estoque extends Model
         'entrada_id',
         'baixa_id',
         'transferencia_id',
+        'procedimento_id',
         'medicamento_id',
         'origem',
         'tipo',
@@ -64,6 +65,43 @@ class Estoque extends Model
         return $array_retorno;
     }
 
+    public static function get_codigos_medicamento($medicamento_id, $clinica_id){
+        $codigos = SELF::select('codigo_barras')
+        ->where('clinica_id', $clinica_id)
+        ->where('medicamento_id', $medicamento_id)
+        ->distinct()
+        ->get();
+
+        $array_retorno = array();
+        foreach($codigos as $linha){
+            $codigo = $linha->codigo_barras;
+
+            //vamos calcular as entradas nesse codigo e nessa clinica
+            $entrada = SELF::where('clinica_id', $clinica_id)
+            ->where('medicamento_id', $medicamento_id)
+            ->where('codigo_barras',$codigo)
+            ->where('tipo','Entrada')
+            ->sum('quantidade');
+
+            $saida = SELF::where('clinica_id', $clinica_id)
+            ->where('medicamento_id', $medicamento_id)
+            ->where('codigo_barras',$codigo)
+            ->where('tipo','Saida')
+            ->sum('quantidade');
+
+            $estoque = $entrada - $saida;
+            if($estoque > 0){
+                $array = [
+                    'lote' => $linha->lote,
+                    'codigo_barras' => $linha->codigo_barras,
+                    'estoque' => $estoque,
+                ];
+                $array_retorno[] = $array;
+            }
+        }
+        return $array_retorno;
+    }
+
     public static function get_lotes_medicamento_mg($medicamento_id, $clinica_id){
         $codigos = SELF::select('codigo_barras')
         ->where('clinica_id', $clinica_id)
@@ -98,4 +136,20 @@ class Estoque extends Model
         }
         return $array_retorno;
     }
+
+    public static function get_saldo_med_cb_clinica($codigo_barras, $clinica_id){
+        //vamos calcular as entradas nesse codigo e nessa clinica
+        $entrada = SELF::where('clinica_id', $clinica_id)
+        ->where('codigo_barras',$codigo_barras)
+        ->where('tipo','Entrada')
+        ->sum('quantidade');
+
+        $saida = SELF::where('clinica_id', $clinica_id)
+        ->where('codigo_barras',$codigo_barras)
+        ->where('tipo','Saida')
+        ->sum('quantidade');
+
+        return $entrada - $saida;
+    }
+
 }

@@ -29,6 +29,7 @@
                             <option value="">Opções</option>
                             <option @if($medicamento->unidade == "Ampola") selected @endif value="Ampola">Ampola</option>
                             <option @if($medicamento->unidade == "Miligrama") selected @endif value="Miligrama">Miligrama</option>
+                            <option @if($medicamento->unidade == "Procedimento") selected @endif value="Procedimento">Procedimento</option>
                         </select>
                         <label for="unidade">Unidade:</label>
                     </div>
@@ -57,7 +58,17 @@
                         <label for="estoque_minimo">Estoque Minimo(*em miligrama):</label>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="form-floating form-floating-outline">
+                        <select required id="aplicacao" name='aplicacao' class="select2 form-select">
+                            <option value="">Opções</option>
+                            <option @if($medicamento->aplicacao == "Sim") selected @endif value="Sim">Sim</option>
+                            <option @if($medicamento->aplicacao == "Não") selected @endif value="Não">Não</option>
+                        </select>
+                        <label for="aplicacao">Gera Aplicação:</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-floating form-floating-outline">
                         <select required id="situacao" name='situacao' class="select2 form-select">
                             <option value="">Opções</option>
@@ -65,6 +76,23 @@
                             <option @if($medicamento->situacao == "Inativo") selected @endif value="Inativo">Inativo</option>
                         </select>
                         <label for="situacao">Situação:</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating form-floating-outline">
+                        <input required class="form-control" type="number" id="aplicacao_feegow_id" name="aplicacao_feegow_id" value="{{ $medicamento->aplicacao_feegow_id }}"/>
+                        <label for="aplicacao_feegow_id">Feegow Aplicação Id:</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating form-floating-outline">
+                        <select id="grupo_id" name='grupo_id' class="select2 form-select">
+                            <option value="">Opções</option>
+                            @foreach($grupos as $grupo)
+                                <option @if($grupo->id == $medicamento->grupo_id) selected @endif value="{{ $grupo->id }}">{{ $grupo->nome }}</option>
+                            @endforeach
+                        </select>
+                        <label for="grupo_id">Grupo:</label>
                     </div>
                 </div>
                 <div class="col-md-6 form-group">

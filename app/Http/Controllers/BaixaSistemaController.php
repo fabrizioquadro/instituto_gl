@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Baixa;
+use App\Models\BaixaAberto;
 use App\Models\Estoque;
 use App\Models\Medicamento;
+use App\Models\EstoqueAberto;
 
 class BaixaSistemaController extends Controller
 {
@@ -18,9 +20,30 @@ class BaixaSistemaController extends Controller
         return view('sistema/baixas/index', compact('baixas'));
     }
 
+    public function index_abertos(){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+        $baixas = BaixaAberto::where('clinica_id', $user->clinica_id)->get();
+        return view('sistema/baixas/index_abertos', compact('baixas'));
+    }
+
     public function adicionar(){
         $medicamentos = Medicamento::all()->sortBy('nome');
         return view('sistema/baixas/adicionar', compact('medicamentos'));
+    }
+
+    public function adicionar_abertos(){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+
+        $abertos = EstoqueAberto::where('clinica_id',$user->clinica_id)
+        ->where('situacao','Aberto')
+        ->get();
+        return view('sistema/baixas/adicionar_abertos', compact('abertos'));
     }
 
     public function get_lotes_medicamento(){
@@ -35,6 +58,42 @@ class BaixaSistemaController extends Controller
         }
         $retorno['lotes'] = $html;
         echo json_encode($retorno);
+    }
+
+    public function insert_abertos(Request $request){
+        try {
+            $user = auth()->user();
+            if(!$user){
+                $user = session()->get('user');
+            }
+
+            $estoque = EstoqueAberto::where('id', $request->estoque_aberto_id)->first();
+
+            $dados = [
+                'user_id' => $user->id,
+                'clinica_id' => $estoque->clinica_id,
+                'estoque_aberto_id' => $estoque->id,
+                'quantidade' => $request->quantidade,
+                'motivo' => $request->motivo,
+            ];
+
+            BaixaAberto::create($dados);
+            if($request->quantidade >= $estoque->qt_restante){
+                $estoque->qt_restante = 0;
+                $estoque->qt_utilizado = $estoque->qt_inical;
+                $estoque->situacao  = 'Finalizado';
+            }
+            else{
+                $estoque->qt_utilizado += $request->quantidade;
+                $estoque->qt_restante -= $request->quantidade;
+            }
+            $estoque->save();
+
+            return redirect()->route('sistema.baixas_abertos')->with('mensagem', 'Baixa Cadastrada!');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.baixas_abertos')->with('mensagem_erro', $e->getMessage());
+        }
+
     }
 
     public function insert(Request $request){
@@ -114,6 +173,11 @@ class BaixaSistemaController extends Controller
         return view('sistema/baixas/excluir', compact('baixa'));
     }
 
+    public function excluir_abertos($id){
+        $baixa = BaixaAberto::where('id', $id)->first();
+        return view('sistema/baixas/excluir_abertos', compact('baixa'));
+    }
+
     public function delete(Request $request){
         try {
             $baixa = Baixa::where('id', $request->baixa_id)->first();
@@ -123,6 +187,25 @@ class BaixaSistemaController extends Controller
             return redirect()->route('sistema.baixas')->with('mensagem', 'Baixa Excluída');
         } catch (\Exception $e) {
             return redirect()->route('sistema.baixas')->with('mensagem_erro', $e->getMessage());
+        }
+    }
+
+    public function delete_abertos(Request $request){
+        try {
+            $baixa = BaixaAberto::where('id', $request->baixa_id)->first();
+            $estoque = EstoqueAberto::where('id', $baixa->estoque_aberto_id)->first();
+
+            $estoque->qt_restante += $baixa->quantidade;
+            $estoque->qt_utilizado -= $baixa->quantidade;
+            if($estoque->qt_restante > 0){
+                $estoque->situacao = 'Aberto';
+            }
+            $estoque->save();
+            $baixa->delete();
+
+            return redirect()->route('sistema.baixas_abertos')->with('mensagem', 'Baixa Excluída');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.baixas_abertos')->with('mensagem_erro', $e->getMessage());
         }
     }
 

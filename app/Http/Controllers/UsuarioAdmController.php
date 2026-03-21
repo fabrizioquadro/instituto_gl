@@ -28,7 +28,7 @@ class UsuarioAdmController extends Controller
     public function insert(Request $request){
         try {
             $user = session()->get('user');
-            $dados = $request->only('nome','email','tipo');
+            $dados = $request->only('nome','email','tipo','senha_certificado','coren');
             $dados['password'] = bcrypt($request->password);
             $dados['clinica_id'] = $user->clinica_id;
 
@@ -50,6 +50,16 @@ class UsuarioAdmController extends Controller
                 $user->save();
             }
 
+            if($request->hasFile('imagem_carimbo') && $request->file('imagem_carimbo')->isValid()){
+                $imagem = $request->imagem_carimbo;
+                $nm_imagem = $user->id."_".$imagem->getClientOriginalName();
+
+                $request->imagem_carimbo->move(public_path('img/usuarios/certificados_digitais'), $nm_imagem);
+
+                $user->imagem_carimbo = $nm_imagem;
+                $user->save();
+            }
+
             return redirect()->route('adm.usuarios')->with('mensagem', 'Usuário Salvo!');
         }catch(\Exception $e){
             return redirect()->route('adm.usuarios')->with('mensagem_erro',$e->getMessage());
@@ -65,7 +75,7 @@ class UsuarioAdmController extends Controller
 
     public function update(Request $request){
         try {
-            $dados = $request->only('nome','email','tipo','clinica_id');
+            $dados = $request->only('nome','email','tipo','clinica_id','senha_certificado','coren');
 
             foreach($this->opcoes as $opcao){
                 $coluna = $request->$opcao;
@@ -83,6 +93,16 @@ class UsuarioAdmController extends Controller
                 $request->imagem->move(public_path('img/usuarios'), $nm_imagem);
 
                 $user->imagem = $nm_imagem;
+                $user->save();
+            }
+
+            if($request->hasFile('imagem_carimbo') && $request->file('imagem_carimbo')->isValid()){
+                $imagem = $request->imagem_carimbo;
+                $nm_imagem = $user->id."_".$imagem->getClientOriginalName();
+
+                $request->imagem_carimbo->move(public_path('img/usuarios/certificados_digitais'), $nm_imagem);
+
+                $user->imagem_carimbo = $nm_imagem;
                 $user->save();
             }
 

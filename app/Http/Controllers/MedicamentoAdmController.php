@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Medicamento;
+use App\Models\Grupo;
 
 class MedicamentoAdmController extends Controller
 {
@@ -13,7 +14,8 @@ class MedicamentoAdmController extends Controller
     }
 
     public function adicionar(){
-        return view('adm/medicamentos/adicionar');
+        $grupos = Grupo::all()->sortBy('nome');
+        return view('adm/medicamentos/adicionar', compact('grupos'));
     }
 
     public function insert(Request $request){
@@ -30,7 +32,8 @@ class MedicamentoAdmController extends Controller
 
     public function editar($id){
         $medicamento = Medicamento::where('id', $id)->first();
-        return view('adm/medicamentos/editar', compact('medicamento'));
+        $grupos = Grupo::all()->sortBy('nome');
+        return view('adm/medicamentos/editar', compact('medicamento','grupos'));
     }
 
     public function update(Request $request){
@@ -57,5 +60,12 @@ class MedicamentoAdmController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('adm.medicamentos')->with('mensagem_erro',$e->getMessage());
         }
+    }
+
+    public function buscar(){
+        $medicamento = Medicamento::where('id', $_GET['medicamento_id'])->first();
+        $retorno['unidade'] = $medicamento->unidade;
+
+        echo json_encode($retorno);
     }
 }

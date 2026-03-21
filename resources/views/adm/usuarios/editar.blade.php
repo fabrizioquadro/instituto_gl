@@ -47,6 +47,25 @@
                 <div class="col-md-6">
                     <div class="form-floating form-floating-outline">
                         <input class="form-control" type="file" id="imagem" name="imagem"/>
+                        <label for='imagem'>Imagem Perfil:</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline">
+                        <input class="form-control" type="file" id="imagem_carimbo" name="imagem_carimbo"/>
+                        <label for='imagem'>Certificado Digital:</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline">
+                        <input class="form-control" type="text" id="senha_certificado" name="senha_certificado" value="{{ $user->senha_certificado }}"/>
+                        <label for='senha_certificado'>Certificado Senha:</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline">
+                        <input class="form-control" type="text" id="coren" name="coren" value="{{ $user->coren }}"/>
+                        <label for='coren'>Coren:</label>
                     </div>
                 </div>
             </div>

@@ -3,17 +3,25 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use App\Models\Procedimento;
 use App\Models\ProcedimentoAnexo;
 use App\Models\Aplicacao;
-use App\Models\Lote;
+use App\Models\AplicacaoLote;
 use App\Models\Medicamento;
 use App\Models\Paciente;
 use App\Models\Financeiro;
 use App\Models\FinanceiroProcedimento;
 use App\Models\FinanceiroFormasPagamento;
 use App\Models\Administrador;
+use App\Models\Estoque;
+use App\Models\EstoqueAberto;
+use App\Models\Combo;
+use App\Models\ComboMedicamento;
 use Illuminate\Support\Facades\Hash;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use App\Helpers\GerarPdf;
 
 class ProcedimentoSistemaController extends Controller
 {
@@ -22,10 +30,87 @@ class ProcedimentoSistemaController extends Controller
         if(!$user){
             $user = session()->get('user');
         }
-        $procedimentos = Procedimento::where('nr_procedimento','1')->get();;
+        //$procedimentos = Procedimento::where('nr_procedimento','1')->get();;
         //$pacientes = Paciente::all()->sortBy('nm_paciente');
 
-        return view('sistema/procedimentos/index', compact('procedimentos'));
+        return view('sistema/procedimentos/index');
+    }
+
+    public function index_pesq(){
+        $requestData= $_REQUEST;
+
+        //Obtendo registros de número total sem qualquer pesquisa
+        $qt_linhas = Procedimento::where('nr_procedimento','1')->count();
+        $retorno = Procedimento::index_pesq($requestData);
+
+        $procedimentos = $retorno['procedimentos'];
+        $totalFiltered = $retorno['totalFiltered'];
+
+        $dados = array();
+        foreach($procedimentos as $procedimento){
+            $dado = array();
+            $st_procedimento = $procedimento->get_st_procedimento();
+            if($st_procedimento == "Aberto"){
+                $situacao = '<span class="badge rounded-pill bg-label-warning">'.$st_procedimento.'</span>';
+            }
+            elseif($st_procedimento == "Finalizado"){
+                $situacao = '<span class="badge rounded-pill bg-label-success">'.$st_procedimento.'</span>';
+            }
+            elseif($st_procedimento == "Cancelado"){
+                $situacao = '<span class="badge rounded-pill bg-label-danger">'.$st_procedimento.'</span>';
+            }
+
+            $st_pagamento = $procedimento->get_st_pagamento();
+            if($st_pagamento == 'Aberto'){
+                $st_pagamento = "<span class='badge bg-danger'>$st_pagamento</span>";
+            }
+            elseif($st_pagamento == 'Total'){
+                $st_pagamento = "<span class='badge bg-success'>$st_pagamento</span>";
+            }
+            elseif($st_pagamento == 'Parcial'){
+                $st_pagamento = "<span class='badge bg-warning'>$st_pagamento</span>";
+            }
+
+            $botao = "
+            <div class='dropdown'>
+                <button type='button' class='btn p-0 dropdown-toggle hide-arrow show' data-bs-toggle='dropdown' aria-expanded='true'>
+                    <i class='mdi mdi-dots-vertical'></i>
+                </button>
+                <div class='dropdown-menu' data-popper-placement='bottom-end'>
+                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)."'><i class='mdi mdi-eye me-1'></i> Acessar</a>
+                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.excluir_grupo', $procedimento->codigo)."'><i class='mdi mdi-delete me-1'></i> Excluir Grupo</a>
+                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_paciente', $procedimento->codigo)."'><i class='mdi mdi-cloud-print me-1'></i> Imprimir Prontuário</a>
+                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_cadastro', $procedimento->codigo)."'><i class='mdi mdi-folder-open me-1'></i> Imprimir Cadastro</a>";
+                    if($st_procedimento != "Finalizado" && $st_procedimento != "Cancelado"){
+                        $botao .= "<a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.cancelar', $procedimento->codigo)."'><i class='mdi mdi-cancel me-1'></i> Cancelar</a>";
+                    }
+                    $botao .= "
+                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.editar_medico', $procedimento->codigo)."'><i class='mdi mdi-pencil me-1'></i> Editar Médico</a>
+                </div>
+            </div>
+            ";
+            $dado[] = $botao;
+            $dado[] = "<span style='display: none'>".strtotime($procedimento->data_cad)."</span>".dataDbForm($procedimento->data_cad);
+            $dado[] = $procedimento->paciente->nm_paciente;
+            $dado[] = $procedimento->codigo;
+            $dado[] = $procedimento->get_nr_semanas();
+            $dado[] = $procedimento->medico;
+            $dado[] = dataDbForm($procedimento->data_aplicacao);
+            $dado[] = $st_pagamento;
+            $dado[] = $situacao;
+            $dado[] = $procedimento->cadastrante ? $procedimento->cadastrante->nome : '';
+
+            $dados[] = $dado;
+        }
+
+        $json_data = array(
+	        "draw" => intval( $requestData['draw'] ),//para cada requisição é enviado um número como parâmetro
+        	"recordsTotal" => intval( $qt_linhas ),  //Quantidade de registros que há no banco de dados
+        	"recordsFiltered" => intval( $totalFiltered ), //Total de registros quando houver pesquisa
+        	"data" => $dados   //Array de dados completo dos dados retornados da tabela
+        );
+
+        echo json_encode($json_data);  //enviar dados como formato json
     }
 
     public function acessar_grupo($codigo, $retorno = 'null'){
@@ -44,7 +129,12 @@ class ProcedimentoSistemaController extends Controller
         $medicos = $api->get_medicos();
         $pacientes = Paciente::all()->sortBy('nm_pacientes');
         $medicamentos = Medicamento::all()->sortBy('nome');
-        return view('sistema/procedimentos/adicionar', compact('pacientes','medicamentos','medicos','retorno'));
+        $combos = Combo::all()->sortBy('nome');
+        //if($_GET && $_GET['controle'] == 'true'){
+        //    return view('sistema/procedimentos/adicionar_new', compact('pacientes','medicamentos','medicos','retorno','combos'));
+        //    exit();
+        //}
+        return view('sistema/procedimentos/adicionar', compact('pacientes','medicamentos','medicos','retorno','combos'));
     }
 
     public function adicionar_grupo($codigo){
@@ -53,12 +143,14 @@ class ProcedimentoSistemaController extends Controller
         $pacientes = Paciente::all()->sortBy('nm_pacientes');
         $medicamentos = Medicamento::all()->sortBy('nome');
         $retorno = null;
-        return view('sistema/procedimentos/adicionar', compact('pacientes','medicamentos','medicos','retorno','codigo'));
+        $combos = Combo::all()->sortBy('nome');
+        return view('sistema/procedimentos/adicionar', compact('pacientes','medicamentos','medicos','retorno','codigo','combos'));
     }
 
     public function insert(Request $request){
         try {
             $array_procedimentos = array();
+            $controle_update = false;
 
             $user = auth()->user();
             if(!$user){
@@ -71,6 +163,7 @@ class ProcedimentoSistemaController extends Controller
                 $proc_origem = Procedimento::where('codigo', $codigo)->first();
                 $medico = $proc_origem->medico;
                 $paciente_id = $proc_origem->paciente_id;
+                $controle_update = true;
             }
             else{
                 $codigo = $request->paciente_id.date('YmdHis');
@@ -109,6 +202,7 @@ class ProcedimentoSistemaController extends Controller
                             'medico' => $medico,
                             'obs' => $obs,
                             'semana_sem_aplicacao' => 'Sim',
+                            'user_id_cadastro' => $user->id,
                         ];
                         $procedimento = Procedimento::create($dados);
 
@@ -149,6 +243,7 @@ class ProcedimentoSistemaController extends Controller
                             'medico' => $medico,
                             'obs' => $obs,
                             'semana_sem_aplicacao' => 'Não',
+                            'user_id_cadastro' => $user->id,
                         ];
                         $procedimento = Procedimento::create($dados);
 
@@ -156,6 +251,8 @@ class ProcedimentoSistemaController extends Controller
 
                         $var = "contador_medicamentos_".$i;
                         $contador = $request->$var;
+
+                        $controle_sem_aplicacao = true;
 
                         for($j=1 ; $j<=$contador ; $j++){
                             $var = "medicamento_id_".$i."_".$j;
@@ -170,17 +267,32 @@ class ProcedimentoSistemaController extends Controller
                                 $var = "total_".$i."_".$j;
                                 $total = $request->$var;
 
+                                $medicamento = Medicamento::where('id', $medicamento_id)->first();
+                                if($medicamento->aplicacao == 'Sim'){
+                                    $dados_situacao = 'Aberta';
+                                    $controle_sem_aplicacao = false;
+                                }
+                                else{
+                                    $dados_situacao = 'Aplicada';
+                                }
+
                                 $dados = [
                                     'procedimento_id' => $procedimento->id,
                                     'medicamento_id' => $medicamento_id,
                                     'quantidade' => $quantidade,
                                     'valor' => valorFormDb($valor),
                                     'total' => valorFormDb($total),
-                                    'situacao' => 'Aberta',
+                                    'situacao' => $dados_situacao,
                                 ];
                                 Aplicacao::create($dados);
                             }
                         }
+
+                        if($controle_sem_aplicacao){
+                            $procedimento->situacao = 'Aplicado';
+                            $procedimento->save();
+                        }
+
                         if($request->hasFile('anexos')){
                             foreach($request->file('anexos') as $arquivo){
                                 if($arquivo->isValid()){
@@ -203,9 +315,17 @@ class ProcedimentoSistemaController extends Controller
                 }
             }
 
-            $retorno = $request->retorno;
-            $medico = $request->medico;
-            return view('sistema/procedimentos/financeiro', compact('array_procedimentos','paciente','retorno','medico'));
+            $this->recalcular_semanas_grupo($codigo);
+
+            if($controle_update){
+                FinanceiroSistemaController::atualiza_financeiro_procedimento($codigo);
+                return redirect()->route('sistema.procedimentos.acessar_grupo', $codigo)->with('mensagem', 'Procedimentos Adicionados!');
+            }
+            else{
+                $retorno = $request->retorno;
+                $medico = $request->medico;
+                return view('sistema/procedimentos/financeiro', compact('array_procedimentos','paciente','retorno','medico'));
+            }
             //return redirect()->route('sistema.procedimentos.financeiros', $financeiro->id);
         } catch (\Exception $e) {
             return redirect()->route('sistema.procedimentos')->with('mensagem_erro', $e->getMessage());
@@ -261,9 +381,12 @@ class ProcedimentoSistemaController extends Controller
 
         if(!$fin_proc){
             //se entrar aqui é que nenhum financeiro foi criado
-            $this->financeiro(false, $procedimento);
+            //$request = new Request();
+            //$this->financeiros($request, $procedimento);
+            FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
         }
 
+        $fin_proc = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first();
         $financeiro = Financeiro::where('id', $fin_proc->financeiro_id)->first();
 
         return view('sistema/procedimentos/acessar', compact('procedimento','retorno','procedimentos_vinculados','controle_aviso_coleta','financeiro'));
@@ -277,8 +400,14 @@ class ProcedimentoSistemaController extends Controller
             }
 
             $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
+            if($procedimento->st_pagamento == "Pendente"){
+                $procedimento->st_pagamento = 'Não';
+                $procedimento->save();
+            }
             $var = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first();
             $financeiro = Financeiro::where('id', $var->financeiro_id)->first();
+            $financeiro->obs_pagamento = $financeiro->obs_pagamento.' / '.$request->obs_pagamento;
+            $financeiro->save();
 
             $valor_pagamento = 0;
             for($i=1 ; $i<=$request->contador_formas ; $i++){
@@ -302,6 +431,7 @@ class ProcedimentoSistemaController extends Controller
                         'forma_pagamento' => $forma_pagamento,
                         'parcelas' => $parcelas,
                         'vl_pagamento' => valorFormDb($vl_pagamento),
+                        'user_id_cadastro' => $user->id,
                     ];
 
                     FinanceiroFormasPagamento::create($dados);
@@ -309,70 +439,25 @@ class ProcedimentoSistemaController extends Controller
                 }
             }
 
-            //vamos verificar se a consulta já foi paga
-            if($financeiro->vl_consulta > $financeiro->vl_consulta_pagamento){
-                $vl_consulta_pendente = $financeiro->vl_consulta - $financeiro->vl_consulta_pagamento;
-
-                if($valor_pagamento >= $vl_consulta_pendente){
-                    $financeiro->vl_consulta_pagamento = $financeiro->vl_consulta_pagamento += $vl_consulta_pendente;
-                    $valor_pagamento -= $vl_consulta_pendente;
-                }
-                else{
-                    $financeiro->vl_consulta_pagamento = $financeiro->vl_consulta_pagamento += $valor_pagamento;
-                    $valor_pagamento -= $valor_pagamento;
-                }
-                $financeiro->save();
-            }
-
-            $procedimentos = Procedimento::where('codigo',$procedimento->codigo)
-            ->where('st_pagamento','<>','Sim')
-            ->where('nr_procedimento','<',$procedimento->nr_procedimento)
-            ->get();
-
-            foreach($procedimentos as $proc){
-                if($valor_pagamento > 0){
-                    $vl_pendente = $proc->valor - $proc->vl_pago;
-                    if($valor_pagamento > $vl_pendente){
-                        $proc->vl_pago += $vl_pendente;
-                        $valor_pagamento -= $vl_pendente;
-                    }
-                    else{
-                        $proc->vl_pago += $valor_pagamento;
-                        $valor_pagamento -= $valor_pagamento;
-                    }
-                    if($proc->vl_pago < $prov->valor){
-                        $proc->st_pagamento = 'Parcial';
-                    }
-                    else{
-                        $proc->st_pagamento = 'Sim';
-                    }
-                    $proc->save();
-                }
-            }
-
-            //vamos verificar se sobrou dinheiro para pagar o procedimento em questaão
-            if($valor_pagamento > 0){
-                $vl_pendente = $procedimento->valor - $procedimento->vl_pago;
-                if($valor_pagamento > $vl_pendente){
-                    $procedimento->vl_pago += $vl_pendente;
-                    $valor_pagamento -= $vl_pendente;
-                }
-                else{
-                    $procedimento->vl_pago += $valor_pagamento;
-                    $valor_pagamento -= $valor_pagamento;
-                }
-                if($procedimento->vl_pago < $procedimento->valor){
-                    $procedimento->st_pagamento = 'Parcial';
-                }
-                else{
-                    $procedimento->st_pagamento = 'Sim';
-                }
-                $procedimento->save();
-            }
+            FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
 
             return redirect()->route('sistema.procedimentos.acessar', [$procedimento->id, $request->retorno])->with('mensagem','Pagamento Cadastrado');
         } catch (\Exception $e) {
             return redirect()->route('sistema.procedimentos.acessar', $procedimento->id)->with('mensagem_erro',$e->getMessage());
+        }
+    }
+
+    public function setar_pagamento_pendente($id){
+        try {
+            $procedimento = Procedimento::where('id', $id)->first();
+            $procedimento->st_pagamento = 'Pendente';
+            $procedimento->save();
+
+            FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
+
+            return redirect()->route('sistema.procedimentos.acessar', $procedimento->id)->with('mensagem', 'Pagamento setado como pendente.');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.procedimentos.acessar', $procedimento->id)->with('mensagem_erro', $e->getMessage());
         }
     }
 
@@ -446,6 +531,7 @@ class ProcedimentoSistemaController extends Controller
                         'forma_pagamento' => $forma_pagamento,
                         'parcelas' => $parcelas,
                         'vl_pagamento' => valorFormDb($vl_pagamento),
+                        'user_id_cadastro' => $user->id,
                     ];
 
                     FinanceiroFormasPagamento::create($dados);
@@ -471,6 +557,7 @@ class ProcedimentoSistemaController extends Controller
             $procedimento->st_biopedancia = $request->exames == "Biopedância" || $request->exames == "Biopedância e Coleta" ? 'Sim' : 'Não';
             $procedimento->st_coleta = $request->exames == "Coleta" || $request->exames == "Biopedância e Coleta" ? 'Sim' : 'Não';
             $procedimento->consulta_tratamento_agendada = $request->consulta_tratamento_agendada ? $request->consulta_tratamento_agendada : '';
+            $procedimento->dt_hr_chegada = date('Y-m-d H:i:s');
             $procedimento->save();
 
             if($request->retorno == 'sistema_dashboard'){
@@ -541,20 +628,24 @@ class ProcedimentoSistemaController extends Controller
 
             //vamos gerar o financeiro
             $vl_procedimentos = 0;
-            if($request){
+            if(!$procedimento){
+                $controle_request = true;
                 $procedimentos = $request->procedimentos ? $request->procedimentos : [];
-                $paciente_id = $request->paciente_id
+                $paciente_id = $request->paciente_id;
                 $medico = $request->medico;
                 $vl_consulta = $request->vl_consulta;
                 $vl_desconto = $request->vl_desconto;
+                $vl_adicional = $request->vl_adicional;
                 $vl_pagamento = $request->vl_pagamento;
                 $obs_pagamento = $request->obs_pagamento;
             }
             elseif($procedimento){
+                $controle_request = false;
                 $paciente_id = $procedimento->paciente_id;
                 $medico = $procedimento->medico;
                 $vl_consulta = '0,00';
                 $vl_desconto = '0,00';
+                $vl_adicional = '0,00';
                 $vl_pagamento = '0,00';
                 $obs_pagamento = '';
 
@@ -565,6 +656,7 @@ class ProcedimentoSistemaController extends Controller
                 }
             }
             else{
+                $controle_request = true;
                 $procedimentos = array();
             }
 
@@ -584,6 +676,7 @@ class ProcedimentoSistemaController extends Controller
                 'vl_consulta_pagamento' => 0.00,
                 'vl_procedimentos' => $vl_procedimentos,
                 'vl_desconto' => valorFormDb($vl_desconto),
+                'vl_adicional' => valorFormDb($vl_adicional),
                 'vl_pagamento' => valorFormDb($vl_pagamento),
                 'tipo_pagamento' => 'teste',
                 'forma_pagamento' => 'teste',//$request->forma_pagamento,
@@ -595,7 +688,7 @@ class ProcedimentoSistemaController extends Controller
 
             $valor_pago = 0;
 
-            if($request){
+            if($controle_request){
                 for($i=1 ; $i<=$request->contador_formas ; $i++){
                     $var = "forma_pagamento_".$i;
                     $forma_pagamento = $request->$var;
@@ -617,6 +710,7 @@ class ProcedimentoSistemaController extends Controller
                             'forma_pagamento' => $forma_pagamento,
                             'parcelas' => $parcelas,
                             'vl_pagamento' => valorFormDb($vl_pagamento),
+                            'user_id_cadastro' => $user->id,
                         ];
 
                         FinanceiroFormasPagamento::create($dados);
@@ -637,8 +731,11 @@ class ProcedimentoSistemaController extends Controller
                 $financeiro->save();
             }
 
-            if($request->procedimentos){
-                foreach($request->procedimentos as $procedimento_id){
+            //para aplicar o desconto nos procedimentos e os acrecimos
+            $valor_pago += $financeiro->vl_desconto - $financeiro->vl_adicional;
+
+            if($procedimentos){
+                foreach($procedimentos as $procedimento_id){
                     $procedimento = Procedimento::where('id', $procedimento_id)->first();
 
                     $dados = [
@@ -671,14 +768,16 @@ class ProcedimentoSistemaController extends Controller
                 }
             }
 
-            if($request->retorno == 'sistema_dashboard'){
-                return redirect()->route('sistema.dashboard')->with('mensagem','Procedimentos Cadastrados!');
-            }
-            elseif($request->retorno == 'adm_dashboard'){
-                return redirect()->route('sistema.dashboard')->with('mensagem','Procedimentos Cadastrados!');
-            }
-            else{
-                return redirect()->route('sistema.procedimentos')->with('mensagem','Procedimentos Cadastrados!');
+            if($controle_request){
+                if($request->retorno == 'sistema_dashboard'){
+                    return redirect()->route('sistema.dashboard')->with('mensagem','Procedimentos Cadastrados!');
+                }
+                elseif($request->retorno == 'adm_dashboard'){
+                    return redirect()->route('sistema.dashboard')->with('mensagem','Procedimentos Cadastrados!');
+                }
+                else{
+                    return redirect()->route('sistema.procedimentos')->with('mensagem','Procedimentos Cadastrados!');
+                }
             }
         } catch (\Exception $e) {
             return redirect()->route('sistema.procedimentos')->with('mensagem_erro',$e->getMessage());
@@ -691,21 +790,528 @@ class ProcedimentoSistemaController extends Controller
         return view('sistema/procedimentos/excluir', compact('procedimento'));
     }
 
+    public function excluir_grupo($codigo){
+        return view('sistema/procedimentos/excluir_grupo', compact('codigo'));
+    }
+
     public function delete(Request $request){
+        $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
+
+        $this->delete_procedimento($request->procedimento_id);
+
+        FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
+
+        $this->recalcular_semanas_grupo($procedimento->codigo);
+
+        return redirect()->route('sistema.procedimentos')->with('mensagem','Procedimento Excluído!');
+    }
+
+    public function delete_grupo(Request $request){
+        $procedimentos = Procedimento::where('codigo', $request->codigo)->get();
+        $procedimento = Procedimento::where('codigo', $request->codigo)->first();
+        $financeiro = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first();
+
+        foreach($procedimentos as $procedimento){
+            $this->delete_procedimento($procedimento->id);
+        }
+
+        //$financeiro = Financeiro::where('id', $financeiro_id)->first();
+        if($financeiro){
+            FinanceiroProcedimento::where('financeiro_id', $financeiro->id)->delete();
+            FinanceiroFormasPagamento::where('financeiro_id', $financeiro->id)->delete();
+            $financeiro->delete();
+        }
+
+        return redirect()->route('sistema.procedimentos')->with('mensagem','Grupo de Procedimentos Excluído!');
+    }
+
+    public function delete_procedimento($procedimento_id){
         try {
-            $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
-            $finProc = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first();
-            $finProc->delete();
-            $financeiro = Financeiro::where('id', $finProc->financeiro_id)->delete();
+            $procedimento = Procedimento::where('id', $procedimento_id)->first();
             ProcedimentoAnexo::where('procedimento_id', $procedimento->id)->delete();
-            Aplicacao::where('procedimento_id', $procedimento->id)->delete();
+            FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->delete();
+            foreach($procedimento->aplicacaos as $aplicacao){
+                if($aplicacao->situacao == "Aplicada"){
+                    if($aplicacao->medicamento->unidade == "Ampola"){
+                        AplicacaoLote::where('aplicacao_id', $aplicacao->id)->delete();
+
+                        Estoque::where('origem', 'Procedimento')
+                        ->where('procedimento_id', $procedimento->id)
+                        ->where('medicamento_id', $aplicacao->medicamento->id)
+                        ->delete();
+                    }
+                    elseif($aplicacao->medicamento->unidade == "Miligrama"){
+                        $aplic_lotes = AplicacaoLote::where('aplicacao_id', $aplicacao->id)->get();
+                        foreach($aplic_lotes as $lote){
+                            $aberto = EstoqueAberto::where('id', $lote->estoque_aberto_id)->first();
+                            $aberto->qt_utilizado -= $lote->quantidade;
+                            $aberto->qt_restante += $lote->quantidade;
+                            if($aberto->qt_restante > 0){
+                                $aberto->situacao = 'Aberto';
+                            }
+                            $aberto->save();
+                            $lote->delete();
+                        }
+                    }
+                }
+
+                $aplicacao->delete();
+            }
+
             $procedimento->delete();
 
-            return redirect()->route('sistema.procedimentos')->with('mensagem','Procedimento Excluído!');
         } catch (\Exception $e) {
             return redirect()->route('sistema.procedimentos')->with('mensagem_erro',$e->getMessage());
         }
 
+    }
+
+    public function imprimir_paciente($codigo){
+        $procedimento = Procedimento::where('codigo', $codigo)->orderBy('nr_procedimento')->first();
+        $procedimentos = Procedimento::where('codigo', $codigo)
+        ->where('situacao', 'Aplicado')
+        ->orderBy('nr_procedimento')
+        ->get();
+
+        $array_arquivos = array();
+
+        foreach($procedimentos as $procedimento) {
+            $pdf = new GerarPdf('P', 'mm', 'A4', true, 'UTF-8', false);
+            $pdf->setPrintHeader(true);
+            $pdf->SetMargins(10, 40, -1, true);
+            $pdf->AddPage();
+
+            //vamos colocar o nome do paciente e a data de cadastro
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->MultiCell(95,6,'Paciente:',0,'L',false,0,'','',true,0,false,true,0,'B',true);
+            $pdf->MultiCell(50,6,'CPF:',0,'L',false,0,'','',true,0,false,true,0,'B',true);
+            $pdf->MultiCell(0,6,'Data Cadastro:',0,'L',false,1,'','',true,0,false,true,0,'B',true);
+
+            $pdf->SetFont('helvetica', 'B', 10);
+            $pdf->MultiCell(95,5,$procedimento->paciente->nm_paciente,0,'L',false,0,'','',true,0,false,true,0,'M',true);
+            $pdf->MultiCell(50,5,$procedimento->paciente->cpf,0,'L',false,0,'','',true,0,false,true,0,'M',true);
+            $pdf->MultiCell(0,5,dataDbForm($procedimento->data_cad),0,'L',false,1,'','',true,0,false,true,0,'M',true);
+
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->MultiCell(95,6,'Médico:',0,'L',false,0,'','',true,0,false,true,0,'B',true);
+            $pdf->MultiCell(0,6,'Clinica:',0,'L',false,1,'','',true,0,false,true,0,'B',true);
+
+            $pdf->SetFont('helvetica', 'B', 10);
+            $pdf->MultiCell(95,5,$procedimento->medico,0,'L',false,0,'','',true,0,false,true,0,'M',true);
+            $pdf->MultiCell(0,5,$procedimento->clinica->nome,0,'L',false,1,'','',true,0,false,true,0,'M',true);
+
+            $pdf->SetLineWidth(0.1);
+            $pdf->Line(10, 65, 200, 65);
+            $pdf->Ln();
+
+            $aplic = $procedimento->aplicacaos()->first();
+            if($aplic){
+                $ds_aplicacao = $aplic->obs;
+            }
+            else{
+                $ds_aplicacao = '';
+            }
+
+            $dt_hr_chegada = '';
+            $dt_hr_atendimento = '';
+            $dt_hr_finalizacao = '';
+
+            if($procedimento->dt_hr_chegada){
+                $var = explode(' ', $procedimento->dt_hr_chegada);
+                $dt_hr_chegada = $var[1];
+            }
+
+            if($procedimento->dt_hr_atendimento){
+                $var = explode(' ', $procedimento->dt_hr_atendimento);
+                $dt_hr_atendimento = $var[1];
+            }
+
+            if($procedimento->dt_hr_finalizacao){
+                $var = explode(' ', $procedimento->dt_hr_finalizacao);
+                $dt_hr_finalizacao = $var[1];
+            }
+
+
+            $pdf->SetFont('helvetica', 'B', 12);
+            $pdf->MultiCell(160,8,"Semana: ".$procedimento->nr_procedimento,0,'L',false,0,'','',true,0,false,true,0,'B',true);
+            $pdf->MultiCell(0,8,dataDbForm($procedimento->data_aplicacao),0,'L',false,1,'','',true,0,false,true,0,'B',true);
+            $pdf->Ln(2);
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->MultiCell(70,6,'Chegada: '.$dt_hr_chegada,0,'L',false,0,'','',true,0,false,true,0,'M',true);
+            $pdf->MultiCell(70,6,'Atendimento: '.$dt_hr_atendimento,0,'L',false,0,'','',true,0,false,true,0,'M',true);
+            $pdf->MultiCell(0,6,'Finalização: '.$dt_hr_finalizacao,0,'L',false,1,'','',true,0,false,true,0,'M',true);
+            $pdf->Ln(2);
+            $pdf->MultiCell(0,6,'OBS:',0,'L',false,1,'','',true,0,false,true,0,'M',true);
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->MultiCell(0,0,rtrim($ds_aplicacao),0,'L',false,1,'','',true,0,false,true,0,'M',true);
+
+            $tabela = '
+            <table style="border-collapse: collapse;width: 100%;border: 1px solid black;">
+                <thead>
+                    <tr>
+                        <th style="border: 1px solid black;"><b>Medicamento</b></th>
+                        <th style="border: 1px solid black;"><b>Unidade</b></th>
+                        <th style="border: 1px solid black;"><b>Quantidade</b></th>
+                        <th style="border: 1px solid black;"><b>Situação</b></th>
+                        <th style="border: 1px solid black;"><b>Data Aplicação</b></th>
+                        <th style="border: 1px solid black;"><b>Lote Aplicação</b></th>
+                        <th style="border: 1px solid black;"><b>C.Barras</b></th>
+                        <th style="border: 1px solid black;"><b>Validade</b></th>
+                        <th style="border: 1px solid black;"><b>Enfermagem</b></th>
+                    </tr>
+                </thead>
+                <tbody>
+                ';
+                $enfermeira = null;
+                $enfermeira_nome = null;
+                foreach($procedimento->aplicacaos as $aplicacao){
+                    $dt_aplicacao = null;
+                    if($aplicacao->lote){
+                        $var = explode(' ',$aplicacao->lote->created_at);
+                        $dt_aplicacao = dataDbForm($var[0]);
+                    }
+                    if(!$enfermeira && $aplicacao->enfermeira){
+                        $enfermeira = $aplicacao->enfermeira;
+                        $enfermeira_nome = $enfermeira->nome;
+                    }
+                    $tabela .= '
+                        <tr>
+                            <td style="border: 1px solid black;">'.$aplicacao->medicamento->nome.'</td>
+                            <td style="border: 1px solid black;">'.$aplicacao->medicamento->unidade.'</td>
+                            <td style="border: 1px solid black;">'.$aplicacao->quantidade.'</td>
+                            <td style="border: 1px solid black;">'.$aplicacao->situacao.'</td>
+                            <td style="border: 1px solid black;">'.$dt_aplicacao.'</td>
+                            <td style="border: 1px solid black;">'.$aplicacao->lotes().'</td>
+                            <td style="border: 1px solid black;">'.$aplicacao->codigos().'</td>
+                            <td style="border: 1px solid black;">'.$aplicacao->vencimentos().'</td>
+                            <td style="border: 1px solid black;">'.$enfermeira_nome.'</td>
+                        </tr>
+                    ';
+                }
+                $tabela .= '
+                </tbody>
+            </table>
+            ';
+
+            $pdf->writeHTML($tabela, true, false, false, false, '');
+            $pdf->ln(10);
+
+            if($enfermeira && $enfermeira->imagem_carimbo){
+                $pfxPath = public_path("img/usuarios/certificados_digitais/$enfermeira->imagem_carimbo");
+                $pfxPass = $enfermeira->senha_certificado;
+
+                $pfxContents = file_get_contents($pfxPath);
+                if ($pfxContents === false) {
+                    throw new \Exception("Não conseguiu ler o arquivo PFX em: $pfxPath");
+                }
+                $certs = [];
+
+                if (!openssl_pkcs12_read($pfxContents, $certs, $pfxPass)) {
+                    // fallback: informe ao usuário ou converta com openssl CLI
+                    throw new \Exception("Falha ao ler o PFX com openssl_pkcs12_read(). Tente converter para PEM via 'openssl pkcs12 -in certificado.pfx -out cert.pem -nodes' e use o PEM.");
+                }
+
+                $certPem = $certs['cert'];
+                $pkeyPem = $certs['pkey'];
+
+                $pdf->setSignature($certPem, $pkeyPem, '', '', 2);
+
+                $x = $pdf->GetX();
+                $y = $pdf->GetY();
+
+                $w = 50;
+                $h = 25;
+
+                $pdf->setSignatureAppearance($x, $y, $w, $h);
+                $pdf->SetFont('helvetica', '', 8);
+                $pdf->Text($x, $y, "Assinado digitalmente por: $enfermeira->nome");
+                $y += 3;
+                $pdf->Text($x, $y, "Coren: $enfermeira->coren");
+                $y += 3;
+                $pdf->Text($x, $y, "Data/Hora: ".date('d/m/Y H:i:s'));
+            }
+
+            $arquivo = "Relatório_Procedimentos_$procedimento->id"."_".date('YmdHis').".pdf";
+            $diretorio = public_path("procedimentos/$procedimento->id/relatorios");
+
+            if (!File::isDirectory($diretorio)) {
+                File::makeDirectory($diretorio, 0755, true, true);
+            }
+
+            $destino = $diretorio."/".$arquivo;
+
+            $pdf->Output($destino, 'F');
+            $array = [
+                'procedimento_id' => $procedimento->id,
+                'semana' => $procedimento->nr_procedimento,
+                'arquivo' => $arquivo,
+                'destino' => $destino,
+            ];
+            $array_arquivos[] = $array;
+        }
+
+        $link_zip = null;
+
+        if(count($array_arquivos) > 0){
+            $path_zip = public_path("zips/relatorios/$codigo.zip");
+            $link_zip = "/public/zips/relatorios/$codigo.zip";
+            $zip = new \ZipArchive();
+
+            if (!$zip->open($path_zip, \ZipArchive::CREATE | \ZipArchive::OVERWRITE)) {
+                throw new \Exception('Falha ao criar arquivo zip.');
+            }
+
+            foreach($array_arquivos as $arq){
+                $zip->addFile($arq['destino'], $arq['arquivo']);
+            }
+            $zip->close();
+        }
+
+        return view('sistema/procedimentos/imprimir_paciente', compact('array_arquivos','link_zip'));
+    }
+
+    public function imprimir_paciente_old($codigo){
+        $procedimento = Procedimento::where('codigo', $codigo)->orderBy('nr_procedimento')->first();
+        $procedimentos = Procedimento::where('codigo', $codigo)
+        ->where('situacao', 'Aplicado')
+        ->orderBy('nr_procedimento')
+        ->get();
+        echo '
+        <!doctype html>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Imprimir Procedimentos</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+                <style>
+                    @media print {
+                        th{
+                            font-size: 10px !important
+                        }
+                        td{
+                            font-size: 8px !important
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-3">
+                            <img src="/public/img/logo.png" style="height: 100px">
+                        </div>
+                        <div class="col-9">
+                            <h3 class="text-center mt-5">Relatório de Procedimentos</h3>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-8 form-group">
+                            <label>Paciente:</label><br>
+                            <strong>'.$procedimento->paciente->nm_paciente.'</strong>
+                        </div>
+                        <div class="col-4 form-group">
+                            <label>Data Cadastro:</label><br>
+                            <strong>'.dataDbForm($procedimento->data_cad).'</strong>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4 form-group">
+                            <label>CPF:</label><br>
+                            <strong>'.$procedimento->paciente->cpf.'</strong>
+                        </div>
+                        <div class="col-4 form-group">
+                            <label>Médico:</label><br>
+                            <strong>'.$procedimento->medico.'</strong>
+                        </div>
+                        <div class="col-4 form-group">
+                            <label>Clínica:</label><br>
+                            <strong>'.$procedimento->clinica->nome.'</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <h5>Procedimentos</h5>
+                    ';
+                    foreach($procedimentos as $procedimento){
+                        $aplic = $procedimento->aplicacaos()->first();
+                        if($aplic){
+                            $ds_aplicacao = $aplic->obs;
+                        }
+                        else{
+                            $ds_aplicacao = '';
+                        }
+
+                        $dt_hr_chegada = '';
+                        $dt_hr_atendimento = '';
+                        $dt_hr_finalizacao = '';
+
+                        if($procedimento->dt_hr_chegada){
+                            $var = explode(' ', $procedimento->dt_hr_chegada);
+                            $dt_hr_chegada = dataDbForm($var[0])." ".$var[1];
+                        }
+
+                        if($procedimento->dt_hr_atendimento){
+                            $var = explode(' ', $procedimento->dt_hr_atendimento);
+                            $dt_hr_atendimento = dataDbForm($var[0])." ".$var[1];
+                        }
+
+                        if($procedimento->dt_hr_finalizacao){
+                            $var = explode(' ', $procedimento->dt_hr_finalizacao);
+                            $dt_hr_finalizacao = dataDbForm($var[0])." ".$var[1];
+                        }
+
+                        echo '
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="card-title">Semana: '.$procedimento->nr_procedimento.'</h6>
+                                    <h6 class="card-title">Data: '.dataDbForm($procedimento->data_aplicacao).'</h6>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label>OBS:</label><br>
+                                        <strong>'.$ds_aplicacao.'</strong>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label>Chegada:</label><br>
+                                        <strong>'.$dt_hr_chegada.'</strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>Atendimento:</label><br>
+                                        <strong>'.$dt_hr_atendimento.'</strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label>Finalização:</label><br>
+                                        <strong>'.$dt_hr_finalizacao.'</strong>
+                                    </div>
+                                </div>
+                                <table class="table table-responsive">
+                                    <thead>
+                                        <tr>
+                                            <th>Medicamento</th>
+                                            <th>Unidade</th>
+                                            <th>Quantidade</th>
+                                            <th>Valor</th>
+                                            <th>Total</th>
+                                            <th>Situação</th>
+                                            <th>Data Aplicação</th>
+                                            <th>Lote Aplicação</th>
+                                            <th>C.Barras</th>
+                                            <th>Validade</th>
+                                            <th>Enfermagem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    ';
+                                    foreach($procedimento->aplicacaos as $aplicacao){
+                                        $dt_aplicacao = null;
+                                        if($aplicacao->lote){
+                                            $var = explode(' ',$aplicacao->lote->created_at);
+                                            $dt_aplicacao = dataDbForm($var[0]);
+                                        }
+                                        $enfermeira = $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '';
+                                        $carimbo = $aplicacao->enfermeira->imagem_carimbo;
+                                        echo'
+                                            <tr>
+                                                <td>'.$aplicacao->medicamento->nome.'</td>
+                                                <td>'.$aplicacao->medicamento->unidade.'</td>
+                                                <td>'.$aplicacao->quantidade.'</td>
+                                                <td>R$ '.valorDbForm($aplicacao->valor).'</td>
+                                                <td>R$ '.valorDbForm($aplicacao->total).'</td>
+                                                <td>'.$aplicacao->situacao.'</td>
+                                                <td>'.$dt_aplicacao.'</td>
+                                                <td>'.$aplicacao->lotes().'</td>
+                                                <td>'.$aplicacao->codigos().'</td>
+                                                <td>'.$aplicacao->vencimentos().'</td>
+                                                <td>'.$enfermeira.'</td>
+                                            </tr>
+                                        ';
+                                    }
+                                    echo '
+                                    <tr>
+                                        <td colspan="11">
+                                            Enfermeiro(a): <img src="/public/img/usuarios/carimbos/'.$carimbo.'" style="height: 100px">
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        ';
+                    }
+                    echo '
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+                <script>
+                    window.addEventListener("load", ()=>{
+                        print();
+                    })
+
+                    window.addEventListener("afterprint", ()=>{
+                        window.close();
+                    })
+                </script>
+            </body>
+        </html>
+        ';
+    }
+
+    public function imprimir_cadastro($codigo){
+        $procedimentos = Procedimento::where('codigo', $codigo)
+        ->orderBy('nr_procedimento')
+        ->get();
+
+        //vamos buscar um resumo das aplicações
+        $array_in = array();
+        foreach($procedimentos as $procedimento){
+            $array_in[] = $procedimento->id;
+        }
+
+        $cadastrante = null;
+        if($procedimento->cadastrante){
+            $cadastrante = $procedimento->cadastrante->nome;
+        }
+
+        $medicamentos = Aplicacao::whereIn('procedimento_id', $array_in)
+        ->distinct()->pluck('medicamento_id');
+        $array_resumo = array();
+        foreach($medicamentos as $medicamento_id){
+            $med = Medicamento::where('id', $medicamento_id)->first();
+            $quantidade = Aplicacao::whereIn('procedimento_id', $array_in)
+            ->where('medicamento_id', $medicamento_id)
+            ->sum('quantidade');
+            $total = Aplicacao::whereIn('procedimento_id', $array_in)
+            ->where('medicamento_id', $medicamento_id)
+            ->sum('total');
+
+            $array = [
+                'medicamento' => $med->nome,
+                'quantidade' => $quantidade,
+                'valor' => round($total / $quantidade, 2),
+                'total' => $total,
+            ];
+
+            $array_resumo[] = $array;
+        }
+
+        $vl_procedimentos = Procedimento::whereIn('id', $array_in)
+        ->sum('valor');
+
+        $vl_pagamentos = Procedimento::whereIn('id', $array_in)
+        ->sum('vl_pago');
+
+        //vamos pegar a obs do Pagamento
+        $financeiro_id = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first()->financeiro_id;
+        $financeiro = Financeiro::where('id', $financeiro_id)->first();
+        $obs_pagamento = $financeiro->obs_pagamento;
+
+        return view('/sistema/procedimentos/imprimir_cadastro', compact('procedimentos','array_resumo',
+        'vl_procedimentos','vl_pagamentos','obs_pagamento','cadastrante'));
     }
 
     public function imprimir(Request $request){
@@ -742,8 +1348,9 @@ class ProcedimentoSistemaController extends Controller
             $financeiro = Financeiro::where('id', $financeiro_id)->first();
         }
         $medicamentos = Medicamento::all()->sortBy('nome');
+        $combos = Combo::all()->sortBy('nome');
 
-        return view('sistema/procedimentos/editar', compact('procedimento','financeiro','procedimentos_vinculados','medicamentos'));
+        return view('sistema/procedimentos/editar', compact('procedimento','financeiro','procedimentos_vinculados','medicamentos','combos'));
     }
 
     public function get_aplicacao(){
@@ -770,6 +1377,8 @@ class ProcedimentoSistemaController extends Controller
 
         $procedimento->valor += $aplicacao->total;
         $procedimento->save();
+
+        FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
 
         $dt_aplicacao = null;
         if($aplicacao->lote){
@@ -817,6 +1426,9 @@ class ProcedimentoSistemaController extends Controller
         $procedimento->valor -= $aplicacao->total;
         $procedimento->save();
         $aplicacao->delete();
+
+        FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
+
         $retorno['controle'] = 'true';
         echo json_encode($retorno);
     }
@@ -834,7 +1446,14 @@ class ProcedimentoSistemaController extends Controller
         $aplicacao = Aplicacao::create($dados);
 
         $procedimento->valor += $aplicacao->total;
+
+        if($procedimento->situacao == "Aplicado"){
+            $procedimento->situacao = 'Aplicação Parcial';
+        }
+
         $procedimento->save();
+
+        FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
 
         $dt_aplicacao = null;
         if($aplicacao->lote){
@@ -876,6 +1495,44 @@ class ProcedimentoSistemaController extends Controller
         echo json_encode($retorno);
     }
 
+    public function insert_combo(Request $request){
+        try {
+            $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
+
+            $medicamentos = ComboMedicamento::where('combo_id', $request->combo_id)->get();
+
+            foreach($medicamentos as $linha){
+                $dados = [
+                    'procedimento_id' => $procedimento->id,
+                    'medicamento_id' => $linha->medicamento_id,
+                    'quantidade' => $linha->quantidade,
+                    'valor' => $linha->valor_unitario,
+                    'total' => round($linha->quantidade * $linha->valor_unitario, 2),
+                    'situacao' => 'Aberta',
+                ];
+                $aplicacao = Aplicacao::create($dados);
+
+                $procedimento->valor += $aplicacao->total;
+                $procedimento->save();
+            }
+
+            if($procedimento->situacao == "Aplicado"){
+                $procedimento->situacao = 'Aplicação Parcial';
+                $procedimento->save();
+            }
+
+            FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
+
+            return redirect()->route('sistema.procedimentos.editar', $request->procedimento_id)->with('mensagem', 'Combo Adicionado');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.procedimentos.editar', $request->procedimento_id)->with('mensagem_erro', $e->getMessage());
+        }
+
+
+
+
+    }
+
     public function adicionar_anexos(Request $request){
         try {
             $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
@@ -906,4 +1563,115 @@ class ProcedimentoSistemaController extends Controller
 
     }
 
+    public function adicionar_medicamentos($codigo){
+        $procedimentos = Procedimento::where('codigo', $codigo)
+        ->where('semana_sem_aplicacao','Não')
+        ->orderBy('nr_procedimento')->get();
+        $medicamentos = Medicamento::all()->sortBy('nome');
+
+        return view('sistema/procedimentos/adicionar_medicamentos', compact('codigo','procedimentos','medicamentos'));
+    }
+
+    public function adicionar_medicamentos_insert(Request $request){
+        try {
+            foreach($request->procedimentos as $procedimento_id){
+                $procedimento = Procedimento::where('id', $procedimento_id)->first();
+
+                for($i=0 ; $i<=$request->contador_medicamentos ; $i++){
+                    $var = "medicamento_id_".$i;
+                    $medicamento_id = $request->$var;
+
+                    $var = "quantidade_".$i;
+                    $quantidade = $request->$var;
+
+                    $var = "valor_".$i;
+                    $valor = $request->$var;
+
+                    $var = "total_".$i;
+                    $total = $request->$var;
+
+                    if($medicamento_id != ""){
+                        //entrando aqui vamos adicionar o medicamento a aplicacao
+                        $dados = [
+                            'procedimento_id' => $procedimento->id,
+                            'medicamento_id' => $medicamento_id,
+                            'quantidade' => $quantidade,
+                            'valor' => valorFormDb($valor),
+                            'total' => valorFormDb($total),
+                            'situacao' => 'Aberta',
+                        ];
+
+                        Aplicacao::create($dados);
+                    }
+                }
+
+                $procedimento->valor = Aplicacao::where('procedimento_id', $procedimento->id)->sum('total');
+                if($procedimento->situacao == "Aplicado"){
+                    $procedimento->situacao = 'Aplicação Parcial';
+                }
+                $procedimento->save();
+            }
+
+            FinanceiroSistemaController::atualiza_financeiro_procedimento($request->codigo);
+
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $request->codigo)->with('mensagem', 'Medicamentos Adicionados!');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.procedimentos')->with('mensagem_erro', $e->getMessage());
+        }
+
+    }
+
+    public function cancelar($codigo){
+        return view('sistema/procedimentos/cancelar', compact('codigo'));
+    }
+
+    public function cancelar_set(Request $request){
+        try {
+            $procedimentos = Procedimento::where('codigo', $request->codigo)->get();
+            foreach($procedimentos as $procedimento){
+                if($procedimento->situacao != "Aplicado"){
+                    foreach($procedimento->aplicacaos as $aplicacao){
+                        if($aplicacao->situacao != "Aplicada"){
+                            $aplicacao->situacao = 'Cancelada';
+                            $aplicacao->save();
+                        }
+                    }
+                    $procedimento->situacao = "Cancelado";
+                    $procedimento->save();
+                }
+            }
+
+            return redirect()->route('sistema.procedimentos')->with('mensagem', 'Grupo de Procedimentos Cancelado');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.procedimentos')->with('mensagem_erro', $e->getMessage());
+        }
+
+    }
+
+    public function recalcular_semanas_grupo($codigo){
+        $procedimentos = Procedimento::where('codigo', $codigo)->orderBy('data_aplicacao')->get();
+        $i=0;
+        foreach($procedimentos as $procedimento){
+            $i++;
+            $procedimento->nr_procedimento = $i;
+            $procedimento->save();
+        }
+    }
+
+    public function editar_medico($codigo){
+        $procedimento = Procedimento::where('codigo', $codigo)->first();
+        $api = api();
+        $medicos = $api->get_medicos();
+        return view('sistema/procedimentos/editar_medico', compact('procedimento','medicos'));
+    }
+
+    public function editar_medico_set(Request $request){
+        try {
+            Procedimento::where('codigo', $request->codigo)->update(['medico' => $request->medico]);
+            return redirect()->route('sistema.procedimentos')->with('mensagem', 'Médico Alterado');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.procedimentos')->with('mensagem_erro', $e->getMessage());
+        }
+
+    }
 }

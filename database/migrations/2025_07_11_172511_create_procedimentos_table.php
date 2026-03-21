@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('clinica_id');
             $table->unsignedBigInteger('clinica_id_aplicacao');
             $table->unsignedBigInteger('paciente_id');
-            $table->unsignedBigInteger('user_id_aplicacao');
+            $table->unsignedBigInteger('user_id_aplicacao')->nullable();
             $table->date('data_cad');
             $table->date('data_aplicacao');
             $table->date('data_pagamento')->nullable();
@@ -40,11 +40,16 @@ return new class extends Migration
             $table->string('semana_sem_aplicacao')->nullable();
             $table->unsignedBigInteger('autorizador_sem_pagamento')->nullable();
             $table->string('consulta_tratamento_agendada',10)->nullable();
+            $table->dateTime('dt_hr_chegada')->nullable();
+            $table->dateTime('dt_hr_atendimento')->nullable();
+            $table->dateTime('dt_hr_finalizacao')->nullable();
+            $table->unsignedBigInteger('user_id_cadastro')->nullable();
             $table->foreign('clinica_id')->references('id')->on('clinicas');
             $table->foreign('clinica_id_aplicacao')->references('id')->on('clinicas');
             $table->foreign('paciente_id')->references('id')->on('pacientes');
             $table->foreign('user_id_aplicacao')->references('id')->on('users');
             $table->foreign('autorizador_sem_pagamento')->references('id')->on('administradors');
+            $table->foreign('user_id_cadastro')->references('id')->on('users');
             $table->timestamps();
         });
     }

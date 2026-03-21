@@ -65,4 +65,29 @@ class Aplicacao extends Model
         }
         return $retorno;
     }
+
+    public function vencimentos(){
+        $lotes = AplicacaoLote::where('aplicacao_id', $this->id)->get();
+        $retorno = "";
+        if($lotes->count() > 1){
+            foreach ($lotes as $lote){
+                $estoque = Estoque::where('codigo_barras', $lote->codigo_barras)->first();
+                if($estoque){
+                    $retorno .= "<br>Codigo: ".$lote->codigo_barras.", ".dataDbForm($estoque->dt_vencimento);
+                }
+            }
+            $retorno = substr($retorno, 4);
+        }
+        else{
+            foreach ($lotes as $lote){
+                $estoque = Estoque::where('codigo_barras', $lote->codigo_barras)->first();
+                if($estoque){
+                    $retorno .= dataDbForm($estoque->dt_vencimento);
+                }
+            }
+        }
+        return $retorno;
+    }
+
+
 }

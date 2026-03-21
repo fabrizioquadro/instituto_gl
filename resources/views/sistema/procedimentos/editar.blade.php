@@ -34,6 +34,12 @@ elseif($procedimento->situacao == "Aplicado"){
 elseif($procedimento->situacao == "Pendente"){
     $situacao = '<span class="badge rounded-pill bg-label-warning">Pendente</span>';
 }
+elseif($procedimento->situacao == "Semana Sem Aplicação"){
+    $situacao = '<span class="badge rounded-pill bg-label-secondary">Semana Sem Aplicação</span>';
+}
+else{
+    $situacao = '<span class="badge rounded-pill bg-label-secondary">'.$procedimento->situacao.'</span>';
+}
 
 if($procedimento->st_pagamento == 'Sim'){
     $st_pagamento = "<span class='badge bg-success'>$procedimento->st_pagamento</span>";
@@ -134,6 +140,16 @@ else{
         @endif
     </div>
 </div>
+@php
+$procedimentos_arqs = App\Models\Procedimento::where('codigo', $procedimento->codigo)->get();
+$in = array();
+foreach($procedimentos_arqs as $proc){
+    $in[] = $proc->id;
+}
+
+$arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get();
+
+@endphp
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between">
@@ -158,7 +174,7 @@ else{
             <div class="col-12 col-md-6 mb-4 mb-xl-0">
                 <div class="demo-inline-spacing mt-3">
                     <div class="list-group">
-                        @if($procedimento->anexos->count() == 0)
+                        @if($arquivos->count() == 0)
                             <div class="list-group-item list-group-item-action d-flex align-items-center waves-effect" style='cursor: default !important'>
                                 <div class="w-100">
                                     <div class="d-flex justify-content-between">
@@ -169,12 +185,12 @@ else{
                                 </div>
                             </div>
                         @endif
-                        @foreach($procedimento->anexos as $arquivo)
+                        @foreach($arquivos as $arquivo)
                             <div class="list-group-item list-group-item-action d-flex align-items-center waves-effect" style='cursor: default !important'>
                                 <div class="w-100">
                                     <div class="d-flex justify-content-between">
                                         <div class="user-info">
-                                            <a target="_blank" href="/public/procedimentos/{{ $procedimento->id }}/anexos/{{ $arquivo->anexo }}">
+                                            <a target="_blank" href="/public/procedimentos/{{ $arquivo->procedimento_id }}/anexos/{{ $arquivo->anexo }}">
                                                 <h6 class="mt-2 mb-0">{{ $arquivo->nm_anexo }}</h6>
                                             </a>
                                         </div>
@@ -225,10 +241,16 @@ else{
     <div class="card-body">
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Aplicações</h4>
-            <button type="button" onclick="adicionar_medicamento()" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
-                <span class="tf-icons mdi mdi-plus me-1"></span>
-                Medicamento
-            </button>
+            <div>
+                <button type="button" onclick="adicionar_medicamento()" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
+                    <span class="tf-icons mdi mdi-plus me-1"></span>
+                    Medicamento
+                </button>
+                <button type="button" onclick="adicionar_combo()" class="btn btn-sm rounded-pill btn-outline-info waves-effect">
+                    <span class="tf-icons mdi mdi-plus me-1"></span>
+                    Combos
+                </button>
+            </div>
         </div>
         <div class="row">
             <div class="col-md-12 form-group">
@@ -329,6 +351,9 @@ else{
                     }
                     elseif($proc->situacao == "Aplicado"){
                         $situacao = '<span class="badge rounded-pill bg-label-success">Aplicado</span>';
+                    }
+                    elseif($proc->situacao == "Semana Sem Aplicação"){
+                        $situacao = '<span class="badge rounded-pill bg-label-secondary">Semana Sem Aplicação</span>';
                     }
 
                     if($proc->st_pagamento == 'Sim'){
@@ -459,14 +484,52 @@ else{
     </div>
 </div>
 
+<div class="modal fade" id="modal_adicionar_combo" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{  route('sistema.procedimentos.insert_combo') }}" class="modal-content" method="post">
+            @csrf
+            <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
+            <div class="modal-header">
+                <h5 class="modal-title" id="backDropModalTitle">Adicionar Combo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mt-2 gy-4">
+                    <div class="col-md-12">
+                        <div class="form-floating form-floating-outline">
+                            <select required id="combo_id" name="combo_id" class="select2 form-select">
+                                <option value="">Opções</option>
+                                @foreach($combos as $combo)
+                                    <option value="{{ $combo->id }}">{{ $combo->nome }}</option>
+                                @endforeach
+                            </select>
+                            <label for="combo_id">Escolha o Combo para inserir:</label>
+                        </div>
+                    </div>
+                </div>
+                <span>* Esta ação será executada diretamente no banco de dados, não podendo ser desfeita.</span>
+                <div class="mb-3 mt-3">
+                    <button class="btn btn-primary" type="submit">Salvar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script type="text/javascript">
 
 var modalEditarAplicacao;
 var modalAdicionarAplicacao;
+var modalAdicionarCombo;
 
 function adicionar_medicamento(){
     modalAdicionarAplicacao = new bootstrap.Modal(document.getElementById('modal_adicionar_aplicacao'));
     modalAdicionarAplicacao.show();
+}
+
+function adicionar_combo(){
+    modalAdicionarCombo = new bootstrap.Modal(document.getElementById('modal_adicionar_combo'));
+    modalAdicionarCombo.show();
 }
 
 function excluir_aplicacao(aplicacao_id){
@@ -523,27 +586,59 @@ function set_valor_medicamento_adicionar(){
 }
 
 function modal_editar_aplicacao_calcula_total_medicamento(){
-    quantidade = parseFloat(document.getElementById("modal_editar_aplicacao_quantidade").value);
-    valor = document.getElementById("modal_editar_aplicacao_valor").value;
-    if(quantidade && valor){
-        valor = valor.replace('.','');
-        valor = parseFloat(valor.replace(',','.'));
-        total = quantidade * valor;
-        total = total.toFixed(2);
-        document.getElementById('modal_editar_aplicacao_total').value = total.replace('.',',');
-    }
+    medicamento_id = document.getElementById('modal_editar_aplicacao_medicamento_id').value;
+
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {
+            medicamento_id : medicamento_id
+        },
+        function(json){
+            if(json.unidade == 'Ampola'){
+                quantidade = Math.ceil(parseFloat(document.getElementById("modal_editar_aplicacao_quantidade").value));
+            }
+            else{
+                quantidade = parseFloat(document.getElementById("modal_editar_aplicacao_quantidade").value);
+            }
+
+            valor = document.getElementById("modal_editar_aplicacao_valor").value;
+            if(quantidade && valor){
+                valor = valor.replace('.','');
+                valor = parseFloat(valor.replace(',','.'));
+                total = quantidade * valor;
+                total = total.toFixed(2);
+                document.getElementById('modal_editar_aplicacao_total').value = total.replace('.',',');
+            }
+        }
+    );
 }
 
 function modal_adicionar_aplicacao_calcula_total_medicamento(){
-    quantidade = parseFloat(document.getElementById("modal_adicionar_aplicacao_quantidade").value);
-    valor = document.getElementById("modal_adicionar_aplicacao_valor").value;
-    if(quantidade && valor){
-        valor = valor.replace('.','');
-        valor = parseFloat(valor.replace(',','.'));
-        total = quantidade * valor;
-        total = total.toFixed(2);
-        document.getElementById('modal_adicionar_aplicacao_total').value = total.replace('.',',');
-    }
+    medicamento_id = document.getElementById('modal_adicionar_aplicacao_medicamento_id').value;
+
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {
+            medicamento_id : medicamento_id
+        },
+        function(json){
+            if(json.unidade == 'Ampola'){
+                quantidade = Math.ceil(parseFloat(document.getElementById("modal_adicionar_aplicacao_quantidade").value));
+            }
+            else{
+                quantidade = parseFloat(document.getElementById("modal_adicionar_aplicacao_quantidade").value);
+            }
+
+            valor = document.getElementById("modal_adicionar_aplicacao_valor").value;
+            if(quantidade && valor){
+                valor = valor.replace('.','');
+                valor = parseFloat(valor.replace(',','.'));
+                total = quantidade * valor;
+                total = total.toFixed(2);
+                document.getElementById('modal_adicionar_aplicacao_total').value = total.replace('.',',');
+            }
+        }
+    );
 }
 
 function salvar_edicao_aplicacao(){

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->double('vl_consulta_pagamento',10,2)->nullable();
             $table->double('vl_procedimentos',10,2);
             $table->double('vl_desconto',10,2);
+            $table->double('vl_adicional',10,2)->default('0.00');
             $table->double('vl_pagamento',10,2);
             $table->string('tipo_pagamento');
             $table->string('forma_pagamento');

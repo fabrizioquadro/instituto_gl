@@ -47,31 +47,49 @@ $template = "layout.".session()->get('layout');
                 <div class="col-md-9">
                     <h5 class="card-title">Pagamento</h5>
                     <div class="row gy-4 mt-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <select id="pagamento_modelo" class="select2 form-select">
+                                    <option value="Pagamento Parcial">Pagamento Parcial</option>
+                                    <option value="Pagamento Total">Pagamento Total</option>
+
+                                </select>
+                                <label for="clinica_id">Pagamento:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row gy-4 mt-3">
+                        <div class="col-md-4" style="display:none">
                             <div class="form-floating form-floating-outline">
                                 <input required onblur="calcula_total()" class="form-control" type="text" id="vl_consulta" name="vl_consulta" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/>
                                 <label for="vl_consulta">Valor da Consulta:</label>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-floating form-floating-outline">
                                 <input onblur="calcula_desconto()" class="form-control" type="number" id="porcentagem_desconto" value="0"/>
                                 <label for="porcentagem_desconto">Desconto (%):</label>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-floating form-floating-outline">
                                 <input required onblur="calcula_total()" class="form-control" type="text" id="vl_desconto" name="vl_desconto" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/>
                                 <label for="vl_desconto">Valor do Desconto:</label>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-floating form-floating-outline">
-                                <input required onblur="calcula_total()" class="form-control" type="text" id="vl_pagamento" name="vl_pagamento" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/>
-                                <label for="vl_pagamento">Valor do Pagamento:</label>
+                                <input required onblur="calcula_total()" class="form-control" type="text" id="vl_adicional" name="vl_adicional" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/>
+                                <label for="vl_adicional">Valor Adicional:</label>
                             </div>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-3">
+                            <div class="form-floating form-floating-outline">
+                                <input required onblur="calcula_total()" class="form-control" type="text" id="vl_pagamento" name="vl_pagamento" readonly value="0,00"/>
+                                <label for="vl_pagamento">Valor Total:</label>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
                             <div class="form-floating form-floating-outline">
                                 <input class="form-control" type="text" id="obs_pagamento" name="obs_pagamento"/>
                                 <label for="obs_pagamento">Obs Pagamento:</label>
@@ -81,7 +99,7 @@ $template = "layout.".session()->get('layout');
                     <hr>
                     <div class="d-flex justify-content-between">
                         <h5 class="card-title">Forma de Pagamento</h5>
-                        <button type="button" onclick="adicionar_forma()" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
+                        <button type="button" id='botao_add_forma_pagamento' onclick="adicionar_forma()" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
                             <span class="tf-icons mdi mdi-plus me-1"></span>
                             Forma Pgt
                         </button>
@@ -155,6 +173,19 @@ $template = "layout.".session()->get('layout');
 </div>
 <script>
 document.getElementById('botao_salvar').addEventListener('click', ()=>{
+    //vamos analizar se o  desconto é maios que zero para obrigar a  informação da observação
+    vl_desconto = document.getElementById('vl_desconto').value;
+    vl_desconto = vl_desconto.replaceAll('.','');
+    vl_desconto = parseFloat(vl_desconto.replace(',','.'));
+
+    if(vl_desconto > 0){
+        obs = document.getElementById('obs_pagamento').value;
+        if(obs == ""){
+            alert('É necessário preencher a observação do pagamento.');
+            return ;
+        }
+    }
+
     //vamos somar todos os valores de pagamentos
     //let somatorio = 0;
     //let variavel = "input.valor";
@@ -180,6 +211,28 @@ document.getElementById('botao_salvar').addEventListener('click', ()=>{
     //    alert('Valor do pagamento e soma dos valores da forma de pagamento não confere.');
     //}
 });
+
+document.getElementById('pagamento_modelo').addEventListener('change', (e)=>{
+    if(e.target.value == 'Pagamento Total'){
+        document.getElementById('porcentagem_desconto').value = 3;
+        document.getElementById('obs_pagamento').value = 'Pagamento Total';
+        document.getElementById('botao_add_forma_pagamento').setAttribute('disabled','disabled');
+
+        document.getElementById('vl_pagamento_1').removeAttribute('onkeypress');
+        document.getElementById('vl_pagamento_1').setAttribute('readonly','readonly');
+        document.getElementById('vl_pagamento_1').value = document.getElementById('vl_pagamento');
+
+        calcula_desconto();
+    }
+    else{
+        document.getElementById('porcentagem_desconto').value = 0;
+        document.getElementById('vl_desconto').value = '0,00';
+        document.getElementById('botao_add_forma_pagamento').removeAttribute('disabled');
+
+        document.getElementById('vl_pagamento_1').setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
+        document.getElementById('vl_pagamento_1').removeAttribute('readonly');
+    }
+})
 
 function adicionar_forma(){
     contador = parseInt(document.getElementById('contador_formas').value);
@@ -294,12 +347,20 @@ function calcula_total(){
     vl_desconto = vl_desconto.replaceAll('.','');
     vl_desconto = parseFloat(vl_desconto.replace(',','.'));
 
-    somatorio = somatorio + vl_consulta - vl_desconto;
+    vl_adicional = document.getElementById('vl_adicional').value;
+    vl_adicional = vl_adicional.replaceAll('.','');
+    vl_adicional = parseFloat(vl_adicional.replace(',','.'));
+
+    somatorio = somatorio + vl_consulta + vl_adicional - vl_desconto;
 
     somatorio = somatorio.toFixed(2);
     somatorio = somatorio.replace('.',",");
 
     document.getElementById('vl_pagamento').value = somatorio
+
+    if(document.getElementById('pagamento_modelo').value == "Pagamento Total"){
+        document.getElementById('vl_pagamento_1').value = document.getElementById('vl_pagamento').value;
+    }
 }
 
 calcula_total();

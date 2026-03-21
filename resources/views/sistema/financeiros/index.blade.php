@@ -8,7 +8,7 @@ $template = "layout.".session()->get('layout');
     <div class="card-body">
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Financeiros</h4>
-            <a href="{{ route('sistema.financeiros.adicionar') }}" class="btn btn-primary">Adicionar</a>
+            {{--<a href="{{ route('sistema.financeiros.adicionar') }}" class="btn btn-primary">Adicionar</a>--}}
         </div>
         @if($mensagem = Session::get('mensagem'))
             <div class="alert alert-success alert-dismissible mt-3" role="alert">
@@ -30,6 +30,7 @@ $template = "layout.".session()->get('layout');
                         <th></th>
                         <th>Data</th>
                         <th>Paciente</th>
+                        <th>Grupo</th>
                         <th>Médico</th>
                         <th>Consulta</th>
                         <th>Procedimentos</th>
@@ -51,6 +52,7 @@ $template = "layout.".session()->get('layout');
                         </td>
                         <td> <span style='display: none'>{{ strtotime($financeiro->dt_pagamento) }}</span> {{ dataDbForm($financeiro->dt_pagamento) }}</td>
                         <td>{{ $financeiro->paciente->nm_paciente }}</td>
+                        <td>{{ $financeiro->procedimentos()->first() ? $financeiro->procedimentos()->first()->codigo : '' }}</td>
                         <td>{{ $financeiro->medico }}</td>
                         <td>R$ {{ valorDbForm($financeiro->vl_consulta) }}</td>
                         <td>R$ {{ valorDbForm($financeiro->vl_procedimentos) }}</td>

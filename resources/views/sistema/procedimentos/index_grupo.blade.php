@@ -8,7 +8,10 @@ $template = "layout.".session()->get('layout');
     <div class="card-body">
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Procedimentos</h4>
-            <a href="{{ route('sistema.procedimentos.adicionar_grupo',$codigo) }}" class="btn btn-primary">Adicionar</a>
+            <div>
+                <a href="{{ route('sistema.procedimentos.adicionar_medicamentos',$codigo) }}" class="btn btn-outline-dark">+ Medicamentos</a>
+                <a href="{{ route('sistema.procedimentos.adicionar_grupo',$codigo) }}" class="btn btn-primary">+ Semanas</a>
+            </div>
         </div>
         @if($mensagem = Session::get('mensagem'))
             <div class="alert alert-success alert-dismissible mt-3" role="alert">
@@ -56,8 +59,14 @@ $template = "layout.".session()->get('layout');
                     elseif($procedimento->situacao == "Semana Sem Aplicação"){
                         $situacao = '<span class="badge rounded-pill bg-label-secondary">Sem Aplicação</span>';
                     }
-                    elseif($procedimento->situacao == "Pendente"){
-                        $situacao = '<span class="badge rounded-pill bg-label-warning">Pendente</span>';
+                    elseif($procedimento->situacao == "Aplicação Parcial" || $procedimento->situacao == "Pendente"){
+                        $situacao = '<span class="badge rounded-pill bg-label-warning">Aplicação Parcial</span>';
+                    }
+                    elseif($procedimento->situacao == "Cancelado"){
+                        $situacao = '<span class="badge rounded-pill bg-label-danger">Cancelado</span>';
+                    }
+                    else{
+                        $situacao = '<span class="badge rounded-pill bg-label-dark">'.$procedimento->situacao.'</span>';
                     }
 
                     if($procedimento->st_pagamento == 'Sim'){
@@ -76,8 +85,10 @@ $template = "layout.".session()->get('layout');
                                 </button>
                                 <div class="dropdown-menu" data-popper-placement="bottom-end">
                                     <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.acessar', $procedimento->id) }}"><i class="mdi mdi-eye me-1"></i> Acessar</a>
-                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.editar', $procedimento->id) }}"><i class="mdi mdi-pencil me-1"></i> Editar</a>
-                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.excluir', $procedimento->id) }}"><i class="mdi mdi-trash-can-outline me-1"></i> Excluir</a>
+                                    @if($procedimento->situacao != "Cancelado")
+                                        <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.editar', $procedimento->id) }}"><i class="mdi mdi-pencil me-1"></i> Editar</a>
+                                        <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.excluir', $procedimento->id) }}"><i class="mdi mdi-trash-can-outline me-1"></i> Excluir</a>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -99,7 +110,7 @@ $template = "layout.".session()->get('layout');
 <script>
 window.addEventListener('load',()=>{
   $('#table-index').DataTable({
-    order: [[1, 'asc']],
+    order: [[4, 'asc']],
     "language": {
 			"sEmptyTable": "Nenhum registro encontrado",
       "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",

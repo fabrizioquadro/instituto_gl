@@ -18,7 +18,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->string('tipo');
+            $table->string('coren')->nullable();
             $table->string('imagem')->nullable();
+            $table->string('imagem_carimbo')->nullable();
+            $table->string('senha_certificado')->nullable();
             $table->string('dashboard_sec',5)->nullable();
             $table->string('dashboard_enf',5)->nullable();
             $table->string('controle_medicamentos',5);

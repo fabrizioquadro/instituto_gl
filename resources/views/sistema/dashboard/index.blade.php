@@ -83,7 +83,7 @@ $template = "layout.".session()->get('layout');
                         <option @if($dados_pesquisa['situacao'] == "Agendado") selected @endif  value="Agendado">Agendado</option>
                         <option @if($dados_pesquisa['situacao'] == "Atendimento") selected @endif  value="Atendimento">Atendimento</option>
                         <option @if($dados_pesquisa['situacao'] == "Fila de Aplicação") selected @endif  value="Fila de Aplicação">Fila de Aplicação</option>
-                        <option @if($dados_pesquisa['situacao'] == "Pendente") selected @endif  value="Pendente">Pendente</option>
+                        <option @if($dados_pesquisa['situacao'] == "Aplicação Parcial") selected @endif  value="Aplicação Parcial">Aplicação Parcial</option>
                     </select>
                 </div>
             </div>

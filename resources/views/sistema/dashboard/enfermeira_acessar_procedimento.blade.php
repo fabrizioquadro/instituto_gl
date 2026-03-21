@@ -16,9 +16,46 @@ $template = "layout.".session()->get('layout');
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 @endif
-<form action="{{ route('sistema.dashboard.set_aplicacao') }}" method="post">
+<form action="{{ route('sistema.dashboard.set_aplicacao') }}" method="post" id="formulario_aplicacao">
     <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
     @csrf
+    <div class="card card-border-shadow-primary mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <h4 class="card-title">Estoques Abertos</h4>
+            </div>
+            <hr>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Clinica</th>
+                            <th>Medicamento</th>
+                            <th>Abertura</th>
+                            <th>Usuário</th>
+                            <th>Lote</th>
+                            <th>C. Barras</th>
+                            <th>Frasco</th>
+                            <th>Restante</th>
+                        </tr>
+                    </thead>
+                    @foreach($array_abertos as $linha)
+                        <tr>
+                            <td>{{ $linha['clinica'] }}</td>
+                            <td>{{ $linha['medicamento'] }}</td>
+                            <td>{{ $linha['abertura'] }}</td>
+                            <td>{{ $linha['usuario'] }}</td>
+                            <td>{{ $linha['lote'] }}</td>
+                            <td>{{ $linha['codigo_barras'] }}</td>
+                            <td>{{ $linha['frasco'] }}</td>
+                            <td>{{ $linha['restante'] }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+            </div>
+        </div>
+    </div>
+    <hr>
     <div class="card card-border-shadow-primary mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between">
@@ -102,17 +139,19 @@ $template = "layout.".session()->get('layout');
     </div>
     @if($procedimento->nr_procedimento > 1)
         @php
-        $nr_proc_ant = $procedimento->nr_procedimento - 1;
+        $nr_proc_ant = $procedimento->nr_procedimento;
         $proc_anterior = App\Models\Procedimento::where('codigo', $procedimento->codigo)
-        ->where('nr_procedimento', $nr_proc_ant)
+        ->where('nr_procedimento','<', $nr_proc_ant)
         ->where('semana_sem_aplicacao', 'Não')
+        ->orderByDesc('id')
         ->first();
+        $obs_anterior = '';
         @endphp
-        @if($proc_anterior->situacao == "Aplicado")
+        @if($proc_anterior && $proc_anterior->situacao == "Aplicado")
             <div class="card card-border-shadow-primary mb-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
-                        <h4 class="card-title">Procedimento Anterior</h4>
+                        <h4 class="card-title">Procedimento Anterior -- {{$proc_anterior->id}}</h4>
                     </div>
                     <div class="table-responsive mt-3">
                         <table class="table table-sm">
@@ -134,9 +173,12 @@ $template = "layout.".session()->get('layout');
                                 @foreach($proc_anterior->aplicacaos as $aplicacao)
                                     @php
                                     $obs_anterior = $aplicacao->obs;
-                                    $estoque = App\Models\Estoque::where('medicamento_id', $aplicacao->medicamento->id)
-                                    ->where('lote', $aplicacao->lote->lote)
-                                    ->first();
+                                    $estoque = false;
+                                    if($aplicacao->lote){
+                                        $estoque = App\Models\Estoque::where('medicamento_id', $aplicacao->medicamento->id)
+                                        ->where('lote', $aplicacao->lote->lote)
+                                        ->first();
+                                    }
                                     @endphp
                                     <tr>
                                         <th>{{ $aplicacao->medicamento->nome }}</th>
@@ -199,11 +241,14 @@ $template = "layout.".session()->get('layout');
                     <div class="form-floating form-floating-outline">
                         <select required id="tp_coleta" name='tp_coleta' class="select2 form-select">
                             <option value="">Opções</option>
-                            <option value="Coleta Reduzida">Coleta Reduzida</option>
-                            <option value="Coleta Copleta">Coleta Copleta</option>
-                            <option value="Coleta Retorno">Coleta Retorno</option>
-                            <option value="Coleta Reduzida 2">Coleta Reduzida 2</option>
+                            <option value="Coleta Completa Feminina">Coleta Completa Feminina</option>
+                            <option value="Coleta Retorno Feminina">Coleta Retorno Feminina</option>
+                            <option value="Coleta Completa Masculina">Coleta Completa Masculina</option>
+                            <option value="Coleta Retorno Masculina">Coleta Retorno Masculina</option>
+                            <option value="Coleta Cortesia">Coleta Cortesia</option>
                             <option value="Coleta Particular">Coleta Particular</option>
+                            <option value="Coleta Reduzida">Coleta Reduzida</option>
+                            <option value="Coleta Reduzida 2">Coleta Reduzida 2</option>
                         </select>
                         <label for="tp_coleta">Tipo Coleta:</label>
                     </div>
@@ -243,17 +288,17 @@ $template = "layout.".session()->get('layout');
                                 <tr>
                                     <td>
                                         @if($aplicacao->situacao == "Aberta" || $aplicacao->situacao == 'Pendente')
-                                            <input class="form-check-input" data-medicamento="{{ $aplicacao->medicamento->unidade }}" type="checkbox" value="Sim" onclick="controle_pendente({{ $aplicacao->medicamento->id }})" name="controle_pendente_{{ $aplicacao->medicamento->id }}" id="controle_pendente_{{ $aplicacao->medicamento->id }}"></td>
+                                            <input class="form-check-input" data-medicamento="{{ $aplicacao->medicamento->unidade }}" type="checkbox" value="Sim" onclick="controle_pendente({{ $aplicacao->medicamento->id }}, this)" name="controle_pendente_{{ $aplicacao->medicamento->id }}" id="controle_pendente_{{ $aplicacao->medicamento->id }}"></td>
                                         @endif
                                     <td>{{ $aplicacao->medicamento->nome }}</td>
                                     <td>{{ $aplicacao->medicamento->unidade }}</td>
                                     <td>{{ $aplicacao->quantidade }}</td>
                                     @if($aplicacao->situacao == "Aberta" || $aplicacao->situacao == 'Pendente')
                                         @if($aplicacao->medicamento->unidade == "Ampola")
-                                            <td><input required onblur="busca_lote_por_codigo(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
+                                            <td><input required onblur="busca_lote_por_codigo(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }}, {{ $aplicacao->quantidade }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
                                             <td><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}"></td>
                                             <td></td>
-                                        @else
+                                        @elseif($aplicacao->medicamento->unidade == "Miligrama")
                                             <td id="td_aplicacao_codigo_{{ $aplicacao->medicamento->id }}"><input required onblur="busca_lote_por_codigo_frasco(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }}, {{ $aplicacao->quantidade }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
                                             <td id="td_aplicacao_lote_{{ $aplicacao->medicamento->id }}"><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}"></td>
                                             <td>
@@ -261,10 +306,15 @@ $template = "layout.".session()->get('layout');
                                                     <span class="tf-icons mdi mdi-numeric-2-box"></span>
                                                 </button>
                                             </td>
+                                        @elseif($aplicacao->medicamento->unidade == "Procedimento")
+                                            <td colspan='3'>
+                                                <input type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control">
+                                            </td>
                                         @endif
                                     @else
-                                        <td>{{$aplicacao->lotes()}}</td>
-                                        <td>{{$aplicacao->codigos()}}</td>
+                                        <td>{!!$aplicacao->lotes()!!}</td>
+                                        <td>{!!$aplicacao->codigos()!!}</td>
+                                        <td></td>
                                     @endif
                                 </tr>
                             @endforeach
@@ -280,6 +330,16 @@ $template = "layout.".session()->get('layout');
         </div>
     </div>
 </form>
+
+<script>
+    document.getElementById("formulario_aplicacao").addEventListener("keydown", function (e) {
+
+        if (e.key === "Enter") {
+            e.preventDefault(); // bloqueia submit automático
+        }
+    });
+
+</script>
 
 @if($procedimentos_vinculados->count() > 0)
     <div class="card card-border-shadow-primary mb-4">
@@ -363,15 +423,29 @@ $template = "layout.".session()->get('layout');
 var modalAbrirFrasco;
 var modal2Codigo;
 
-function busca_lote_por_codigo(e, medicamento_id, clinica_id){
+function busca_lote_por_codigo(e, medicamento_id, clinica_id, quantidade){
     if(e.value){
         $.getJSON(
             '{{ route("sistema.dashboard.busca_lote_por_codigo") }}',
             {
-                codigo : e.value
+                codigo : e.value,
+                clinica_id : clinica_id,
+                quantidade : quantidade
             },
             function(json){
-                document.getElementById('lote_' + medicamento_id).value = json.lote;
+                if(json.controle == 'true'){
+                    document.getElementById('lote_' + medicamento_id).value = json.lote;
+                }
+                else if(json.controle == 'insuficiente'){
+                    alert('Quantidade em estoque insuficiente!');
+                    document.getElementById('lote_' + medicamento_id).value = '';
+                    document.getElementById('codigo_barras_' + medicamento_id).value = '';
+                }
+                else{
+                    alert('Codigo Inválido!');
+                    document.getElementById('lote_' + medicamento_id).value = '';
+                    document.getElementById('codigo_barras_' + medicamento_id).value = '';
+                }
             }
         );
     }
@@ -430,22 +504,34 @@ function busca_lote_por_codigo_frasco_2codigo(numero){
     }
 }
 
-function controle_pendente(medicamento_id){
-    if(document.getElementById('controle_pendente_' + medicamento_id).checked == true){
-        //document.getElementById('lote_' + medicamento_id).setAttribute('disabled','disabled');
-        document.getElementById('lote_' + medicamento_id).removeAttribute('required');
-        document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('required');
-        //if(document.getElementById('controle_pendente_' + medicamento_id).dataset.medicamento == "Ampola"){
-        //    document.getElementById('codigo_barras_' + medicamento_id).setAttribute('disabled','disabled');
-        //}
+function controle_pendente(medicamento_id, elem){
+    unidade = elem.dataset.medicamento;
+    if(unidade == 'Procedimento'){
+        if(document.getElementById('controle_pendente_' + medicamento_id).checked == true){
+            //document.getElementById('lote_' + medicamento_id).setAttribute('disabled','disabled');
+            document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('required');
+        }
+        else{
+            document.getElementById('codigo_barras_' + medicamento_id).setAttribute('required','required');
+        }
     }
     else{
-        document.getElementById('lote_' + medicamento_id).setAttribute('required','required');
-        document.getElementById('codigo_barras_' + medicamento_id).setAttribute('required','required');
-        //document.getElementById('lote_' + medicamento_id).removeAttribute('disabled');
-        //if(document.getElementById('controle_pendente_' + medicamento_id).dataset.medicamento == "Ampola"){
-        //    document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('disabled');
-        //}
+        if(document.getElementById('controle_pendente_' + medicamento_id).checked == true){
+            //document.getElementById('lote_' + medicamento_id).setAttribute('disabled','disabled');
+            document.getElementById('lote_' + medicamento_id).removeAttribute('required');
+            document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('required');
+            //if(document.getElementById('controle_pendente_' + medicamento_id).dataset.medicamento == "Ampola"){
+            //    document.getElementById('codigo_barras_' + medicamento_id).setAttribute('disabled','disabled');
+            //}
+        }
+        else{
+            document.getElementById('lote_' + medicamento_id).setAttribute('required','required');
+            document.getElementById('codigo_barras_' + medicamento_id).setAttribute('required','required');
+            //document.getElementById('lote_' + medicamento_id).removeAttribute('disabled');
+            //if(document.getElementById('controle_pendente_' + medicamento_id).dataset.medicamento == "Ampola"){
+            //    document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('disabled');
+            //}
+        }
     }
 }
 
@@ -468,7 +554,17 @@ function controle_pendente(medicamento_id){
                                 <option value="">Opções</option>
                                 @foreach($procedimento->aplicacaos as $aplicacao)
                                     @if($aplicacao->medicamento->unidade == 'Miligrama')
-                                        <option value="{{ $aplicacao->medicamento->id }}">{{ $aplicacao->medicamento->nome }}</option>
+                                        @if($aplicacao->medicamento->grupo_id)
+                                            {{-- se possui grupo vamos trazer os medicamentos do grupo --}}
+                                            @php
+                                            $medicamentos_grupo = App\Models\Medicamento::where('grupo_id', $aplicacao->medicamento->grupo_id)->get();
+                                            @endphp
+                                            @foreach($medicamentos_grupo as $med)
+                                                <option value="{{ $med->id }}">{{ $med->nome }}</option>
+                                            @endforeach
+                                        @else
+                                            <option value="{{ $aplicacao->medicamento->id }}">{{ $aplicacao->medicamento->nome }}</option>
+                                        @endif
                                     @endif
                                 @endforeach
                             </select>

@@ -13,5 +13,6 @@ class ProcedimentoAnexo extends Model
         'procedimento_id',
         'nm_anexo',
         'anexo',
+        'enviado_feegow',
     ];
 }

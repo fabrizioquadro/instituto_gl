@@ -129,15 +129,15 @@ $template = "layout.".session()->get('layout');
                                     <tr id="linha_medicamento_1_1">
                                         <td>
                                             <select onchange="set_valor_medicamento(1,1)" required name="medicamento_id_1_1" id="medicamento_id_1_1" class="form-control">
-                                                <option>Opções</option>
+                                                <option value="">Opções</option>
                                                 @foreach($medicamentos as $medicamento)
                                                     <option data-valor='{{ $medicamento->vl_venda }}' value="{{ $medicamento->id }}">{{ $medicamento->nome }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
                                         <td><input onblur="calcula_total_medicamento(1,1)" name="quantidade_1_1" id="quantidade_1_1" required type="text" class="form-control"></td>
-                                        <td><input onblur="calcula_total_medicamento(1,1)" name="valor_1_1" id="valor_1_1" required type="text" class="form-control" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
-                                        <td><input onblur="calcula_total_medicamento(1,1)" name="total_1_1" id="total_1_1" required type="text" class="form-control total_1" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
+                                        <td><input onblur="calcula_total_medicamento(1,1)" name="valor_1_1" id="valor_1_1" required type="text" class="form-control" readonly></td>
+                                        <td><input onblur="calcula_total_medicamento(1,1)" name="total_1_1" id="total_1_1" required type="text" class="form-control total_1" readonly></td>
                                         <td>
                                             <button type="button" title='Excluir linha' onclick='excluir_linha_medicamento(1,1)' class="btn btn-sm rounded-pill btn-icon btn-label-danger btn-fab demo waves-effect">
                                                 <span class="tf-icons mdi mdi-delete mdi-24px"></span>
@@ -150,7 +150,7 @@ $template = "layout.".session()->get('layout');
                         <div class="row mt-2 gy-4 align-items-end">
                             <div class="col-md-4">
                                 <div class="form-floating form-floating-outline">
-                                    <input onblur="calcula_total_procedimento(1)" class="form-control total_procedimento" type="text" id="total_procedimento_1" name="total_procedimento_1" required onkeypress="return(MascaraMoeda(this,'.',',',event))"/>
+                                    <input onblur="calcula_total_procedimento(1)" class="form-control total_procedimento" type="text" id="total_procedimento_1" name="total_procedimento_1" required readonly/>
                                     <label for="total_procedimento_1">Total Procedimento 1:</label>
                                 </div>
                             </div>
@@ -166,7 +166,7 @@ $template = "layout.".session()->get('layout');
                     <div class="row mt-2 gy-4 align-items-end">
                         <div class="col-md-4">
                             <div class="form-floating form-floating-outline">
-                                <input onblur="calcula_total_procedimento_all()" class="form-control" type="text" id="total_geral_procedimento" name="total_geral_procedimento" required onkeypress="return(MascaraMoeda(this,'.',',',event))"/>
+                                <input onblur="calcula_total_procedimento_all()" class="form-control" type="text" id="total_geral_procedimento" name="total_geral_procedimento" required readonly/>
                                 <label for="total_geral_procedimento">Total Geral Procedimentos:</label>
                             </div>
                         </div>
@@ -281,20 +281,51 @@ function set_valor_medicamento(linha, medicamento){
     valor = parseInt(selectedOption.dataset.valor);
     valor = valor.toFixed(2);
     document.getElementById("valor_" + linha + '_' + medicamento).value = valor.replace('.',',');
+
+    //se for procedimento pode editar o valor
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {medicamento_id:select.value},
+        function(json){
+            if(json.unidade == "Procedimento"){
+                document.getElementById("valor_" + linha + '_' + medicamento).removeAttribute('readonly');
+                document.getElementById("valor_" + linha + '_' + medicamento).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
+            }
+            else{
+                document.getElementById("valor_" + linha + '_' + medicamento).setAttribute('readonly','readonly');
+                document.getElementById("valor_" + linha + '_' + medicamento).removeAttribute('onkeypress');
+            }
+        }
+    );
+
     calcula_total_medicamento(linha,medicamento)
 }
 
 function calcula_total_medicamento(linha,medicamento){
-    quantidade = parseFloat(document.getElementById("quantidade_" + linha + '_' + medicamento).value);
-    valor = document.getElementById("valor_" + linha + '_' + medicamento).value;
-    if(quantidade && valor){
-        valor = valor.replace('.','');
-        valor = parseFloat(valor.replace(',','.'));
-        total = quantidade * valor;
-        total = total.toFixed(2);
-        document.getElementById('total_' + linha + '_' + medicamento).value = total.replace('.',',');
-    }
-    calcula_total_procedimento(linha);
+    medicamento_id = document.getElementById("medicamento_id_" + linha + '_' + medicamento).value;
+
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {medicamento_id:medicamento_id},
+        function(json){
+            if(json.unidade == "Ampola"){
+                quantidade = Math.ceil(parseFloat(document.getElementById("quantidade_" + linha + '_' + medicamento).value));
+            }
+            else{
+                quantidade = parseFloat(document.getElementById("quantidade_" + linha + '_' + medicamento).value);
+            }
+
+            valor = document.getElementById("valor_" + linha + '_' + medicamento).value;
+            if(quantidade && valor){
+                valor = valor.replace('.','');
+                valor = parseFloat(valor.replace(',','.'));
+                total = quantidade * valor;
+                total = total.toFixed(2);
+                document.getElementById('total_' + linha + '_' + medicamento).value = total.replace('.',',');
+            }
+            calcula_total_procedimento(linha);
+        }
+    );
 }
 
 function calcula_total_procedimento(linha){
@@ -350,15 +381,15 @@ function adicionar_medicamento(linha){
     html = `
     <td>
         <select onchange="set_valor_medicamento(${linha},${contador})" required name="medicamento_id_${variavel}" id="medicamento_id_${variavel}" class="form-control">
-            <option>Opções</option>
+            <option value="">Opções</option>
             @foreach($medicamentos as $medicamento)
                 <option data-valor='{{ $medicamento->vl_venda }}' value="{{ $medicamento->id }}">{{ $medicamento->nome }}</option>
             @endforeach
         </select>
     </td>
     <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="quantidade_${variavel}" id="quantidade_${variavel}" required type="text" class="form-control"></td>
-    <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="valor_${variavel}" id="valor_${variavel}" required type="text" class="form-control" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
-    <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="total_${variavel}" id="total_${variavel}" required type="text" class="form-control total_${linha}" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
+    <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="valor_${variavel}" id="valor_${variavel}" required type="text" class="form-control" readonly></td>
+    <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="total_${variavel}" id="total_${variavel}" required type="text" class="form-control total_${linha}" readonly></td>
     <td>
         <button type="button" title='Excluir linha' onclick='excluir_linha_medicamento(${linha},${contador})' class="btn btn-sm rounded-pill btn-icon btn-label-danger btn-fab demo waves-effect">
             <span class="tf-icons mdi mdi-delete mdi-24px"></span>
@@ -436,15 +467,15 @@ function adicionar_procedimento(){
                     <tr id="linha_medicamento_${contador}_1">
                         <td>
                             <select onchange="set_valor_medicamento(${contador},1)" required name="medicamento_id_${contador}_1" id="medicamento_id_${contador}_1" class="form-control">
-                                <option>Opções</option>
+                                <option value="">Opções</option>
                                 @foreach($medicamentos as $medicamento)
                                     <option data-valor='{{ $medicamento->vl_venda }}' value="{{ $medicamento->id }}">{{ $medicamento->nome }}</option>
                                 @endforeach
                             </select>
                         </td>
                         <td><input onblur="calcula_total_medicamento(${contador},1)" name="quantidade_${contador}_1" id="quantidade_${contador}_1" required type="text" class="form-control"></td>
-                        <td><input onblur="calcula_total_medicamento(${contador},1)" name="valor_${contador}_1" id="valor_${contador}_1" required type="text" class="form-control" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
-                        <td><input onblur="calcula_total_medicamento(${contador},1)" name="total_${contador}_1" id="total_${contador}_1" required type="text" class="form-control total_${contador}" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
+                        <td><input onblur="calcula_total_medicamento(${contador},1)" name="valor_${contador}_1" id="valor_${contador}_1" required type="text" class="form-control" readonly></td>
+                        <td><input onblur="calcula_total_medicamento(${contador},1)" name="total_${contador}_1" id="total_${contador}_1" required type="text" class="form-control total_${contador}" readonly></td>
                         <td>
                             <button type="button" title='Excluir linha' onclick='excluir_linha_medicamento(${contador},1)' class="btn btn-sm rounded-pill btn-icon btn-label-danger btn-fab demo waves-effect">
                                 <span class="tf-icons mdi mdi-delete mdi-24px"></span>
@@ -457,7 +488,7 @@ function adicionar_procedimento(){
         <div class="row mt-2 gy-4 align-items-end">
             <div class="col-md-4">
                 <div class="form-floating form-floating-outline">
-                    <input onblur="calcula_total_procedimento(${contador})" class="form-control total_procedimento" type="text" id="total_procedimento_${contador}" name="total_procedimento_${contador}" required onkeypress="return(MascaraMoeda(this,'.',',',event))"/>
+                    <input onblur="calcula_total_procedimento(${contador})" class="form-control total_procedimento" type="text" id="total_procedimento_${contador}" name="total_procedimento_${contador}" required readonly/>
                     <label for="total_procedimento_${contador}">Total Procedimento ${contador}:</label>
                 </div>
             </div>
@@ -515,10 +546,16 @@ function excluir_procedimento(nr_procedimento){
                 </div>
                 <div class="d-flex justify-content-between mt-5">
                     <h6 class="card-title">Medicamentos</h6>
-                    <button type="button" onclick="gerador_adicionar_medicamento()" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
-                        <span class="tf-icons mdi mdi-plus me-1"></span>
-                        Medicamento
-                    </button>
+                    <div>
+                        <button type="button" onclick="gerador_adicionar_combo()" class="btn btn-sm rounded-pill btn-outline-info waves-effect">
+                            <span class="tf-icons mdi mdi-plus me-1"></span>
+                            Combos
+                        </button>
+                        <button type="button" onclick="gerador_adicionar_medicamento()" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
+                            <span class="tf-icons mdi mdi-plus me-1"></span>
+                            Medicamento
+                        </button>
+                    </div>
                 </div>
                 <div class="table-responsive mt-3">
                     <table class="table table-sm">
@@ -535,15 +572,15 @@ function excluir_procedimento(nr_procedimento){
                             <tr id="gerador_linha_medicamento_1">
                                 <td>
                                     <select onchange="gerador_set_valor_medicamento(1)" name="gerador_medicamento_id_1" id="gerador_medicamento_id_1" class="form-control">
-                                        <option>Opções</option>
+                                        <option value="">Opções</option>
                                         @foreach($medicamentos as $medicamento)
-                                            <option data-valor='{{ $medicamento->vl_venda }}' value="{{ $medicamento->id }}">{{ $medicamento->nome." - ".$medicamento->fabricante }}</option>
+                                            <option data-valor='{{ $medicamento->vl_venda }}' value="{{ $medicamento->id }}">{{ $medicamento->nome }}</option>
                                         @endforeach
                                     </select>
                                 </td>
                                 <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_quantidade_1" id="gerador_quantidade_1" required type="text" class="form-control"></td>
-                                <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
-                                <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_total_1" id="gerador_total_1" required type="text" class="form-control" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
+                                <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control" readonly></td>
+                                <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_total_1" id="gerador_total_1" required type="text" class="form-control" readonly></td>
                                 <td></td>
                             </tr>
                         </tbody>
@@ -559,8 +596,29 @@ function excluir_procedimento(nr_procedimento){
 
 <script>
 var modalGerador;
+var modalCombo;
 
 document.getElementById('botao_gerador').addEventListener('click', ()=>{
+    document.getElementById('gerador_contador_medicamentos').value = 1;
+    document.getElementById('gerador_dt_inicio').value = '';
+    document.getElementById('gerador_nr_procedimentos').value = '';
+    document.getElementById('gerador_intervalo').value = '';
+    document.getElementById('gerador_tabela_medicamentos').innerHTML = `
+    <tr id="gerador_linha_medicamento_1">
+        <td>
+            <select onchange="gerador_set_valor_medicamento(1)" name="gerador_medicamento_id_1" id="gerador_medicamento_id_1" class="form-control">
+                <option value="">Opções</option>
+                @foreach($medicamentos as $medicamento)
+                    <option data-valor='{{ $medicamento->vl_venda }}' value="{{ $medicamento->id }}">{{ $medicamento->nome }}</option>
+                @endforeach
+            </select>
+        </td>
+        <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_quantidade_1" id="gerador_quantidade_1" required type="text" class="form-control"></td>
+        <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control" readonly></td>
+        <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_total_1" id="gerador_total_1" required type="text" class="form-control" readonly></td>
+        <td></td>
+    </tr>
+    `;
     modalGerador = new bootstrap.Modal(document.getElementById('modal_gerador'));
     modalGerador.show();
 })
@@ -571,19 +629,54 @@ function gerador_set_valor_medicamento(linha){
     valor = parseInt(selectedOption.dataset.valor);
     valor = valor.toFixed(2);
     document.getElementById("gerador_valor_" + linha).value = valor.replace('.',',');
+
+    //se for procedimento pode editar o valor
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {medicamento_id:select.value},
+        function(json){
+            if(json.unidade == "Procedimento"){
+                document.getElementById("gerador_valor_" + linha).removeAttribute('readonly');
+                document.getElementById("gerador_valor_" + linha).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
+            }
+            else{
+                document.getElementById("gerador_valor_" + linha).setAttribute('readonly','readonly');
+                document.getElementById("gerador_valor_" + linha).removeAttribute('onkeypress');
+            }
+        }
+    );
+
     gerador_calcula_total_medicamento(linha);
 }
 
 function gerador_calcula_total_medicamento(linha){
-    quantidade = parseFloat(document.getElementById("gerador_quantidade_" + linha).value);
-    valor = document.getElementById("gerador_valor_" + linha).value;
-    if(quantidade && valor){
-        valor = valor.replace('.','');
-        valor = parseFloat(valor.replace(',','.'));
-        total = quantidade * valor;
-        total = total.toFixed(2);
-        document.getElementById('gerador_total_' + linha).value = total.replace('.',',');
-    }
+    medicamento_id = document.getElementById('gerador_medicamento_id_' + linha).value;
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {
+            medicamento_id : medicamento_id
+        },
+        function(json){
+            if(json.unidade == 'Ampola'){
+                quantidade = Math.ceil(parseFloat(document.getElementById("gerador_quantidade_" + linha).value));
+            }
+            else{
+                quantidade = parseFloat(document.getElementById("gerador_quantidade_" + linha).value);
+            }
+
+            valor = document.getElementById("gerador_valor_" + linha).value;
+            if(quantidade && valor){
+                valor = valor.replace('.','');
+                valor = parseFloat(valor.replace(',','.'));
+                total = quantidade * valor;
+                total = total.toFixed(2);
+                document.getElementById('gerador_total_' + linha).value = total.replace('.',',');
+            }
+        }
+    );
+
+
+
 }
 
 function gerador_adicionar_medicamento(){
@@ -597,15 +690,15 @@ function gerador_adicionar_medicamento(){
     html = `
     <td>
         <select onchange="gerador_set_valor_medicamento(${contador})" required name="gerador_medicamento_id_${contador}" id="gerador_medicamento_id_${contador}" class="form-control">
-            <option>Opções</option>
+            <option value="">Opções</option>
             @foreach($medicamentos as $medicamento)
-                <option data-valor='{{ $medicamento->vl_venda }}' value="{{ $medicamento->id }}">{{ $medicamento->nome." - ".$medicamento->fabricante }}</option>
+                <option data-valor='{{ $medicamento->vl_venda }}' value="{{ $medicamento->id }}">{{ $medicamento->nome }}</option>
             @endforeach
         </select>
     </td>
     <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_quantidade_${contador}" id="gerador_quantidade_${contador}" required type="text" class="form-control"></td>
-    <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
-    <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_total_${contador}" id="gerador_total_${contador}" required type="text" class="form-control" onkeypress="return(MascaraMoeda(this,'.',',',event))"></td>
+    <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control" readonly></td>
+    <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_total_${contador}" id="gerador_total_${contador}" required type="text" class="form-control" readonly></td>
     <td></td>
     `;
 
@@ -613,41 +706,116 @@ function gerador_adicionar_medicamento(){
     document.getElementById('gerador_tabela_medicamentos').appendChild(tr);
 }
 
+function gerador_adicionar_medicamentos_combo(medicamento){
+    if(document.getElementById('gerador_medicamento_id_1').value == ""){
+        contador = 1;
+    }
+    else{
+        contador = parseInt(document.getElementById('gerador_contador_medicamentos').value);
+        contador++;
+        document.getElementById('gerador_contador_medicamentos').value = contador;
+
+        tr = document.createElement('tr');
+        tr.setAttribute('id', 'gerador_linha_medicamento_' + contador);
+
+        html = `
+        <td>
+            <select onchange="gerador_set_valor_medicamento(${contador})" required name="gerador_medicamento_id_${contador}" id="gerador_medicamento_id_${contador}" class="form-control">
+                <option value="">Opções</option>
+                @foreach($medicamentos as $medicamento)
+                    <option data-valor='{{ $medicamento->vl_venda }}' value="{{ $medicamento->id }}">{{ $medicamento->nome }}</option>
+                @endforeach
+            </select>
+        </td>
+        <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_quantidade_${contador}" id="gerador_quantidade_${contador}" required type="text" class="form-control"></td>
+        <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control" readonly></td>
+        <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_total_${contador}" id="gerador_total_${contador}" required type="text" class="form-control" readonly></td>
+        <td></td>
+        `;
+
+        tr.innerHTML = html;
+        document.getElementById('gerador_tabela_medicamentos').appendChild(tr);
+    }
+
+    document.getElementById('gerador_medicamento_id_' + contador).value = medicamento['medicamento_id'];
+    document.getElementById('gerador_quantidade_' + contador).value = medicamento['quantidade'];
+    document.getElementById('gerador_valor_' + contador).value = medicamento['valor'];
+    document.getElementById('gerador_total_' + contador).value = medicamento['total'];
+
+}
+
 function gera_procedimentos_gerador(){
     dt_inicio = document.getElementById('gerador_dt_inicio').value;
     nr_procedimentos = parseInt(document.getElementById('gerador_nr_procedimentos').value);
     intervalo = parseInt(document.getElementById('gerador_intervalo').value);
     contador_medicamentos = parseInt(document.getElementById('gerador_contador_medicamentos').value);
-
+    contador_procedimentos = parseInt(document.getElementById('contador_procedimentos').value);
     data = new Date(dt_inicio);
 
     if(dt_inicio && nr_procedimentos && intervalo){
         for(i=1 ; i<=nr_procedimentos ; i++){
-            if(i != 1){
-                //vamos jogar na pagina o procedimento i
-                adicionar_procedimento();
-                data.setDate(data.getDate() + intervalo);
+            //vamos analizar se já existe nos procedimentos a data proposta
+            controle_data_existe = false;
+            for(c=1 ; c<=contador_procedimentos ; c++){
+                input_controle = document.querySelector('#data_aplicacao_' + c);
+                if(input_controle){
+                    //vamos testar as datas
+                    if(input_controle.value != ''){
+                        data_compara = new Date(input_controle.value);
+                        if(data.getTime() == data_compara.getTime()){
+                            controle_data_existe = c;
+                        }
+                    }
+                }
             }
-            //vamos setar a data
-            document.getElementById('data_aplicacao_' + i).value = data.toISOString().slice(0, 10);
+
+            if(controle_data_existe){
+                f = controle_data_existe;
+            }
+            else{
+                if(contador_procedimentos == 1){
+                    f = i;
+                }
+                else{
+                    f = contador_procedimentos + i;
+                }
+
+                if(i != 1 || contador_procedimentos != 1){
+                    //vamos jogar na pagina o procedimento i
+                    adicionar_procedimento();
+                }
+
+                //vamos setar a data
+                document.getElementById('data_aplicacao_' + f).value = data.toISOString().slice(0, 10);
+            }
 
             //vamos adicionar os medicamentos
             for(j=1 ; j<=contador_medicamentos ; j++){
-                if(j != 1){
-                    adicionar_medicamento(i);
+                if(controle_data_existe){
+                    adicionar_medicamento(f);
+                    m = document.getElementById('contador_medicamentos_' + f).value;
                 }
+                else{
+                    if(j != 1){
+                        adicionar_medicamento(f);
+                    }
+                }
+
+                m = document.getElementById('contador_medicamentos_' + f).value;
+
                 medicamento_id = document.getElementById('gerador_medicamento_id_' + j).value;
                 quantidade = document.getElementById('gerador_quantidade_' + j).value;
                 valor = document.getElementById('gerador_valor_' + j).value;
                 total = document.getElementById('gerador_total_' + j).value;
 
-                document.getElementById('medicamento_id_' + i + "_" + j).value = medicamento_id;
-                document.getElementById('quantidade_' + i + "_" + j).value = quantidade;
-                document.getElementById('valor_' + i + "_" + j).value = valor;
-                document.getElementById('total_' + i + "_" + j).value = total;
+                document.getElementById('medicamento_id_' + f + "_" + m).value = medicamento_id;
+                document.getElementById('quantidade_' + f + "_" + m).value = quantidade;
+                document.getElementById('valor_' + f + "_" + m).value = valor;
+                document.getElementById('total_' + f + "_" + m).value = total;
 
-                calcula_total_medicamento(i,j);
+                calcula_total_medicamento(f,m);
             }
+            data.setDate(data.getDate() + intervalo);
         }
         modalGerador.hide();
     }
@@ -655,6 +823,67 @@ function gera_procedimentos_gerador(){
         alert('é necessário preencher todos os campos.');
     }
 }
+
+</script>
+
+<div class="modal fade" id="modal_combos" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post">
+            <input type="hidden" id="gerador_contador_medicamentos" value='1'>
+            <div class="modal-header">
+                <h5 class="modal-title" id="backDropModalTitle">Combos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mt-2 gy-4">
+                    <div class="col-md-12">
+                        <div class="form-floating form-floating-outline">
+                            <select required id="combo_id" class="select2 form-select">
+                                <option value="">Opções</option>
+                                @foreach($combos as $combo)
+                                    <option value="{{ $combo->id }}">{{ $combo->nome }}</option>
+                                @endforeach
+                            </select>
+                            <label for="combo_id">Escolha o Combo para inserir:</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 mt-3">
+                    <button class="btn btn-primary" type="button" id="adicionar_gerador_combo">Adicionar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+function gerador_adicionar_combo(){
+    modalCombo = new bootstrap.Modal(document.getElementById('modal_combos'));
+    modalGerador.hide();
+    modalCombo.show();
+}
+
+document.getElementById('adicionar_gerador_combo').addEventListener('click', ()=>{
+    if(document.getElementById('combo_id').value != ""){
+        $.getJSON(
+            "{{ route('adm.combos.buscar_medicamentos') }}",
+            { combo_id : document.getElementById('combo_id').value },
+            function(json){
+                for(i=0 ; i<json.medicamentos.length ; i++){
+                    medicamento = json.medicamentos[i];
+                    gerador_adicionar_medicamentos_combo(medicamento);
+                }
+
+                modalCombo.hide();
+                modalGerador.show();
+            }
+        );
+    }
+    else{
+        alert('É necessário escolher o combo.');
+    }
+})
 
 </script>
 @endsection

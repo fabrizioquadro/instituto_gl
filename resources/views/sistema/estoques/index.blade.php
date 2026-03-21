@@ -27,7 +27,7 @@ $template = "layout.".session()->get('layout');
                 <thead class="table-light">
                     <tr>
                         <th>Medicamento</th>
-                        <th>Lote</th>
+                        <th>C Barras</th>
                         <th>Unidade</th>
                         <th>Quantidade</th>
                         <th>Vl Compra</th>
@@ -39,7 +39,7 @@ $template = "layout.".session()->get('layout');
                 @foreach($array_estoque as $linha)
                     <tr>
                         <td>{{ $linha['medicamento_nome'] }}</td>
-                        <td>{{ $linha['lote'] }}</td>
+                        <td>{{ $linha['codigo_barras'] }}</td>
                         <td>{{ $linha['unidade'] }}</td>
                         <td>{{ $linha['quantidade'] }}</td>
                         <td>R$ {{ valorDbForm($linha['vl_compra']) }}</td>

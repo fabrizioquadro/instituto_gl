@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('vl_venda',10,2);
             $table->double('estoque_minimo')->default('0');
             $table->string('situacao');
+            $table->string('aplicacao',5);
+            $table->integer('aplicacao_feegow_id')->nullable();
             $table->timestamps();
         });
     }

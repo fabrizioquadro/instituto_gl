@@ -23,12 +23,13 @@ class EstoqueSistemaController extends Controller
 
         foreach($medicamentos as $linha){
             $medicamento = Medicamento::where('id', $linha->medicamento_id)->first();
-            $lotes = Estoque::get_lotes_medicamento($medicamento->id, $user->clinica_id);
+            $lotes = Estoque::get_codigos_medicamento($medicamento->id, $user->clinica_id);
 
             foreach($lotes as $lote){
                 $array = array();
                 $array['medicamento_nome'] = $medicamento->nome;
                 $array['lote'] = $lote['lote'];
+                $array['codigo_barras'] = $lote['codigo_barras'];
                 $array['unidade'] = $medicamento->unidade;
                 $array['quantidade'] = $lote['estoque'];
                 $array['vl_compra'] = $medicamento->ultimo_valor_pg;

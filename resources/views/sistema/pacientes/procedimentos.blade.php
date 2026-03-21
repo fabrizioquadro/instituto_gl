@@ -1,5 +1,6 @@
 @php
 $template = "layout.".session()->get('layout');
+$obs_anterior = '';
 @endphp
 @extends($template)
 

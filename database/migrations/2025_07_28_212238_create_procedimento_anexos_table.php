@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('procedimento_id');
             $table->string('nm_anexo');
             $table->string('anexo')->nullable();
+            $table->string('enviado_feegow')->default('Não');
             $table->foreign('procedimento_id')->references('id')->on('procedimentos');
             $table->timestamps();
         });

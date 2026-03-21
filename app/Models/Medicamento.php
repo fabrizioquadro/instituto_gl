@@ -18,5 +18,12 @@ class Medicamento extends Model
         'vl_venda',
         'estoque_minimo',
         'situacao',
+        'aplicacao',
+        'aplicacao_feegow_id',
+        'grupo_id',
     ];
+
+    public function grupo(){
+        return $this->belongsTo(Grupo::class);
+    }
 }

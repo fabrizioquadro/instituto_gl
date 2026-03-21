@@ -137,4 +137,182 @@ class FinanceiroSistemaController extends Controller
         $financeiro = Financeiro::where('id', $id)->first();
         return view('sistema/financeiros/acessar', compact('financeiro'));
     }
+
+    public static function atualiza_financeiro_procedimento($codigo){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+
+        //vamos analizar se já possui financeiro esse codigo
+        $procedimentos = Procedimento::where('codigo', $codigo)->orderBy('nr_procedimento')->get();
+        $financeiro_id = null;
+        $controle_financeiro = true;
+        $vl_procedimentos = 0;
+
+        foreach($procedimentos as $procedimento){
+            $vl_procedimentos += $procedimento->valor;
+            if($controle_financeiro){
+                $var = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first();
+                if($var){
+                    $financeiro_id = $var->financeiro_id;
+                    $controle_financeiro = false;
+                }
+            }
+        }
+
+        if($controle_financeiro){
+            $dados = [
+                'clinica_id' => $procedimento->clinica_id,
+                'paciente_id' => $procedimento->paciente_id,
+                'medico' => $procedimento->medico,
+                'dt_pagamento' => date('Y-m-d'),
+                'vl_consulta' => '0.00',
+                'vl_procedimentos' => $vl_procedimentos,
+                'vl_desconto' => '0.00',
+                'vl_adicional' => '0.00',
+                'vl_pagamento' => '0.00',
+                'tipo_pagamento' => 'teste',
+                'forma_pagamento' => 'teste',
+                'parcelas' => '1',
+            ];
+            $financeiro = Financeiro::create($dados);
+
+            foreach($procedimentos as $procedimento){
+                $dados = [
+                    'financeiro_id' => $financeiro->id,
+                    'procedimento_id' => $procedimento->id,
+                ];
+                FinanceiroProcedimento::create($dados);
+            }
+        }
+        else{
+            $financeiro = Financeiro::where('id', $financeiro_id)->first();
+        }
+
+        //vamos recalcular tudo
+        $valor_pago = FinanceiroFormasPagamento::where('financeiro_id', $financeiro->id)->sum('vl_pagamento');
+
+        if($valor_pago > 0){
+            if($valor_pago >= $financeiro->vl_consulta){
+                $vl_consulta_pagamento = $financeiro->vl_consulta;
+            }
+            elseif($valor_pago < $financeiro->vl_consulta){
+                $vl_consulta_pagamento = $valor_pago;
+            }
+            $valor_pago -= $vl_consulta_pagamento;
+            $financeiro->vl_consulta_pagamento = $vl_consulta_pagamento;
+            $financeiro->save();
+        }
+        else{
+            $financeiro->vl_consulta_pagamento = '0.00';
+            $financeiro->save();
+        }
+
+        //para aplicar o desconto nos procedimentos
+        $valor_pago += $financeiro->vl_desconto - $financeiro->vl_adicional;
+
+        $procedimentos = Procedimento::where('codigo', $codigo)
+        ->where('st_pagamento','<>','Pendente')
+        ->orderBy('nr_procedimento')->get();
+
+        foreach($procedimentos as $procedimento){
+            if($valor_pago > 0){
+                if($valor_pago >= $procedimento->valor){
+                    $st_pagamento = 'Sim';
+                    $vl_pago = $procedimento->valor;
+                }
+                elseif($valor_pago < $procedimento->valor){
+                    $st_pagamento = 'Parcial';
+                    $vl_pago = $valor_pago;
+                }
+
+                $valor_pago -= $vl_pago;
+
+                $procedimento->st_pagamento = $st_pagamento;
+                $procedimento->tipo_pagamento = $financeiro->tipo_pagamento;
+                $procedimento->forma_pagamento = $financeiro->forma_pagamento;
+                $procedimento->parcelas = $financeiro->parcelas;
+                $procedimento->obs_pagamento = $financeiro->obs_pagamento;
+                $procedimento->data_pagamento = $financeiro->dt_pagamento;
+                $procedimento->vl_pago = $vl_pago;
+                $procedimento->save();
+            }
+            else{
+                if($procedimento->situacao != "Semana Sem Aplicação"){
+                    $procedimento->st_pagamento = 'Não';
+                    $procedimento->vl_pago = '0.00';
+                    $procedimento->save();
+                }
+            }
+        }
+    }
+
+    public function adicionar_pagamento($id){
+        $financeiro = Financeiro::where('id', $id)->first();
+        return view('sistema/financeiros/adicionar_pagamento', compact('financeiro'));
+    }
+
+    public function insert_pagamento(Request $request){
+        try {
+            $user = auth()->user();
+            if(!$user){
+                $user = session()->get('user');
+            }
+
+            $financeiro = Financeiro::where('id', $request->financeiro_id)->first();
+
+            for($i=1 ; $i<=$request->contador_formas ; $i++){
+                $var = "forma_pagamento_".$i;
+                $forma_pagamento = $request->$var;
+
+                if($forma_pagamento == "Crédito"){
+                    $var = "parcelas_".$i;
+                    $parcelas = $request->$var;
+                }
+                else{
+                    $parcelas = 1;
+                }
+
+                $var = "vl_pagamento_".$i;
+                $vl_pagamento = $request->$var;
+
+                if($forma_pagamento && $vl_pagamento){
+                    $dados = [
+                        'financeiro_id' => $financeiro->id,
+                        'forma_pagamento' => $forma_pagamento,
+                        'parcelas' => $parcelas,
+                        'vl_pagamento' => valorFormDb($vl_pagamento),
+                        'user_id_cadastro' => $user->id,
+                    ];
+
+                    FinanceiroFormasPagamento::create($dados);
+                }
+            }
+            $financeiro->obs_pagamento = $financeiro->obs_pagamento." / ".$request->obs_pagamento;
+            $financeiro->save();
+
+            $this->atualiza_financeiro_procedimento($financeiro->procedimentos()->first()->codigo);
+
+            return redirect()->route('sistema.financeiros.acessar', $financeiro->id)->with('mensagem', 'Pagamentos Lançados');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.financeiros')->with('mensagem_erro', $e->getMessage());
+        }
+    }
+
+    public function delete_pagamento($id = null){
+        try {
+            $forma = FinanceiroFormasPagamento::where('id', $id)->first();
+            $financeiro = Financeiro::where('id', $forma->financeiro_id)->first();
+            $forma->delete();
+
+            $this->atualiza_financeiro_procedimento($financeiro->procedimentos()->first()->codigo);
+
+            return redirect()->route('sistema.financeiros.acessar', $financeiro->id)->with('mensagem', 'Pagamento Excluído');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.financeiros')->with('mensagem_erro', $e->getMessage());
+        }
+
+    }
+
 }

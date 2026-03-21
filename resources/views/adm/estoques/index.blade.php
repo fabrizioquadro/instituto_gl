@@ -17,6 +17,7 @@
     <div class="card-body">
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Estoques</h4>
+            <button type="button" name="exportar" id="exportar" class="btn btn-sm btn-primary">Exportar</button>
         </div>
         <hr>
         <div class="table-responsive">
@@ -128,6 +129,17 @@
         </form>
     </div>
 </div>
+
+<form target="_blank" id='formulario' action="{{ route('adm.estoques.exportar') }}" method="post">
+    @csrf
+    <input type="hidden" name="data" id="data">
+</form>
+<script>
+document.getElementById('exportar').addEventListener('click', ()=>{
+    document.getElementById('formulario').submit();
+})
+
+</script>
 
 <script type="text/javascript">
 var modalLotes;

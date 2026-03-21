@@ -18,7 +18,7 @@ $template = "layout.".session()->get('layout');
     </div>
 @endif
 
-@if($procedimento->st_pagamento != 'Sim')
+@if($procedimento->st_pagamento != 'Sim' && $procedimento->valor > 0)
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between">
@@ -49,7 +49,7 @@ $template = "layout.".session()->get('layout');
                     Forma Pgt
                 </button>
             </div>
-            <div class="table-responsive mt-3">
+            <div class="table-responsive mt-3" style="min-height: 50px !important">
                 <table class="table">
                     <thead class="table-light">
                         <tr>
@@ -99,30 +99,23 @@ $template = "layout.".session()->get('layout');
             </div>
             <div class="row mt-3">
                 <div class="col-md-6 form-group">
-                    <button type="button" id='botao_setar_pagamento' class="btn btn-primary me-2">Setar Pagamento</button>
+                    <button type="button" id='botao_setar_pagamento' class="btn btn-sm btn-primary me-2">Setar Pagamento</button>
+                    @if($procedimento->st_pagamento != "Pendente")
+                        <button type="button" id='botao_setar_pagamento_pendente' class="btn btn-sm btn-warning me-2">Marcar Como Pendente</button>
+                        <script type="text/javascript">
+                        document.getElementById('botao_setar_pagamento_pendente').addEventListener('click', ()=>{
+                            if(confirm('Tem certeza que deseja marcar o pagamento desse procedimento como pendente?')){
+                                window.location.href = "{{ route('sistema.procedimentos.setar_pagamento_pendente', $procedimento->id) }}";
+                            }
+                        });
+                        </script>
+                    @endif
                 </div>
             </div>
         </form>
         <script>
         document.getElementById('botao_setar_pagamento').addEventListener('click', ()=>{
-            //vamos somar todos os valores de pagamentos
-            //let somatorio = 0;
-            //let variavel = "input.valor";
-
-            //inputs = document.querySelectorAll(variavel);
-            //[].forEach.call(inputs, function(input) {
-            //    valor = input.value;
-            //    valor = valor.replaceAll('.','');
-            //    valor = parseFloat(valor.replace(',','.'));
-            //    somatorio = somatorio + valor;
-            //});
-
-            //if({{ $procedimento->valor }} == somatorio){
-                document.getElementById('formulario_pagamento').submit();
-            //}
-            //else{
-            //    alert('Valor do pagamento e soma dos valores da forma de pagamento não confere.');
-            //}
+            document.getElementById('formulario_pagamento').submit();
         });
 
         function adicionar_forma(){
@@ -249,9 +242,24 @@ $template = "layout.".session()->get('layout');
         </form>
     </div>
 </div>
+@else
+<div class="row mt-3 mb-3">
+    <div class="col-md-6 form-group">
+        @if($procedimento->st_pagamento != "Pendente")
+            <button type="button" id='botao_setar_pagamento_pendente' class="btn btn-sm btn-warning me-2">Marcar Como Pendente</button>
+            <script type="text/javascript">
+            document.getElementById('botao_setar_pagamento_pendente').addEventListener('click', ()=>{
+                if(confirm('Tem certeza que deseja marcar o pagamento desse procedimento como pendente?')){
+                    window.location.href = "{{ route('sistema.procedimentos.setar_pagamento_pendente', $procedimento->id) }}";
+                }
+            });
+            </script>
+        @endif
+    </div>
+</div>
 @endif
 
-@if($procedimento->st_pagamento == 'Sim' && ($procedimento->situacao == 'Agendado' || $procedimento->situacao == 'Pendente'))
+@if(($procedimento->st_pagamento == 'Sim' || $procedimento->valor == 0) && ($procedimento->situacao == 'Agendado' || $procedimento->situacao == 'Aplicação Parcial'))
     <div class="card card-border-shadow-primary mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between">
@@ -322,8 +330,14 @@ elseif($procedimento->situacao == "Atendimento"){
 elseif($procedimento->situacao == "Aplicado"){
     $situacao = '<span class="badge rounded-pill bg-label-success">Aplicado</span>';
 }
-elseif($procedimento->situacao == "Pendente"){
-    $situacao = '<span class="badge rounded-pill bg-label-warning">Pendente</span>';
+elseif($procedimento->situacao == "Aplicação Parcial" || $procedimento->situacao == "Pendente"){
+    $situacao = '<span class="badge rounded-pill bg-label-warning">Aplicação Parcial</span>';
+}
+elseif($procedimento->situacao == "Cancelado"){
+    $situacao = '<span class="badge rounded-pill bg-label-danger">Cancelado</span>';
+}
+else{
+    $situacao = '<span class="badge rounded-pill bg-label-dark">'.$procedimento->situacao.'</span>';
 }
 
 if($procedimento->st_pagamento == 'Sim'){
@@ -394,7 +408,23 @@ else{
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Financeiro</h4>
         </div>
-        <a href="{{ route('sistema.financeiros.acessar', $financeiro->id) }}" class="btn btn-primary" target="_blank">Acessar Financeiro</a>
+        <div class="row">
+            <div class="col-md-3 form-group">
+                <label for="">Valor Procedimento:</label><br>
+                <b>R$ {{ valorDbForm($procedimento->valor) }}</b>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Valor Pago + Desconto:</label><br>
+                <b>R$ {{ valorDbForm($procedimento->vl_pago) }}</b>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Pagamento:</label><br>
+                <b>{{ $procedimento->st_pagamento }}</b>
+            </div>
+            <div class="col-md-3 form-group">
+                <a href="{{ route('sistema.financeiros.acessar', $financeiro->id) }}" class="btn btn-primary" target="_blank">Acessar Financeiro</a>
+            </div>
+        </div>
         {{--
         <div class="row mt-2 gy-4">
             <div class="col-md-3 form-group">
@@ -440,6 +470,16 @@ else{
         --}}
     </div>
 </div>
+@php
+$procedimentos_arqs = App\Models\Procedimento::where('codigo', $procedimento->codigo)->get();
+$in = array();
+foreach($procedimentos_arqs as $proc){
+    $in[] = $proc->id;
+}
+
+$arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get();
+
+@endphp
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between">
@@ -449,7 +489,7 @@ else{
             <div class="col-12 col-md-6 mb-4 mb-xl-0">
                 <div class="demo-inline-spacing mt-3">
                     <div class="list-group">
-                        @if($procedimento->anexos->count() == 0)
+                        @if($arquivos->count() == 0)
                             <div class="list-group-item list-group-item-action d-flex align-items-center waves-effect" style='cursor: default !important'>
                                 <div class="w-100">
                                     <div class="d-flex justify-content-between">
@@ -460,12 +500,12 @@ else{
                                 </div>
                             </div>
                         @endif
-                        @foreach($procedimento->anexos as $arquivo)
+                        @foreach($arquivos as $arquivo)
                             <div class="list-group-item list-group-item-action d-flex align-items-center waves-effect" style='cursor: default !important'>
                                 <div class="w-100">
                                     <div class="d-flex justify-content-between">
                                         <div class="user-info">
-                                            <a target="_blank" href="/public/procedimentos/{{ $procedimento->id }}/anexos/{{ $arquivo->anexo }}">
+                                            <a target="_blank" href="/public/procedimentos/{{ $arquivo->procedimento_id }}/anexos/{{ $arquivo->anexo }}">
                                                 <h6 class="mt-2 mb-0">{{ $arquivo->nm_anexo }}</h6>
                                             </a>
                                         </div>
@@ -558,7 +598,7 @@ else{
                             <th>{{ $aplicacao->obs }}</th>
                             <th>{{ $aplicacao->situacao }}</th>
                             <th>{{ $dt_aplicacao }}</th>
-                            <th>{{ $aplicacao->lotes() }}</th>
+                            <th>{!! $aplicacao->lotes() !!}</th>
                             <th>{!! $aplicacao->codigos() !!}</th>
                             <th>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</th>
                         </tr>
@@ -602,6 +642,9 @@ else{
                     }
                     elseif($proc->situacao == "Aplicado"){
                         $situacao = '<span class="badge rounded-pill bg-label-success">Aplicado</span>';
+                    }
+                    elseif($proc->situacao == "Cancelado"){
+                        $situacao = '<span class="badge rounded-pill bg-label-danger">Cancelado</span>';
                     }
 
                     if($proc->st_pagamento == 'Sim'){

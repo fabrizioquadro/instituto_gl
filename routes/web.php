@@ -18,6 +18,12 @@ use App\Http\Controllers\PacienteSistemaController;
 use App\Http\Controllers\DashboardAdmSisController;
 use App\Http\Controllers\EstoqueAdmController;
 use App\Http\Controllers\FinanceiroSistemaController;
+use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\MigracaoController;
+use App\Http\Controllers\ComboController;
+use App\Http\Controllers\GrupoController;
+use App\Http\Controllers\ApiKaminoController;
+use App\Http\Controllers\ApiFlegowController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,11 +37,19 @@ use App\Http\Controllers\FinanceiroSistemaController;
 */
 
 Route::get('/', [LoginController::class, 'index'])->name('index');
+Route::get('/get_procedimentos', [ApiFlegowController::class, 'get_procedimentos']);
+Route::get('/get_especialidades', [ApiFlegowController::class, 'get_especialidades']);
+Route::get('/get_grupos_procedimento', [ApiFlegowController::class, 'get_grupos_procedimento']);
+Route::get('/integra_api_kamino', [ApiKaminoController::class, 'gera_xlsx_kamino']);
 Route::get('/teste', [LoginController::class, 'teste']);
+Route::get('/teste_financeiro', [LoginController::class, 'teste_financeiro']);
 Route::post('/login', [LoginController::class, 'login'])->name('login');
 Route::get('/esqueceu_senha', [LoginController::class, 'esqueceu_senha'])->name('esqueceu_senha');
 Route::post('/recuperar_senha', [LoginController::class, 'recuperar_senha'])->name('recuperar_senha');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
+
+Route::get('/medicamentos/buscar', [MedicamentoAdmController::class, 'buscar'])->name('adm.medicamentos.buscar');
+Route::get('/combos/buscar_medicamentos', [ComboController::class, 'buscar_medicamentos'])->name('adm.combos.buscar_medicamentos');
 
 Route::middleware(['verificaAdministrador'])->group(function () {
     Route::prefix('adm')->group(function(){
@@ -96,7 +110,35 @@ Route::middleware(['verificaAdministrador'])->group(function () {
 
         Route::get('/estoques', [EstoqueAdmController::class, 'index'])->name('adm.estoques');
         Route::get('/estoques/get_lotes_medicamento', [EstoqueAdmController::class, 'get_lotes_medicamento'])->name('adm.estoques.get_lotes_medicamento');
+        Route::post('/estoques/exportar', [EstoqueAdmController::class, 'exportar'])->name('adm.estoques.exportar');
 
+        Route::get('/relatorios/financeiro', [RelatorioController::class, 'financeiro'])->name('adm.relatorios.financeiro');
+        Route::get('/relatorios/vendas', [RelatorioController::class, 'vendas'])->name('adm.relatorios.vendas');
+        Route::get('/relatorios/enfermagem', [RelatorioController::class, 'enfermagem'])->name('adm.relatorios.enfermagem');
+        Route::get('/relatorios/transferencias', [RelatorioController::class, 'transferencias'])->name('adm.relatorios.transferencias');
+        Route::post('/relatorios/financeiro/gerar', [RelatorioController::class, 'financeiro_gerar'])->name('adm.relatorios.financeiro.gerar');
+        Route::post('/relatorios/vendas/gerar', [RelatorioController::class, 'vendas_gerar'])->name('adm.relatorios.vendas.gerar');
+        Route::post('/relatorios/enfermagem/gerar', [RelatorioController::class, 'enfermagem_gerar'])->name('adm.relatorios.enfermagem.gerar');
+        Route::post('/relatorios/transferencias/gerar', [RelatorioController::class, 'transferencias_gerar'])->name('adm.relatorios.transferencias.gerar');
+        Route::post('/relatorios/exportar', [RelatorioController::class, 'exportar'])->name('adm.relatorios.exportar');
+        Route::post('/relatorios/exportar/enfermagem', [RelatorioController::class, 'exportar_enfermagem'])->name('adm.relatorios.exportar_enfermagem');
+
+        Route::get('/combos', [ComboController::class, 'index'])->name('adm.combos');
+        Route::get('/combos/adicionar', [ComboController::class, 'adicionar'])->name('adm.combos.adicionar');
+        Route::get('/combos/editar/{id}', [ComboController::class, 'editar'])->name('adm.combos.editar');
+        Route::get('/combos/excluir/{id}', [ComboController::class, 'excluir'])->name('adm.combos.excluir');
+        Route::get('/combos/delete_medicamento', [ComboController::class, 'delete_medicamento'])->name('adm.combos.delete_medicamento');
+        Route::post('/combos/insert', [ComboController::class, 'insert'])->name('adm.combos.insert');
+        Route::post('/combos/update', [ComboController::class, 'update'])->name('adm.combos.update');
+        Route::post('/combos/delete', [ComboController::class, 'delete'])->name('adm.combos.delete');
+
+        Route::get('/grupos', [GrupoController::class, 'index'])->name('adm.grupos');
+        Route::get('/grupos/adicionar', [GrupoController::class, 'adicionar'])->name('adm.grupos.adicionar');
+        Route::get('/grupos/editar/{id}', [GrupoController::class, 'editar'])->name('adm.grupos.editar');
+        Route::get('/grupos/excluir/{id}', [GrupoController::class, 'excluir'])->name('adm.grupos.excluir');
+        Route::post('/grupos/insert', [GrupoController::class, 'insert'])->name('adm.grupos.insert');
+        Route::post('/grupos/update', [GrupoController::class, 'update'])->name('adm.grupos.update');
+        Route::post('/grupos/delete', [GrupoController::class, 'delete'])->name('adm.grupos.delete');
 
         // rotas do sistema para o administrador
         Route::prefix('sistema')->group(function(){
@@ -124,6 +166,8 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/dashboard/get_lotes_medicamento_mg', [DashboardSistemaController::class, 'get_lotes_medicamento_mg'])->name('sistema.dashboard.get_lotes_medicamento_mg');
         Route::get('/dashboard/filtrar_atrasados', [DashboardSistemaController::class, 'filtrar_atrasados'])->name('sistema.dashboard.filtrar_atrasados');
 
+        Route::any('/fila_atendimento', [DashboardSistemaController::class, 'fila_atendimento'])->name('sistema.fila_atendimento');
+
         Route::get('/entradas', [EntradaSistemaController::class, 'index'])->name('sistema.entradas');
         Route::get('/entradas/adicionar', [EntradaSistemaController::class, 'adicionar'])->name('sistema.entradas.adicionar');
         Route::get('/entradas/editar/{id}', [EntradaSistemaController::class, 'editar'])->name('sistema.entradas.editar');
@@ -144,6 +188,11 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/baixas/insert', [BaixaSistemaController::class, 'insert'])->name('sistema.baixas.insert');
         Route::post('/baixas/update', [BaixaSistemaController::class, 'update'])->name('sistema.baixas.update');
         Route::post('/baixas/delete', [BaixaSistemaController::class, 'delete'])->name('sistema.baixas.delete');
+        Route::get('/baixas_abertos', [BaixaSistemaController::class, 'index_abertos'])->name('sistema.baixas_abertos');
+        Route::get('/baixas_abertos/adicionar', [BaixaSistemaController::class, 'adicionar_abertos'])->name('sistema.baixas.adicionar_abertos');
+        Route::get('/baixas_abertos/excluir/{id}', [BaixaSistemaController::class, 'excluir_abertos'])->name('sistema.baixas.excluir_abertos');
+        Route::post('/baixas_abertos/insert', [BaixaSistemaController::class, 'insert_abertos'])->name('sistema.baixas.insert_abertos');
+        Route::post('/baixas_abertos/delete', [BaixaSistemaController::class, 'delete_abertos'])->name('sistema.baixas_abertos.delete');
 
         Route::get('/transferencias', [TransferenciaSistemaController::class, 'index'])->name('sistema.transferencias');
         Route::get('/transferencias/adicionar', [TransferenciaSistemaController::class, 'adicionar'])->name('sistema.transferencias.adicionar');
@@ -155,24 +204,37 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/estoques', [EstoqueSistemaController::class, 'index'])->name('sistema.estoques');
 
         Route::get('/procedimentos', [ProcedimentoSistemaController::class, 'index'])->name('sistema.procedimentos');
+        Route::get('/procedimentos/index_pesq', [ProcedimentoSistemaController::class, 'index_pesq'])->name('sistema.procedimentos.index_pesq');
         Route::get('/procedimentos/adicionar/{retorno?}', [ProcedimentoSistemaController::class, 'adicionar'])->name('sistema.procedimentos.adicionar');
         Route::get('/procedimentos/editar/{id}', [ProcedimentoSistemaController::class, 'editar'])->name('sistema.procedimentos.editar');
         Route::get('/procedimentos/excluir/{id}', [ProcedimentoSistemaController::class, 'excluir'])->name('sistema.procedimentos.excluir');
+        Route::get('/procedimentos/excluir_grupo/{codigo}', [ProcedimentoSistemaController::class, 'excluir_grupo'])->name('sistema.procedimentos.excluir_grupo');
         Route::get('/procedimentos/acessar/{id}/{retorno?}', [ProcedimentoSistemaController::class, 'acessar'])->name('sistema.procedimentos.acessar');
         Route::get('/procedimentos/acessar_grupo/{codigo}/{retorno?}', [ProcedimentoSistemaController::class, 'acessar_grupo'])->name('sistema.procedimentos.acessar_grupo');
         Route::get('/procedimentos/adicionar_grupo/{codigo}', [ProcedimentoSistemaController::class, 'adicionar_grupo'])->name('sistema.procedimentos.adicionar_grupo');
+        Route::get('/procedimentos/adicionar_medicamentos/{codigo}', [ProcedimentoSistemaController::class, 'adicionar_medicamentos'])->name('sistema.procedimentos.adicionar_medicamentos');
+        Route::post('/procedimentos/adicionar_medicamentos_insert', [ProcedimentoSistemaController::class, 'adicionar_medicamentos_insert'])->name('sistema.procedimentos.adicionar_medicamentos_insert');
         Route::post('/procedimentos/insert', [ProcedimentoSistemaController::class, 'insert'])->name('sistema.procedimentos.insert');
         Route::post('/procedimentos/setar_pagamento', [ProcedimentoSistemaController::class, 'setar_pagamento'])->name('sistema.procedimentos.setar_pagamento');
+        Route::get('/procedimentos/setar_pagamento_pendente/{id}', [ProcedimentoSistemaController::class, 'setar_pagamento_pendente'])->name('sistema.procedimentos.setar_pagamento_pendente');
         Route::post('/procedimentos/enviar_fila_aplicacao', [ProcedimentoSistemaController::class, 'enviar_fila_aplicacao'])->name('sistema.procedimentos.enviar_fila_aplicacao');
         Route::post('/procedimentos/enviar_fila_aplicacao_sem_pagamento', [ProcedimentoSistemaController::class, 'enviar_fila_aplicacao_sem_pagamento'])->name('sistema.procedimentos.enviar_fila_aplicacao_sem_pagamento');
         Route::post('/procedimentos/financeiros', [ProcedimentoSistemaController::class, 'financeiros'])->name('sistema.procedimentos.financeiros');
         Route::post('/procedimentos/delete', [ProcedimentoSistemaController::class, 'delete'])->name('sistema.procedimentos.delete');
+        Route::post('/procedimentos/delete_grupo', [ProcedimentoSistemaController::class, 'delete_grupo'])->name('sistema.procedimentos.delete_grupo');
         Route::post('/procedimentos/imprimir', [ProcedimentoSistemaController::class, 'imprimir'])->name('sistema.procedimentos.imprimir');
+        Route::get('/procedimentos/imprimir_paciente/{codigo}', [ProcedimentoSistemaController::class, 'imprimir_paciente'])->name('sistema.procedimentos.imprimir_paciente');
+        Route::get('/procedimentos/imprimir_cadastro/{codigo}', [ProcedimentoSistemaController::class, 'imprimir_cadastro'])->name('sistema.procedimentos.imprimir_cadastro');
         Route::get('/procedimentos/get_aplicacao', [ProcedimentoSistemaController::class, 'get_aplicacao'])->name('sistema.procedimentos.get_aplicacao');
         Route::get('/procedimentos/update_aplicacao', [ProcedimentoSistemaController::class, 'update_aplicacao'])->name('sistema.procedimentos.update_aplicacao');
         Route::get('/procedimentos/delete_aplicacao', [ProcedimentoSistemaController::class, 'delete_aplicacao'])->name('sistema.procedimentos.delete_aplicacao');
         Route::get('/procedimentos/insert_aplicacao', [ProcedimentoSistemaController::class, 'insert_aplicacao'])->name('sistema.procedimentos.insert_aplicacao');
+        Route::post('/procedimentos/insert_combo', [ProcedimentoSistemaController::class, 'insert_combo'])->name('sistema.procedimentos.insert_combo');
         Route::post('/procedimentos/adicionar_anexos', [ProcedimentoSistemaController::class, 'adicionar_anexos'])->name('sistema.procedimentos.adicionar_anexos');
+        Route::get('/procedimentos/cancelar/{codigo}', [ProcedimentoSistemaController::class, 'cancelar'])->name('sistema.procedimentos.cancelar');
+        Route::post('/procedimentos/cancelar_set/', [ProcedimentoSistemaController::class, 'cancelar_set'])->name('sistema.procedimentos.cancelar_set');
+        Route::get('/procedimentos/editar_medico/{codigo}', [ProcedimentoSistemaController::class, 'editar_medico'])->name('sistema.procedimentos.editar_medico');
+        Route::post('/procedimentos/editar_medico_set', [ProcedimentoSistemaController::class, 'editar_medico_set'])->name('sistema.procedimentos.editar_medico_set');
 
         Route::get('/pacientes', [PacienteSistemaController::class, 'index'])->name('sistema.pacientes');
         Route::get('/pacientes/atualizar_integracao', [PacienteSistemaController::class, 'atualizar_integracao'])->name('sistema.pacientes.atualizar_integracao');
@@ -183,6 +245,9 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/financeiros/adicionar', [FinanceiroSistemaController::class, 'adicionar'])->name('sistema.financeiros.adicionar');
         Route::get('/financeiros/acessar/{id}', [FinanceiroSistemaController::class, 'acessar'])->name('sistema.financeiros.acessar');
         Route::get('/financeiros/get_procedimentos_abertos', [FinanceiroSistemaController::class, 'get_procedimentos_abertos'])->name('sistema.financeiros.get_procedimentos_abertos');
+        Route::get('/financeiros/adicionar_pagamento/{id}', [FinanceiroSistemaController::class, 'adicionar_pagamento'])->name('sistema.financeiros.adicionar_pagamento');
+        Route::get('/financeiros/delete_pagamento/{id?}', [FinanceiroSistemaController::class, 'delete_pagamento'])->name('sistema.financeiros.delete_pagamento');
+        Route::post('/financeiros/insert_pagamento', [FinanceiroSistemaController::class, 'insert_pagamento'])->name('sistema.financeiros.insert_pagamento');
         Route::post('/financeiros/insert', [FinanceiroSistemaController::class, 'insert'])->name('sistema.financeiros.insert');
     });
 });

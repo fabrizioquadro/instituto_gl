@@ -12,6 +12,17 @@ class Paciente extends Model
     protected $fillable = [
         'nm_paciente',
         'dt_nascimento',
+        'cpf',
         'paciente_id_feegow',
+        'endereco',
+        'numero',
+        'complemento',
+        'bairro',
+        'cidade',
+        'estado',
+        'cep',
+        'telefone',
+        'email',
+        'integrado_kamino',
     ];
 }

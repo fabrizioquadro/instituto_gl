@@ -28,6 +28,7 @@
                             <option value="">Opções</option>
                             <option value="Ampola">Ampola</option>
                             <option value="Miligrama">Miligrama</option>
+                            <option value="Procedimento">Procedimento</option>
                         </select>
                         <label for="unidade">Unidade:</label>
                     </div>
@@ -47,16 +48,26 @@
                 <div class="col-md-4">
                     <div class="form-floating form-floating-outline">
                         <input required class="form-control" type="text" id="vl_venda" name="vl_venda" onkeypress="return(MascaraMoeda(this,'.',',',event))"/>
-                        <label for="vl_venda">Valor Venda (Valor por ampola ou por miligrama):</label>
+                        <label for="vl_venda">Valor Venda (Ampola, miligrama ou procedimento):</label>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-floating form-floating-outline">
-                        <input required class="form-control" type="text" id="estoque_minimo" name="estoque_minimo"/>
+                        <input required class="form-control" type="text" id="estoque_minimo" name="estoque_minimo" value="0"/>
                         <label for="estoque_minimo">Estoque Minimo(*em miligrama):</label>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="form-floating form-floating-outline">
+                        <select required id="aplicacao" name='aplicacao' class="select2 form-select">
+                            <option value="">Opções</option>
+                            <option value="Sim">Sim</option>
+                            <option value="Não">Não</option>
+                        </select>
+                        <label for="aplicacao">Gera Aplicação:</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-floating form-floating-outline">
                         <select required id="situacao" name='situacao' class="select2 form-select">
                             <option value="">Opções</option>
@@ -64,6 +75,23 @@
                             <option value="Inativo">Inativo</option>
                         </select>
                         <label for="situacao">Situação:</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating form-floating-outline">
+                        <input required class="form-control" type="number" id="aplicacao_feegow_id" name="aplicacao_feegow_id"/>
+                        <label for="aplicacao_feegow_id">Feegow Aplicação Id:</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating form-floating-outline">
+                        <select id="grupo_id" name='grupo_id' class="select2 form-select">
+                            <option value="">Opções</option>
+                            @foreach($grupos as $grupo)
+                                <option value="{{ $grupo->id }}">{{ $grupo->nome }}</option>
+                            @endforeach
+                        </select>
+                        <label for="grupo_id">Grupo:</label>
                     </div>
                 </div>
                 <div class="col-md-6 form-group">

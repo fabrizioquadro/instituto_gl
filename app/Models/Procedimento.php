@@ -37,7 +37,61 @@ class Procedimento extends Model
         'semana_sem_aplicacao',
         'autorizador_sem_pagamento',
         'consulta_tratamento_agendada',
+        'dt_hr_chegada',
+        'dt_hr_atendimento',
+        'dt_hr_finalizacao',
+        'user_id_cadastro',
     ];
+
+    public static function index_pesq($requestData){
+
+        $procedimentos = SELF::where('nr_procedimento','1')
+        ->orderByDesc('data_cad')
+        ->get();
+
+        $totalFiltered = count($procedimentos);
+
+        $procedimentos = SELF::where('nr_procedimento','1')
+        ->offset($requestData['start'])
+        ->limit($requestData['length'])
+        ->orderByDesc('data_cad')
+        ->get();
+
+        if( !empty($requestData['search']['value']) ) {
+            $pacientes = Paciente::where('nm_paciente','LIKE',"%".$requestData['search']['value']."%")->get();
+            $in = array();
+            foreach($pacientes as $paciente){
+                $in[] = $paciente->id;
+            }
+
+            $procedimentos = SELF::where('nr_procedimento','1')
+            ->where(function($query) use ($requestData, $in){
+                $query->where('medico','LIKE','%'.$requestData['search']['value'].'%')
+                ->orWhere('codigo',$requestData['search']['value'])
+                ->orWhereIn('paciente_id', $in);
+            })
+            ->orderByDesc('data_cad')
+            ->get();
+
+            $totalFiltered = count($procedimentos);
+
+            $procedimentos = SELF::where('nr_procedimento','1')
+            ->where(function($query) use ($requestData, $in){
+                $query->where('medico','LIKE','%'.$requestData['search']['value'].'%')
+                ->orWhere('codigo','LIKE','%'.$requestData['search']['value'].'%')
+                ->orWhereIn('paciente_id', $in);
+            })
+            ->offset($requestData['start'])
+            ->limit($requestData['length'])
+            ->orderByDesc('data_cad')
+            ->get();
+        }
+
+        $retorno['procedimentos'] = $procedimentos;
+        $retorno['totalFiltered'] = $totalFiltered;
+
+        return $retorno;
+    }
 
     public function aplicacaos(){
         return $this->hasMany(Aplicacao::class);
@@ -45,6 +99,10 @@ class Procedimento extends Model
 
     public function clinica(){
         return $this->belongsTo(Clinica::class);
+    }
+
+    public function cadastrante(){
+        return $this->belongsTo(User::class,'user_id_cadastro','id');
     }
 
     public function clinica_aplicacao(){
@@ -97,13 +155,26 @@ class Procedimento extends Model
             ->orWhereNull('semana_sem_aplicacao');
         })
         ->where('situacao','<>','Aplicado')
+        ->where('situacao','<>','Cancelado')
         ->get();
 
         if($qt_situacao->count() > 0){
             return 'Aberto';
         }
         else{
-            return 'Finalizado';
+            $qt_situacao = SELF::where('codigo', $this->codigo)
+            ->where(function ($query){
+                $query->where('semana_sem_aplicacao','Não')
+                ->orWhereNull('semana_sem_aplicacao');
+            })
+            ->where('situacao','Cancelado')
+            ->get();
+            if($qt_situacao->count() > 0){
+                return 'Cancelado';
+            }
+            else{
+                return 'Finalizado';
+            }
         }
     }
 
@@ -148,4 +219,83 @@ class Procedimento extends Model
 
         return SELF::whereIn('id', $in)->get();
     }
+
+    public static function gerar_relatorio_vendas($filtro){
+        $array = array();
+        $sql = "SELECT id FROM procedimentos WHERE 1=1";
+
+        if($filtro['clinica_id']){
+            $sql .= " AND clinica_id=?";
+            $array[] = $filtro['clinica_id'];
+        }
+
+        if($filtro['paciente_id']){
+            $sql .= " AND paciente_id=?";
+            $array[] = $filtro['paciente_id'];
+        }
+
+        if($filtro['medico']){
+            $sql .= " AND medico=?";
+            $array[] = $filtro['medico'];
+        }
+
+        if($filtro['dt_inc']){
+            $sql .= " AND data_cad>=?";
+            $array[] = $filtro['dt_inc'];
+        }
+
+        if($filtro['dt_fn']){
+            $sql .= " AND data_cad<=?";
+            $array[] = $filtro['dt_fn'];
+        }
+
+        $sql .= " ORDER BY data_cad";
+
+        $res = \DB::select($sql, $array);
+
+        $in = array();
+        foreach($res as $linha){
+            $in[] = $linha->id;
+        }
+
+        return SELF::whereIn('id', $in)->get();
+    }
+
+    public static function gerar_relatorio_enfermagem($filtro){
+        $array = array();
+        $sql = "SELECT id FROM procedimentos WHERE 1=1";
+
+        if($filtro['clinica_id']){
+            $sql .= " AND clinica_id_aplicacao=?";
+            $array[] = $filtro['clinica_id'];
+        }
+
+        if($filtro['paciente_id']){
+            $sql .= " AND paciente_id=?";
+            $array[] = $filtro['paciente_id'];
+        }
+
+        if($filtro['dt_inc']){
+            $sql .= " AND data_aplicacao>=?";
+            $array[] = $filtro['dt_inc'];
+        }
+
+        if($filtro['dt_fn']){
+            $sql .= " AND data_aplicacao<=?";
+            $array[] = $filtro['dt_fn'];
+        }
+
+        $sql .= " AND situacao IN ('Aplicado','Aplicação Parcial') ORDER BY data_aplicacao";
+
+        $res = \DB::select($sql, $array);
+
+        $in = array();
+        foreach($res as $linha){
+            $in[] = $linha->id;
+        }
+
+        return SELF::whereIn('id', $in)->get();
+    }
+
+
 }

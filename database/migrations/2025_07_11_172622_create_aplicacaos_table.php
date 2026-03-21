@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('procedimento_id');
             $table->unsignedBigInteger('medicamento_id');
-            $table->unsignedBigInteger('user_id_aplicacao');
+            $table->unsignedBigInteger('user_id_aplicacao')->nullable();
             $table->double('quantidade');
             $table->double('valor',10,2);
             $table->double('total',10,2);

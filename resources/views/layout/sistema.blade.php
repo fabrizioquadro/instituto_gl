@@ -82,6 +82,12 @@ else{
                                 <div data-i18n="Dashboard">Dashboard</div>
                             </a>
                         </li>
+                        <li class="menu-item">
+                            <a href="{{ route('sistema.fila_atendimento') }}" class="menu-link">
+                                <i class="menu-icon tf-icons mdi mdi-human-queue"></i>
+                                <div data-i18n="Fila Atendimento">Fila Atendimento</div>
+                            </a>
+                        </li>
                         @if($user->controle_medicamentos == 'Sim')
                             <li class="menu-item">
                                 <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -97,6 +103,11 @@ else{
                                     <li class="menu-item">
                                         <a href="{{ route('sistema.baixas') }}" class="menu-link">
                                             <div data-i18n="Baixas">Baixas</div>
+                                        </a>
+                                    </li>
+                                    <li class="menu-item">
+                                        <a href="{{ route('sistema.baixas_abertos') }}" class="menu-link">
+                                            <div data-i18n="Baixas Aberto">Baixas Aberto</div>
                                         </a>
                                     </li>
                                     <li class="menu-item">

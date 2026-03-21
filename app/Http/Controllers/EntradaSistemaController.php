@@ -265,6 +265,7 @@ class EntradaSistemaController extends Controller
                     margin-left: 3mm;
                     height: 15mm;
                     display: flex;
+                    page-break-after: always;
                 }
                 .etiqueta{
                     width: 30mm;
@@ -275,12 +276,14 @@ class EntradaSistemaController extends Controller
                     justify-content: center;
                     font-size: 10px;
                     background-color: #f0f0f0;
+                    padding-top: 3mm
                 }
                 @media print {
                     .linha{
                         margin-left: 3mm;
                         height: 15mm;
                         display: flex;
+                        page-break-after: always;
                     }
                     .etiqueta{
                         width: 30mm;
@@ -291,9 +294,7 @@ class EntradaSistemaController extends Controller
                         justify-content: center;
                         font-size: 10px;
                         background-color: #f0f0f0;
-                    }
-                    .linha {
-                        page-break-after: always;
+                        padding-top: 3mm !important;
                     }
                 }
                 </style>
@@ -316,7 +317,7 @@ class EntradaSistemaController extends Controller
                             $html .= '
                             <div class="etiqueta">
                                 ';
-                                    $html .= $generator->getBarcode($estoque->codigo_barras, $generator::TYPE_CODE_128, 1.1, 25);
+                                    $html .= '&nbsp'.$generator->getBarcode($estoque->codigo_barras, $generator::TYPE_CODE_128, 1.1, 30);
                                 $html .= '
                                 <br>
                                 '.$estoque->codigo_barras.'
@@ -363,7 +364,7 @@ class EntradaSistemaController extends Controller
                 <title>Impressão de Etiquetas</title>
                 <style>
                 @page{
-                    size: 100mm 21mm
+                    size: 100mm 15mm
                 }
                 * {
                     margin: 0;
@@ -402,7 +403,7 @@ class EntradaSistemaController extends Controller
                 @media print {
                     .pagina-etiquetas {
                         display: block;
-                        width: 102mm;  /* Largura da área de impressão */
+                        width: 100mm;  /* Largura da área de impressão */
                         padding: 0 2mm;  /* Padding de 3mm */
                         background-color: white;
                         height: auto;  /* Para rolo contínuo */
@@ -412,6 +413,7 @@ class EntradaSistemaController extends Controller
                         display: flex;
                         justify-content: space-between;
                         margin-bottom: 3mm;
+                        margin-left: 2mm;
                         page-break-inside: avoid;  /* Evita quebras dentro de uma linha */
                     }
                     .etiqueta {

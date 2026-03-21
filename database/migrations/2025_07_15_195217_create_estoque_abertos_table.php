@@ -26,7 +26,6 @@ return new class extends Migration
             $table->string('codigo_barras')->nullable();
             $table->string('situacao');
             $table->foreign('medicamento_id')->references('id')->on('medicamentos');
-            $table->foreign('procedimento_id')->references('id')->on('procedimentos');
             $table->foreign('user_id')->references('id')->on('users');
             $table->foreign('clinica_id')->references('id')->on('clinicas');
             $table->timestamps();

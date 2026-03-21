@@ -30,4 +30,27 @@ class Transferencia extends Model
         ->where('clinica_id', $clinica_id)
         ->get();
     }
+
+    public static function gerar_relatorio_transferencias($filtros){
+        $array = array();
+        $sql = "SELECT id FROM transferencias WHERE 1=1";
+        if($filtros['dt_inc']){
+            $sql .= " AND data>=?";
+            $array[] = $filtros['dt_inc'];
+        }
+        if($filtros['dt_fn']){
+            $sql .= " AND data<=?";
+            $array[] = $filtros['dt_fn'];
+        }
+        $sql .= " ORDER BY data";
+
+        $res = \DB::select($sql, $array);
+
+        $in = array();
+        foreach($res as $linha){
+            $in[] = $linha->id;
+        }
+
+        return SELF::whereIn('id', $in)->get();
+    }
 }

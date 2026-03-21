@@ -3,6 +3,7 @@ $template = "layout.".session()->get('layout');
 @endphp
 @extends($template)
 @section('conteudo')
+<meta http-equiv="refresh" content="30">
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <h4 class="card-title">Enfermagem</h4>
@@ -19,6 +20,42 @@ $template = "layout.".session()->get('layout');
             </div>
         @endif
         <hr>
+        <div class="card card-border-shadow-primary mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h4 class="card-title">Estoques Abertos</h4>
+                </div>
+                <hr>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Clinica</th>
+                                <th>Medicamento</th>
+                                <th>Abertura</th>
+                                <th>Usuário</th>
+                                <th>Lote</th>
+                                <th>C. Barras</th>
+                                <th>Frasco</th>
+                                <th>Restante</th>
+                            </tr>
+                        </thead>
+                        @foreach($array_abertos as $linha)
+                            <tr>
+                                <td>{{ $linha['clinica'] }}</td>
+                                <td>{{ $linha['medicamento'] }}</td>
+                                <td>{{ $linha['abertura'] }}</td>
+                                <td>{{ $linha['usuario'] }}</td>
+                                <td>{{ $linha['lote'] }}</td>
+                                <td>{{ $linha['codigo_barras'] }}</td>
+                                <td>{{ $linha['frasco'] }}</td>
+                                <td>{{ $linha['restante'] }}</td>
+                            </tr>
+                        @endforeach
+                    </table>
+                </div>
+            </div>
+        </div>
         <div class="card card-border-shadow-primary mb-4">
             <div class="card-body">
                 <h5 class="card-title">Aguardando</h5>

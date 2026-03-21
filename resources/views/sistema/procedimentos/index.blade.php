@@ -36,51 +36,9 @@ $template = "layout.".session()->get('layout');
                         <th>Dt 1ª Aplicação</th>
                         <th>Situação Pg</th>
                         <th>Situação</th>
+                        <th>Cadastrante</th>
                     </tr>
                 </thead>
-                @foreach($procedimentos as $procedimento)
-                    @php
-                    $st_procedimento = $procedimento->get_st_procedimento();
-                    if($st_procedimento == "Aberto"){
-                        $situacao = '<span class="badge rounded-pill bg-label-warning">'.$st_procedimento.'</span>';
-                    }
-                    elseif($st_procedimento == "Finalizado"){
-                        $situacao = '<span class="badge rounded-pill bg-label-success">'.$st_procedimento.'</span>';
-                    }
-
-                    $st_pagamento = $procedimento->get_st_pagamento();
-                    if($st_pagamento == 'Aberto'){
-                        $st_pagamento = "<span class='badge bg-danger'>$st_pagamento</span>";
-                    }
-                    elseif($st_pagamento == 'Total'){
-                        $st_pagamento = "<span class='badge bg-success'>$st_pagamento</span>";
-                    }
-                    elseif($st_pagamento == 'Parcial'){
-                        $st_pagamento = "<span class='badge bg-warning'>$st_pagamento</span>";
-                    }
-
-                    @endphp
-                    <tr>
-                        <td>
-                            <div class="dropdown">
-                                <button type="button" class="btn p-0 dropdown-toggle hide-arrow show" data-bs-toggle="dropdown" aria-expanded="true">
-                                    <i class="mdi mdi-dots-vertical"></i>
-                                </button>
-                                <div class="dropdown-menu" data-popper-placement="bottom-end">
-                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.acessar_grupo', $procedimento->codigo) }}"><i class="mdi mdi-eye me-1"></i> Acessar</a>
-                                </div>
-                            </div>
-                        </td>
-                        <td> <span style='display: none'>{{ strtotime($procedimento->data_cad) }}</span> {{ dataDbForm($procedimento->data_cad) }}</td>
-                        <td>{{ $procedimento->paciente->nm_paciente }}</td>
-                        <td>{{ $procedimento->codigo }}</td>
-                        <td>{{ $procedimento->get_nr_semanas() }}</td>
-                        <td>{{ $procedimento->medico }}</td>
-                        <td>{{ dataDbForm($procedimento->data_aplicacao) }}</td>
-                        <td>{!! $st_pagamento !!}</td>
-                        <td>{!! $situacao !!}</td>
-                    </tr>
-                @endforeach
             </table>
         </div>
     </div>
@@ -88,7 +46,14 @@ $template = "layout.".session()->get('layout');
 <script>
 window.addEventListener('load',()=>{
   $('#table-index').DataTable({
-    order: [[1, 'asc']],
+        "processing": true,
+  		"serverSide": true,
+        "ordering": false,
+  		"ajax":
+  		{
+  			"url": "{{ route('sistema.procedimentos.index_pesq') }}",
+  			"type": "GET"
+  		},
     "language": {
 			"sEmptyTable": "Nenhum registro encontrado",
       "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",

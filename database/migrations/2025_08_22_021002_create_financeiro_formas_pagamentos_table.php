@@ -17,7 +17,9 @@ return new class extends Migration
             $table->string('forma_pagamento');
             $table->integer('parcelas');
             $table->double('vl_pagamento');
+            $table->unsignedBigInteger('user_id_cadastro');
             $table->foreign('financeiro_id')->references('id')->on('financeiros');
+            $table->foreign('user_id_cadastro')->references('id')->on('users');
             $table->timestamps();
         });
     }

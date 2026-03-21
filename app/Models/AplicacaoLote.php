@@ -14,5 +14,6 @@ class AplicacaoLote extends Model
         'quantidade',
         'lote',
         'codigo_barras',
+        'estoque_aberto_id',
     ];
 }

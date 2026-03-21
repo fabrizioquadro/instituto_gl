@@ -8,6 +8,7 @@ $template = "layout.".session()->get('layout');
     <div class="card-body">
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Acessar Financeiro</h4>
+            <a href="{{ route('sistema.financeiros.adicionar_pagamento', $financeiro->id) }}" class="btn btn-sm btn-primary">Adicionar Pagamento</a>
         </div>
         @if($mensagem = Session::get('mensagem'))
             <div class="alert alert-success alert-dismissible mt-3" role="alert">
@@ -23,37 +24,62 @@ $template = "layout.".session()->get('layout');
         @endif
         <hr>
         <div class="row mt-2 gy-4 align-items-end mb-3">
-            <div class="col-md-4 form-group">
+            <div class="col-md-3 form-group">
                 <label for="">Paciente:</label><br>
                 <b>{{ $financeiro->paciente->nm_paciente }}</b>
             </div>
-            <div class="col-md-4 form-group">
-                <label for="">Cinica:</label><br>
+            <div class="col-md-3 form-group">
+                <label for="">Grupo:</label><br>
+                <b>{{ $financeiro->procedimentos()->first() ? $financeiro->procedimentos()->first()->codigo : '' }}</b>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Clinica:</label><br>
                 <b>{{ $financeiro->clinica->nome }}</b>
             </div>
-            <div class="col-md-4 form-group">
-                <label for="">Data Pagamento:</label><br>
+            <div class="col-md-3 form-group">
+                <label for="">Data Cadastro:</label><br>
                 <b>{{ dataDbForm($financeiro->dt_pagamento) }}</b>
             </div>
         </div>
         <div class="row mt-2 gy-4 align-items-end mb-3">
-            <div class="col-md-3 form-group">
-                <label for="">Valor Consulta:</label><br>
-                <b>R$ {{ valorDbForm($financeiro->vl_consulta) }}</b>
-            </div>
-            <div class="col-md-3 form-group">
+            <div class="col-md-2 form-group">
                 <label for="">Valor Procedimentos:</label><br>
-                <b>R$ {{ valorDbForm($financeiro->vl_procedimentos) }}</b>
+                <b>R$ {{ valorDbForm($financeiro->valor_procedimentos()) }}</b>
             </div>
-            <div class="col-md-3 form-group">
+            <div class="col-md-2 form-group">
+                <label for="">Valor Aplicações:</label><br>
+                <b>R$ {{ valorDbForm($financeiro->valor_aplicacaos()) }}</b>
+            </div>
+            <div class="col-md-2 form-group">
                 <label for="">Valor Desconto:</label><br>
                 <b>R$ {{ valorDbForm($financeiro->vl_desconto) }}</b>
             </div>
-            <div class="col-md-3 form-group">
+            <div class="col-md-2 form-group">
+                <label for="">Valor Adicional:</label><br>
+                <b>R$ {{ valorDbForm($financeiro->vl_adicional) }}</b>
+            </div>
+            <div class="col-md-2 form-group">
                 <label for="">Valor Pagamento:</label><br>
-                <b>R$ {{ valorDbForm($financeiro->vl_pagamento) }}</b>
+                <b>R$ {{ valorDbForm($financeiro->formas()->sum('vl_pagamento')) }}</b>
             </div>
         </div>
+        <div class="row mt-2 gy-4 align-items-end mb-3">
+            <div class="col-md-3 form-group">
+                <label for="">Valor Total:</label><br>
+                <b>R$ {{ valorDbForm($financeiro->valor_procedimentos() + $financeiro->valor_aplicacaos() + $financeiro->vl_adicional - $financeiro->vl_desconto) }}</b>
+            </div>
+            <div class="col-md-3 form-group">
+                <label for="">Valor Restante:</label><br>
+                <b>R$ {{ valorDbForm($financeiro->valor_procedimentos() + $financeiro->valor_aplicacaos() + $financeiro->vl_adicional - $financeiro->vl_desconto - $financeiro->formas()->sum('vl_pagamento')) }}</b>
+            </div>
+        </div>
+        <div class="row mt-2 gy-4 align-items-end mb-3">
+            <div class="col-md-3 form-group">
+                <label for="">Observação:</label><br>
+                <b>{{ $financeiro->obs_pagamento }}</b>
+            </div>
+        </div>
+        <h5 class="card-title mt-5">Pagamentos</h5>
         <div class="table-responsive mt-3">
             <table class="table">
                 <thead class="table-light">
@@ -62,6 +88,8 @@ $template = "layout.".session()->get('layout');
                         <th>Forma Pagamento</th>
                         <th>Parcelas</th>
                         <th>Valor</th>
+                        <th>Cadastro</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -74,9 +102,25 @@ $template = "layout.".session()->get('layout');
                             <td>{{ $forma->forma_pagamento }}</td>
                             <td>{{ $forma->parcelas }}</td>
                             <td>R$ {{ valorDbForm($forma->vl_pagamento) }}</td>
+                            <td>{{ $forma->cadastrante ? $forma->cadastrante->nome : '' }}</td>
+                            <td>
+                                @if(session()->has('administrador'))
+                                    <button title="Excluir Pagamento" onclick="excluir_pagamento({{ $forma->id }})" type="button" class="btn btn-icon btn-outline-danger waves-effect">
+                                        <span class="tf-icons mdi mdi-delete"></span>
+                                    </button>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"> <b>TOTAL</b> </td>
+                        <td> <b>R$ {{ valorDbForm($financeiro->formas()->sum('vl_pagamento')) }}</b> </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
@@ -117,6 +161,9 @@ $template = "layout.".session()->get('layout');
                         elseif($proc->situacao == "Aplicado"){
                             $situacao = '<span class="badge rounded-pill bg-label-success">Aplicado</span>';
                         }
+                        else{
+                            $situacao = '<span class="badge rounded-pill bg-label-warning">'.$proc->situacao.'</span>';
+                        }
 
                         if($proc->st_pagamento == 'Sim'){
                             $st_pagamento = "<span class='badge bg-success'>$proc->st_pagamento</span>";
@@ -153,4 +200,11 @@ $template = "layout.".session()->get('layout');
         </div>
     </div>
 @endif
+<script>
+function excluir_pagamento(id){
+    if(confirm('Tem certeza que deseja excluir este pagamento?')){
+        window.location.href = "{{ route('sistema.financeiros.delete_pagamento') }}/" + id
+    }
+}
+</script>
 @endsection

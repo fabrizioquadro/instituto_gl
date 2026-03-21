@@ -48,6 +48,12 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
         <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css" />
         <link rel="stylesheet" href="{{ asset('/public/css/bootstrap-combobox.css') }}" />
 
+        <style media="screen">
+            .table-responsive{
+                min-height: 300px !important;
+            }
+        </style>
+
         <!-- Helpers -->
         <script src="{{ asset('/public/template/vendor/js/helpers.js') }}"></script>
         <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
@@ -106,9 +112,21 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                             </a>
                         </li>
                         <li class="menu-item">
+                            <a href="{{ route('adm.grupos') }}" class="menu-link">
+                                <i class="menu-icon tf-icons mdi mdi-format-list-group"></i>
+                                <div data-i18n="Grupos">Grupos</div>
+                            </a>
+                        </li>
+                        <li class="menu-item">
                             <a href="{{ route('adm.medicamentos') }}" class="menu-link">
                                 <i class="menu-icon tf-icons mdi mdi-medication-outline"></i>
                                 <div data-i18n="Medicamentos">Medicamentos</div>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{{ route('adm.combos') }}" class="menu-link">
+                                <i class="menu-icon tf-icons mdi mdi-medical-bag"></i>
+                                <div data-i18n="Combos">Combos</div>
                             </a>
                         </li>
                         <li class="menu-item">
@@ -123,6 +141,34 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                                 <div data-i18n="Fornecedores">Fornecedores</div>
                             </a>
                         </li>
+                        <li class="menu-item">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <i class="menu-icon tf-icons mdi mdi-chart-tree"></i>
+                                <div data-i18n="Relatórios">Relatórios</div>
+                            </a>
+                            <ul class="menu-sub">
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.financeiro') }}" class="menu-link">
+                                        <div data-i18n="Financeiro">Financeiro</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.vendas') }}" class="menu-link">
+                                        <div data-i18n="Vendas">Vendas</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.enfermagem') }}" class="menu-link">
+                                        <div data-i18n="Enfermagem">Enfermagem</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.transferencias') }}" class="menu-link">
+                                        <div data-i18n="Transferências">Transferências</div>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
                         <li class="menu-header fw-medium mt-4">
                             <span class="menu-header-text">Sistema</span>
                         </li>
@@ -130,6 +176,12 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                             <a href="{{ route('sistema.dashboard') }}" class="menu-link">
                                 <i class="menu-icon tf-icons mdi mdi-home-outline"></i>
                                 <div data-i18n="Dashboard">Dashboard</div>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{{ route('sistema.fila_atendimento') }}" class="menu-link">
+                                <i class="menu-icon tf-icons mdi mdi-human-queue"></i>
+                                <div data-i18n="Fila Atendimento">Fila Atendimento</div>
                             </a>
                         </li>
                         <li class="menu-item">
@@ -146,6 +198,11 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                                 <li class="menu-item">
                                     <a href="{{ route('sistema.baixas') }}" class="menu-link">
                                         <div data-i18n="Baixas">Baixas</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('sistema.baixas_abertos') }}" class="menu-link">
+                                        <div data-i18n="Baixa Abertos">Baixa Abertos</div>
                                     </a>
                                 </li>
                                 <li class="menu-item">
@@ -376,6 +433,7 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
         <script src="{{ asset('/public/template/js/main.js') }}"></script>
         <script src="{{ asset('/public/js/script.js') }}"></script>
         <script src="{{ asset('/public/js/bootstrap-combobox.js') }}"></script>
+        <script src="{{ asset('/public/template/vendor/libs/apex-charts/apexcharts.js') }}"></script>
 
         <script>
         document.getElementById('layout_admin_clinica_id').addEventListener('change', (e)=>{
