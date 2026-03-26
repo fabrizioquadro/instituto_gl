@@ -73,7 +73,7 @@ class RelatorioController extends Controller
                     $codigo = $procedimento ? $procedimento->codigo : '';
 
                     if($rateio_pagamento['vl_consulta'] > 0){
-                        $dados = [
+                        $linha_dados = [
                             'financeiro_id' => $forma->financeiro_id,
                             'pagamento_id' => $forma->id,
                             'ordem' => strtotime($data),
@@ -96,11 +96,11 @@ class RelatorioController extends Controller
                             'medico' => $financeiro->medico,
                             'contador' => $contador,
                         ];
-                        $array_financeiro[] = $dados;
+                        $array_financeiro[] = $linha_dados;
                     }
 
                     if($rateio_pagamento['vl_aplicacao'] > 0){
-                        $dados = [
+                        $linha_dados = [
                             'financeiro_id' => $forma->financeiro_id,
                             'pagamento_id' => $forma->id,
                             'ordem' => strtotime($data),
@@ -123,7 +123,7 @@ class RelatorioController extends Controller
                             'medico' => $financeiro->medico,
                             'contador' => $contador,
                         ];
-                        $array_financeiro[] = $dados;
+                        $array_financeiro[] = $linha_dados;
                     }
                 }
             }
@@ -134,7 +134,7 @@ class RelatorioController extends Controller
             return $a['ordem'] <=> $b['ordem'];
         });
 
-        return view('adm/relatorios/financeiro_gerar', compact('array_financeiro'));
+        return view('adm/relatorios/financeiro_gerar', compact('array_financeiro', 'dados'));
     }
 
     public function financeiro_gerar_old(Request $request){
@@ -201,7 +201,7 @@ class RelatorioController extends Controller
         $medicamento_id = $dados['medicamento_id'];
         $situacao = $dados['situacao'];
 
-        return view('adm/relatorios/vendas_gerar', compact('procedimentos','medicamento_id','situacao'));
+        return view('adm/relatorios/vendas_gerar', compact('procedimentos','medicamento_id','situacao','dados'));
     }
 
     public function enfermagem_gerar(Request $request){
@@ -215,7 +215,7 @@ class RelatorioController extends Controller
         $dados = $request->except('_token');
         $transferencias = Transferencia::gerar_relatorio_transferencias($dados);
 
-        return view('adm/relatorios/transferencias_gerar', compact('transferencias'));
+        return view('adm/relatorios/transferencias_gerar', compact('transferencias','dados'));
     }
 
     public function exportar(Request $request){
@@ -318,8 +318,242 @@ class RelatorioController extends Controller
         // Caminho onde o arquivo será salvo
         $arq = "Enfermagem_".date('YmdHis');
         $path = public_path('rel_enfermagem/'.$arq.'.xlsx');
+        if(!is_dir(public_path('rel_enfermagem'))){
+            mkdir(public_path('rel_enfermagem'), 0755, true);
+        }
 
         // Salva o arquivo
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($path);
+
+        return response()->download($path)->deleteFileAfterSend(false);
+    }
+
+    public function exportar_financeiro(Request $request){
+        $dados_req = json_decode($request->dados, true);
+        $financeiros = Financeiro::get_pagamentos_relatorio($dados_req);
+
+        $dt_inc = false;
+        $dt_fn = false;
+
+        if(isset($dados_req['dt_inc']) && $dados_req['dt_inc']){
+            $dt_inc = $dados_req['dt_inc'];
+            $dt_inc_stamp = strtotime($dt_inc." 00:00:00");
+        }
+
+        if(isset($dados_req['dt_fn']) && $dados_req['dt_fn']){
+            $dt_fn = $dados_req['dt_fn'];
+            $dt_fn_stamp = strtotime($dt_fn." 23:59:59");
+        }
+
+        $array_financeiro = array();
+
+        foreach($financeiros as $financeiro){
+            foreach($financeiro->formas as $forma){
+                $dt_forma_stamp = strtotime($forma->created_at);
+                if( (!$dt_inc || $dt_forma_stamp >= $dt_inc_stamp ) && (!$dt_fn || $dt_forma_stamp <= $dt_fn_stamp) ){
+                    $procedimento = $financeiro->procedimentos()->first();
+                    $rateio_pagamento = $forma->get_rateio_financeiro();
+                    $var = explode(" ",$forma->created_at);
+                    $data = $var[0];
+                    $contador = $procedimento ? Procedimento::where('codigo', $procedimento->codigo)->count() : '0';
+                    $codigo = $procedimento ? $procedimento->codigo : '';
+
+                    if($rateio_pagamento['vl_consulta'] > 0){
+                        $dados = [
+                            'pagamento_id' => $forma->id,
+                            'ordem' => strtotime($data),
+                            'data' => dataDbForm($data),
+                            'paciente' => $financeiro->paciente->nm_paciente,
+                            'id_feegow' => $financeiro->paciente->paciente_id_feegow,
+                            'cpf' => $financeiro->paciente->cpf,
+                            'codigo' => $codigo,
+                            'vl_tratamento' => 'R$ '.valorDbForm($financeiro->vl_procedimentos),
+                            'desconto_total' => 'R$ '.valorDbForm($financeiro->vl_desconto),
+                            'vl_pagamento' => 'R$ '.valorDbForm($forma->vl_pagamento),
+                            'vl_rateio' => 'R$ '.valorDbForm($rateio_pagamento['vl_consulta']),
+                            'tp_pagamento' => 'Consulta',
+                            'desconto' => valorDbForm(0.00),
+                            'forma_pagamento' => $forma->forma_pagamento,
+                            'parcelas' => $forma->parcelas,
+                            'clinica' => $financeiro->clinica->nome,
+                            'medico' => $financeiro->medico,
+                            'contador' => $contador,
+                            'obs' => $financeiro->obs_pagamento,
+                        ];
+                        $array_financeiro[] = $dados;
+                    }
+
+                    if($rateio_pagamento['vl_aplicacao'] > 0){
+                        $dados = [
+                            'pagamento_id' => $forma->id,
+                            'ordem' => strtotime($data),
+                            'data' => dataDbForm($data),
+                            'paciente' => $financeiro->paciente->nm_paciente,
+                            'id_feegow' => $financeiro->paciente->paciente_id_feegow,
+                            'cpf' => $financeiro->paciente->cpf,
+                            'codigo' => $codigo,
+                            'vl_tratamento' => 'R$ '.valorDbForm($financeiro->vl_procedimentos),
+                            'desconto_total' => 'R$ '.valorDbForm($financeiro->vl_desconto),
+                            'vl_pagamento' => 'R$ '.valorDbForm($forma->vl_pagamento),
+                            'vl_rateio' => 'R$ '.valorDbForm($rateio_pagamento['vl_aplicacao']),
+                            'tp_pagamento' => 'Aplicação',
+                            'desconto' => valorDbForm($financeiro->vl_desconto),
+                            'forma_pagamento' => $forma->forma_pagamento,
+                            'parcelas' => $forma->parcelas,
+                            'clinica' => $financeiro->clinica->nome,
+                            'medico' => $financeiro->medico,
+                            'contador' => $contador,
+                            'obs' => $financeiro->obs_pagamento,
+                        ];
+                        $array_financeiro[] = $dados;
+                    }
+                }
+            }
+        }
+
+        //vamos organizar o array
+        usort($array_financeiro, function($a, $b) {
+            return $a['ordem'] <=> $b['ordem'];
+        });
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $cabecalho = [
+            'ID', 'Data', 'Paciente', 'ID Feegow', 'CPF', 'Codigo', 'Valor Tratamento', 'Desconto Total',
+            'Pagamento', 'Valor Rateio', 'Tipo', 'Desconto Rateio', 'Forma Pagamento', 'Parcelas',
+            'Clinica', 'Médico', 'Nr Procedimentos', 'Obs'
+        ];
+
+        $sheet->fromArray($cabecalho, null, 'A1');
+
+        $linhaTotal = 2;
+        foreach($array_financeiro as $linha){
+            $array_excel = [
+                $linha['pagamento_id'],
+                $linha['data'],
+                $linha['paciente'],
+                $linha['id_feegow'],
+                $linha['cpf'],
+                $linha['codigo'],
+                $linha['vl_tratamento'],
+                $linha['desconto_total'],
+                $linha['vl_pagamento'],
+                $linha['vl_rateio'],
+                $linha['tp_pagamento'],
+                $linha['desconto'],
+                $linha['forma_pagamento'],
+                $linha['parcelas'],
+                $linha['clinica'],
+                $linha['medico'],
+                $linha['contador'],
+                $linha['obs']
+            ];
+            $sheet->fromArray($array_excel, null, 'A' . $linhaTotal);
+            $linhaTotal++;
+        }
+
+        $arq = "Financeiro_".date('YmdHis');
+        $path = public_path('rel_financeiro/'.$arq.'.xlsx');
+        if(!is_dir(public_path('rel_financeiro'))){
+            mkdir(public_path('rel_financeiro'), 0755, true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($path);
+
+        return response()->download($path)->deleteFileAfterSend(false);
+    }
+
+    public function exportar_vendas(Request $request){
+        $dados_req = json_decode($request->dados, true);
+        $procedimentos = Procedimento::gerar_relatorio_vendas($dados_req);
+        $medicamento_id = isset($dados_req['medicamento_id']) ? $dados_req['medicamento_id'] : null;
+        $situacao = isset($dados_req['situacao']) ? $dados_req['situacao'] : null;
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $cabecalho = [
+            'Medicamento', 'Quantidada', 'Status', 'Cadastro', 'Aplicação', 'Valor', 'Pago', 'Procedimento', 'Paciente', 'Médico'
+        ];
+
+        $sheet->fromArray($cabecalho, null, 'A1');
+
+        $linhaTotal = 2;
+        foreach($procedimentos as $procedimento){
+            foreach($procedimento->aplicacaos as $aplicacao){
+                if((!$medicamento_id || $aplicacao->medicamento->id == $medicamento_id) && (!$situacao || $situacao == $aplicacao->situacao)){
+                    $array_excel = [
+                        $aplicacao->medicamento->nome,
+                        $aplicacao->quantidade,
+                        $aplicacao->situacao,
+                        dataDbForm($procedimento->data_cad),
+                        dataDbForm($procedimento->data_aplicacao),
+                        'R$ '.valorDbForm($aplicacao->total),
+                        $procedimento->st_pagamento,
+                        $procedimento->codigo."/".$procedimento->nr_procedimento,
+                        $procedimento->paciente->nm_paciente,
+                        $procedimento->medico
+                    ];
+                    $sheet->fromArray($array_excel, null, 'A' . $linhaTotal);
+                    $linhaTotal++;
+                }
+            }
+        }
+
+        $arq = "Vendas_".date('YmdHis');
+        $path = public_path('rel_vendas/'.$arq.'.xlsx');
+        if(!is_dir(public_path('rel_vendas'))){
+            mkdir(public_path('rel_vendas'), 0755, true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($path);
+
+        return response()->download($path)->deleteFileAfterSend(false);
+    }
+
+    public function exportar_transferencias(Request $request){
+        $dados_req = json_decode($request->dados, true);
+        $transferencias = Transferencia::gerar_relatorio_transferencias($dados_req);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $cabecalho = [
+            'Data', 'Origem', 'Destino', 'Medicamento', 'Quantidade'
+        ];
+
+        $sheet->fromArray($cabecalho, null, 'A1');
+
+        $linhaTotal = 2;
+        foreach($transferencias as $transferencia){
+            $medicamentos = \App\Models\Estoque::where('origem','Transferencia')
+            ->where('transferencia_id', $transferencia->id)
+            ->where('tipo', 'Saida')
+            ->get();
+
+            foreach($medicamentos as $estoque){
+                $array_excel = [
+                    dataDbForm($transferencia->data),
+                    $transferencia->origem->nome,
+                    $transferencia->destino->nome,
+                    $estoque->medicamento->nome,
+                    $estoque->quantidade
+                ];
+                $sheet->fromArray($array_excel, null, 'A' . $linhaTotal);
+                $linhaTotal++;
+            }
+        }
+
+        $arq = "Transferencias_".date('YmdHis');
+        $path = public_path('rel_transferencias/'.$arq.'.xlsx');
+        if(!is_dir(public_path('rel_transferencias'))){
+            mkdir(public_path('rel_transferencias'), 0755, true);
+        }
+
         $writer = new Xlsx($spreadsheet);
         $writer->save($path);
 

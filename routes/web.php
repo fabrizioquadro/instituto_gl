@@ -123,6 +123,9 @@ Route::middleware(['verificaAdministrador'])->group(function () {
         Route::post('/relatorios/transferencias/gerar', [RelatorioController::class, 'transferencias_gerar'])->name('adm.relatorios.transferencias.gerar');
         Route::post('/relatorios/exportar', [RelatorioController::class, 'exportar'])->name('adm.relatorios.exportar');
         Route::post('/relatorios/exportar/enfermagem', [RelatorioController::class, 'exportar_enfermagem'])->name('adm.relatorios.exportar_enfermagem');
+        Route::post('/relatorios/exportar/financeiro', [RelatorioController::class, 'exportar_financeiro'])->name('adm.relatorios.exportar_financeiro');
+        Route::post('/relatorios/exportar/vendas', [RelatorioController::class, 'exportar_vendas'])->name('adm.relatorios.exportar_vendas');
+        Route::post('/relatorios/exportar/transferencias', [RelatorioController::class, 'exportar_transferencias'])->name('adm.relatorios.exportar_transferencias');
 
         Route::get('/combos', [ComboController::class, 'index'])->name('adm.combos');
         Route::get('/combos/adicionar', [ComboController::class, 'adicionar'])->name('adm.combos.adicionar');

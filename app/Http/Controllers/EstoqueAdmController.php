@@ -7,6 +7,8 @@ use App\Models\Medicamento;
 use App\Models\Estoque;
 use App\Models\EstoqueAberto;
 use App\Models\Clinica;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class EstoqueAdmController extends Controller
 {
@@ -241,45 +243,47 @@ class EstoqueAdmController extends Controller
             if($quantidade > 0){
                 $array_view[] = $array;
                 //vamos colocar os lotes
-                $medicamento = Medicamento::where('id', $array['id'])->first();
-                $clinicas = Clinica::all()->sortBy('nome');
+                $medicamento_atual = Medicamento::where('id', $array['id'])->first();
 
                 $codigos = Estoque::select('codigo_barras')
-                ->where('medicamento_id', $medicamento->id)
+                ->where('medicamento_id', $medicamento_atual->id)
                 ->distinct()
                 ->get();
 
                 foreach($codigos as $linha){
-                    $estoque = Estoque::where('medicamento_id', $medicamento->id)->where('codigo_barras',$linha->codigo_barras)->first();
-                    $quantidade = 0;
-                    $array = [
+                    $estoque = Estoque::where('medicamento_id', $medicamento_atual->id)->where('codigo_barras',$linha->codigo_barras)->first();
+                    $quantidade_lote = 0;
+                    $array_lote = [
                         'lote' => $estoque->lote,
                         'codigo_barras' => $estoque->codigo_barras,
                         'data_vencimento' => dataDbForm($estoque->dt_vencimento),
                         'negrito' => false,
+                        'medicamento' => $medicamento_atual->nome,
+                        'unidade' => $medicamento_atual->unidade,
+                        'estoque_minimo' => $medicamento_atual->estoque_minimo,
                     ];
                     //vamos buscar as entradas e saidas de cada clinica
                     foreach($clinicas as $clinica){
                         $entrada = Estoque::where('clinica_id', $clinica->id)
-                        ->where('medicamento_id', $medicamento->id)
+                        ->where('medicamento_id', $medicamento_atual->id)
                         ->where('codigo_barras',$linha->codigo_barras)
                         ->where('tipo','Entrada')
                         ->sum('quantidade');
 
                         $saida = Estoque::where('clinica_id', $clinica->id)
-                        ->where('medicamento_id', $medicamento->id)
+                        ->where('medicamento_id', $medicamento_atual->id)
                         ->where('codigo_barras',$linha->codigo_barras)
                         ->where('tipo','Saida')
                         ->sum('quantidade');
 
                         $qt_clinica = $entrada - $saida;
-                        $array[$clinica->nome] = $qt_clinica;
-                        $quantidade += $qt_clinica;
+                        $array_lote[$clinica->nome] = $qt_clinica;
+                        $quantidade_lote += $qt_clinica;
                     }
 
-                    $array['quantidade'] = $quantidade;
-                    if($quantidade > 0){
-                        $array_view[] = $array;
+                    $array_lote['quantidade'] = $quantidade_lote;
+                    if($quantidade_lote > 0){
+                        $array_view[] = $array_lote;
                     }
                 }
             }
@@ -306,126 +310,78 @@ class EstoqueAdmController extends Controller
             }
         }
 
-        $html = "
-        <table>
-            <thead>
-                <tr>
-                    <td>Estoque</td>
-                </tr>
-                <tr>
-                    <th>Medicamento</th>
-                    <th>Unidade</th>
-                    <th>Estoque Minimo</th>
-                    <th>QT Total</th>
-                    ";
-                    foreach($clinicas as $clinica){
-                        $html .= "<th>$clinica->nome</th>";
-                    }
-                    $html .= "
-                    <th>Lote</th>
-                    <th>C.Barras</th>
-                    <th>Vencimento</th>
-                </tr>
-            </thead>
-            <tbody>
-            ";
-            foreach($array_view as $array){
-                if($array['negrito']){
-                    $array_controle = $array;
-                    $html .= "
-                        <tr>
-                            <td><b>$array[medicamento]</b></td>
-                            <td><b>$array[unidade]</b></td>
-                            <td><b>$array[estoque_minimo]</b></td>
-                            <td><b>$array[quantidade]</b></td>
-                            ";
-                            foreach($clinicas as $clinica){
-                                $html .= "<td><b>".$array[$clinica->nome]."</b></td>";
-                            }
-                            $html .= "
-                        </tr>
-                    ";
-                }
-                else{
-                    $html .= "
-                        <tr>
-                            <td>$array_controle[medicamento]</td>
-                            <td>$array_controle[unidade]</td>
-                            <td>$array_controle[estoque_minimo]</td>
-                            <td>$array[quantidade]</td>
-                            ";
-                            foreach($clinicas as $clinica){
-                                $html .= "<td>".$array[$clinica->nome]."</td>";
-                            }
-                            $html .= "
-                            <td>$array[lote]</td>
-                            <td>$array[codigo_barras]</td>
-                            <td>$array[data_vencimento]</td>
-                        </tr>
-                    ";
-                }
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('A1', 'Estoque');
+        
+        $cabecalho = ['Medicamento', 'Unidade', 'Estoque Minimo', 'QT Total'];
+        foreach($clinicas as $clinica){
+            $cabecalho[] = $clinica->nome;
+        }
+        $cabecalho[] = 'Lote';
+        $cabecalho[] = 'C.Barras';
+        $cabecalho[] = 'Vencimento';
+
+        $sheet->fromArray($cabecalho, null, 'A2');
+
+        $linhaTotal = 3;
+        foreach($array_view as $array){
+            $row = [
+                $array['medicamento'],
+                $array['unidade'],
+                $array['estoque_minimo'],
+                $array['quantidade']
+            ];
+            foreach($clinicas as $clinica){
+                $row[] = $array[$clinica->nome];
             }
-            $html .= "
-                <tr>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td></td>
-                </tr>
-            </tbody>
-        </table>
-
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Estoques Abertos</th>
-                </tr>
-                <tr>
-                    <th>Clinica</th>
-                    <th>Medicamento</th>
-                    <th>Abertura</th>
-                    <th>Usuário</th>
-                    <th>Lote</th>
-                    <th>C.Barras</th>
-                    <th>Frasco(mg)</th>
-                    <th>Restante</th>
-                </tr>
-            </thead>
-            <tbody>
-            ";
-            foreach($array_abertos as $array){
-                $html .= "
-                    <tr>
-                        <td>$array[clinica]</td>
-                        <td>$array[medicamento]</td>
-                        <td>$array[abertura]</td>
-                        <td>$array[usuario]</td>
-                        <td>$array[frasco]</td>
-                        <td>$array[restante]</td>
-                        <td>$array[lote]</td>
-                        <td>$array[codigo_barras]</td>
-                    </tr>
-                ";
+            if(!$array['negrito']){
+                $row[] = $array['lote'];
+                $row[] = $array['codigo_barras'];
+                $row[] = $array['data_vencimento'];
             }
-            $html .= "
-            </tbody>
-        </table>
-        ";
+            
+            $sheet->fromArray($row, null, 'A' . $linhaTotal);
+            
+            if($array['negrito']){
+                $sheet->getStyle('A' . $linhaTotal . ':Z' . $linhaTotal)->getFont()->setBold(true);
+            }
+            $linhaTotal++;
+        }
 
-        $arquivo = "Exportar Estoque - ".date('d.m.Y - H:i').'.xls';
-        $arquivo = str_replace(":",'h',$arquivo);
+        $linhaTotal += 2;
+        $sheet->setCellValue('A' . $linhaTotal, 'Estoques Abertos');
+        $linhaTotal++;
+        
+        $cabecalho_abertos = ['Clinica', 'Medicamento', 'Abertura', 'Usuário', 'Lote', 'C.Barras', 'Frasco(mg)', 'Restante'];
+        $sheet->fromArray($cabecalho_abertos, null, 'A' . $linhaTotal);
+        $linhaTotal++;
 
-        // Configurações header para forçar o download
-        header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-        header ("Last-Modified: " . gmdate("D,d M YH:i:s") . " GMT");
-        header ("Cache-Control: no-cache, must-revalidate");
-        header ("Pragma: no-cache");
-        header ("Content-type: application/x-msexcel");
-        header ("Content-Disposition: attachment; filename=\"{$arquivo}\"" );
-        header ("Content-Description: PHP Generated Data" );
-        // Envia o conteúdo do arquivo
-        echo $html;
-        exit();
+        foreach($array_abertos as $array){
+            $row = [
+                $array['clinica'],
+                $array['medicamento'],
+                $array['abertura'],
+                $array['usuario'],
+                $array['lote'],
+                $array['codigo_barras'],
+                $array['frasco'],
+                $array['restante']
+            ];
+            $sheet->fromArray($row, null, 'A' . $linhaTotal);
+            $linhaTotal++;
+        }
+
+        $arq = "Estoque_".date('YmdHis');
+        $path = public_path('rel_estoque/'.$arq.'.xlsx');
+        if(!is_dir(public_path('rel_estoque'))){
+            mkdir(public_path('rel_estoque'), 0755, true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($path);
+
+        return response()->download($path)->deleteFileAfterSend(false);
     }
 }

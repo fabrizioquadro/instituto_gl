@@ -66,9 +66,10 @@
         </div>
     </div>
 </div>
-<form target="_blank" id='formulario' action="{{ route('adm.relatorios.exportar') }}" method="post">
+<form target="_blank" id='formulario' action="{{ route('adm.relatorios.exportar_financeiro') }}" method="post">
     @csrf
     <input type="hidden" name="data" id="data">
+    <input type="hidden" name="dados" value="{{ json_encode($dados) }}">
 </form>
 <script>
 document.getElementById('exportar').addEventListener('click', ()=>{
