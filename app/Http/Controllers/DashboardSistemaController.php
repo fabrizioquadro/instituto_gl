@@ -107,7 +107,9 @@ class DashboardSistemaController extends Controller
             ->where('situacao', 'Agendado')
             ->get();
 
-            return view('sistema/dashboard/index', compact('procedimentos','paciente_id','paciente','dados_pesquisa','proc_atrasados'));
+            $vencimentos = Estoque::get_medicamentos_vencimento($user->clinica_id);
+
+            return view('sistema/dashboard/index', compact('procedimentos','paciente_id','paciente','dados_pesquisa','proc_atrasados','vencimentos'));
         }
     }
 

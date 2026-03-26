@@ -131,6 +131,13 @@ class PacienteSistemaController extends Controller
         }
     }
 
+    public function get_paciente_ajax(){
+        if(isset($_GET['paciente_id'])){
+            $paciente = Paciente::where('id', $_GET['paciente_id'])->first();
+            return json_encode($paciente);
+        }
+    }
+
     public function procedimentos($id){
         $paciente = Paciente::where('id', $id)->first();
         $procedimentos = Procedimento::where('paciente_id', $paciente->id)->orderBy('data_cad')->get();

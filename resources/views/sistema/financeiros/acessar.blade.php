@@ -88,7 +88,8 @@ $template = "layout.".session()->get('layout');
                         <th>Forma Pagamento</th>
                         <th>Parcelas</th>
                         <th>Valor</th>
-                        <th>Cadastro</th>
+                        <th>Dt/Hr Cadastro</th>
+                        <th>Usuário</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -102,6 +103,7 @@ $template = "layout.".session()->get('layout');
                             <td>{{ $forma->forma_pagamento }}</td>
                             <td>{{ $forma->parcelas }}</td>
                             <td>R$ {{ valorDbForm($forma->vl_pagamento) }}</td>
+                            <td>{{ $forma->created_at ? $forma->created_at->format('d/m/Y H:i:s') : '' }}</td>
                             <td>{{ $forma->cadastrante ? $forma->cadastrante->nome : '' }}</td>
                             <td>
                                 @if(session()->has('administrador'))
@@ -117,6 +119,7 @@ $template = "layout.".session()->get('layout');
                     <tr>
                         <td colspan="3"> <b>TOTAL</b> </td>
                         <td> <b>R$ {{ valorDbForm($financeiro->formas()->sum('vl_pagamento')) }}</b> </td>
+                        <td></td>
                         <td></td>
                         <td></td>
                     </tr>

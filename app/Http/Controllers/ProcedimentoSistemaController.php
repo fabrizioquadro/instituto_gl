@@ -78,7 +78,6 @@ class ProcedimentoSistemaController extends Controller
                 </button>
                 <div class='dropdown-menu' data-popper-placement='bottom-end'>
                     <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)."'><i class='mdi mdi-eye me-1'></i> Acessar</a>
-                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.excluir_grupo', $procedimento->codigo)."'><i class='mdi mdi-delete me-1'></i> Excluir Grupo</a>
                     <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_paciente', $procedimento->codigo)."'><i class='mdi mdi-cloud-print me-1'></i> Imprimir Prontuário</a>
                     <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_cadastro', $procedimento->codigo)."'><i class='mdi mdi-folder-open me-1'></i> Imprimir Cadastro</a>";
                     if($st_procedimento != "Finalizado" && $st_procedimento != "Cancelado"){
@@ -92,6 +91,7 @@ class ProcedimentoSistemaController extends Controller
             $dado[] = $botao;
             $dado[] = "<span style='display: none'>".strtotime($procedimento->data_cad)."</span>".dataDbForm($procedimento->data_cad);
             $dado[] = $procedimento->paciente->nm_paciente;
+            $dado[] = $procedimento->paciente->dt_nascimento ? dataDbForm($procedimento->paciente->dt_nascimento) : '';
             $dado[] = $procedimento->codigo;
             $dado[] = $procedimento->get_nr_semanas();
             $dado[] = $procedimento->medico;
@@ -127,7 +127,7 @@ class ProcedimentoSistemaController extends Controller
     public function adicionar($retorno = null){
         $api = api();
         $medicos = $api->get_medicos();
-        $pacientes = Paciente::all()->sortBy('nm_pacientes');
+        $pacientes = Paciente::all()->sortBy('nm_paciente');
         $medicamentos = Medicamento::all()->sortBy('nome');
         $combos = Combo::all()->sortBy('nome');
         //if($_GET && $_GET['controle'] == 'true'){
@@ -140,11 +140,13 @@ class ProcedimentoSistemaController extends Controller
     public function adicionar_grupo($codigo){
         $api = api();
         $medicos = $api->get_medicos();
-        $pacientes = Paciente::all()->sortBy('nm_pacientes');
+        $pacientes = Paciente::all()->sortBy('nm_paciente');
         $medicamentos = Medicamento::all()->sortBy('nome');
         $retorno = null;
         $combos = Combo::all()->sortBy('nome');
-        return view('sistema/procedimentos/adicionar', compact('pacientes','medicamentos','medicos','retorno','codigo','combos'));
+        $procedimento_origem = Procedimento::where('codigo', $codigo)->first();
+        $paciente = $procedimento_origem->paciente;
+        return view('sistema/procedimentos/adicionar', compact('pacientes','medicamentos','medicos','retorno','codigo','combos','paciente'));
     }
 
     public function insert(Request $request){
@@ -173,6 +175,10 @@ class ProcedimentoSistemaController extends Controller
             }
 
             $paciente = Paciente::where('id', $paciente_id)->first();
+            if($request->paciente_obs){
+                $paciente->obs = $request->paciente_obs;
+                $paciente->save();
+            }
 
             for($i=1 ; $i<= $request->contador_procedimentos ; $i++){
                 //vamos cadastrar o procedimento
@@ -1672,6 +1678,16 @@ class ProcedimentoSistemaController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('sistema.procedimentos')->with('mensagem_erro', $e->getMessage());
         }
+    }
 
+    public function update_flag(Request $request){
+        $procedimento = Procedimento::find($request->id);
+        if ($procedimento) {
+            $flag = $request->flag;
+            $value = ($request->value == 1 ? 1 : 0);
+            $procedimento->where('id', $request->id)->update([$flag => $value]);
+            return response()->json(['success' => true, 'id' => $request->id, 'flag' => $flag, 'value' => $value]);
+        }
+        return response()->json(['success' => false, 'message' => 'Procedimento não encontrado']);
     }
 }

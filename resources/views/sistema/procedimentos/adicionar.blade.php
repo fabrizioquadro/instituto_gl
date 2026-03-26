@@ -32,9 +32,21 @@ $template = "layout.".session()->get('layout');
                 <input type="hidden" name="codigo" value="{{ $codigo }}">
                 <div class="row mt-2 gy-4 align-items-end mb-3">
                     <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <input class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
+                         <div class="form-floating form-floating-outline">
+                            <input required class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
                             <label for="anexos">Anexos:</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="">Paciente:</label><br>
+                        <strong>{{ $paciente->nm_paciente }}</strong>
+                    </div>
+                </div>
+                <div class="row mt-2 gy-4 align-items-end mb-3">
+                    <div class="col-md-12">
+                        <div class="form-floating form-floating-outline">
+                            <textarea class="form-control h-px-75" name="paciente_obs" id="paciente_obs">{{ $paciente->obs }}</textarea>
+                            <label for="paciente_obs">Observação do Paciente:</label>
                         </div>
                     </div>
                 </div>
@@ -46,6 +58,14 @@ $template = "layout.".session()->get('layout');
                                 <option value="">Opções</option>
                             </select>
                             <label for="paciente_id">Paciente:</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-2 gy-4 align-items-end mb-3">
+                    <div class="col-md-12">
+                        <div class="form-floating form-floating-outline">
+                            <textarea class="form-control h-px-75" name="paciente_obs" id="paciente_obs"></textarea>
+                            <label for="paciente_obs">Observação do Paciente:</label>
                         </div>
                     </div>
                 </div>
@@ -213,6 +233,17 @@ window.addEventListener('load',()=>{
             },
         cache: true
         }
+    });
+
+    $('#paciente_id').on('select2:select', function (e) {
+        var data = e.params.data;
+        $.getJSON(
+            '{{ route("sistema.pacientes.get_paciente_ajax") }}',
+            {paciente_id : data.id},
+            function(json){
+                document.getElementById('paciente_obs').value = json.obs;
+            }
+        );
     });
 });
 

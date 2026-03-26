@@ -251,33 +251,67 @@ $template = "layout.".session()->get('layout');
 </div>
 <script>
 window.addEventListener('load',()=>{
-  $('#table-index').DataTable({
-    order: [[1, 'asc']],
-    "language": {
-			"sEmptyTable": "Nenhum registro encontrado",
-      "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",
-      "sInfoEmpty": "Mostrando 0 até 0 de 0 registros",
-      "sInfoFiltered": "(Filtrados de _MAX_ registros)",
-      "sInfoPostFix": "",
-      "sInfoThousands": ".",
-      "sLengthMenu": "_MENU_ resultados por página",
-      "sLoadingRecords": "Carregando...",
-      "sProcessing": "Processando...",
-      "sZeroRecords": "Nenhum registro encontrado",
-      "sSearch": "Pesquisar",
-      "oPaginate": {
-        "sNext": "Próximo",
-        "sPrevious": "Anterior",
-        "sFirst": "Primeiro",
-        "sLast": "Último"
-      },
-      "oAria": {
-        "sSortAscending": ": Ordenar colunas de forma ascendente",
-        "sSortDescending": ": Ordenar colunas de forma descendente"
-      }
-    }
-  });
-})
+    // Inicialização do DataTable
+    $('#table-index').DataTable({
+        order: [[1, 'asc']],
+        // ... configurações de linguagem ...
+        "language": {
+            "sEmptyTable": "Nenhum registro encontrado",
+            "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+            "sInfoEmpty": "Mostrando 0 até 0 de 0 registros",
+            "sInfoFiltered": "(Filtrados de _MAX_ registros)",
+            "sSearch": "Pesquisar",
+            "oPaginate": {
+                "sNext": "Próximo",
+                "sPrevious": "Anterior"
+            }
+        }
+    });
 
+    // Lógica para Alarme Sonoro de Novos Atendimentos
+    try {
+        const currentAwaitingIds = @json($procedimentos_aguardando->pluck('id'));
+        const storageKey = 'gl_last_awaiting_ids';
+        const previousAwaitingIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
+
+        // Verifica se há IDs na lista atual que não estavam na lista anterior
+        const hasNewAttendances = currentAwaitingIds.some(id => !previousAwaitingIds.includes(id));
+
+        if (hasNewAttendances) {
+            playAlertSound();
+        }
+
+        // Atualiza o cache para a próxima atualização
+        localStorage.setItem(storageKey, JSON.stringify(currentAwaitingIds));
+    } catch (e) {
+        console.error("Erro na lógica de alarme sonoro:", e);
+    }
+});
+
+function playAlertSound() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        
+        const context = new AudioContext();
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+
+        oscillator.type = 'sine'; // Som suave
+        oscillator.frequency.setValueAtTime(880, context.currentTime); // Nota lá (A5)
+        
+        gainNode.gain.setValueAtTime(0, context.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.5, context.currentTime + 0.1);
+        gainNode.gain.linearRampToValueAtTime(0, context.currentTime + 0.8);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.8);
+    } catch (error) {
+        console.warn('Não foi possível reproduzir o som de alerta (pode exigir interação prévia do usuário):', error);
+    }
+}
 </script>
 @endsection

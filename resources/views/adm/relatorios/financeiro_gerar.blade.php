@@ -21,17 +21,21 @@
                         <td>ID</td>
                         <td>Data</td>
                         <td>Paciente</td>
+                        <td>ID Feegow</td>
                         <td>CPF</td>
                         <td>Codigo</td>
+                        <td>Valor Tratamento</td>
+                        <td>Desconto Total</td>
                         <td>Pagamento</td>
-                        <td>Valor</td>
+                        <td>Valor Rateio</td>
                         <td>Tipo</td>
-                        <td>Desconto</td>
+                        <td>Desconto Rateio</td>
                         <td>Forma Pagamento</td>
                         <td>Parcelas</td>
                         <td>Clinica</td>
                         <td>Médico</td>
                         <td>Nr Procedimentos</td>
+                        <td>Obs</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -40,8 +44,11 @@
                             <td> <a href="{{ route('sistema.financeiros.acessar', $linha['financeiro_id']) }}" target="_blank"> {{ $linha['pagamento_id'] }} </a></td>
                             <td>{{ $linha['data'] }}</td>
                             <td>{{ $linha['paciente'] }}</td>
+                            <td>{{ $linha['id_feegow'] }}</td>
                             <td>{{ $linha['cpf'] }}</td>
                             <td> <a href="{{ route('sistema.procedimentos.acessar_grupo', $linha['codigo']) }}" target="_blank"> {{ "'$linha[codigo]'" }} </a></td>
+                            <td>{{ $linha['vl_tratamento'] }}</td>
+                            <td>{{ $linha['desconto_total'] }}</td>
                             <td>{{ $linha['vl_pagamento'] }}</td>
                             <td>{{ $linha['vl_rateio'] }}</td>
                             <td>{{ $linha['tp_pagamento'] }}</td>
@@ -51,6 +58,7 @@
                             <td>{{ $linha['clinica'] }}</td>
                             <td>{{ $linha['medico'] }}</td>
                             <td>{{ $linha['contador'] }}</td>
+                            <td>{{ $linha['obs'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>

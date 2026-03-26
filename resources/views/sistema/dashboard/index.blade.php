@@ -144,6 +144,71 @@ $template = "layout.".session()->get('layout');
         </div>
     </div>
 </div>
+
+<div class="card card-border-shadow-warning mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <h4 class="card-title">Medicações Próximas ao Vencimento</h4>
+        </div>
+        <hr>
+        <div class="table-responsive">
+            <table class="table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Medicação</th>
+                        <th>Lote</th>
+                        <th>C. Barras</th>
+                        <th>Vencimento</th>
+                        <th>Saldo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(count($vencimentos) == 0)
+                        <tr>
+                            <td colspan="6" class="text-center">Nenhuma medicação próxima do vencimento (90 dias)</td>
+                        </tr>
+                    @else
+                        @foreach($vencimentos as $vencimento)
+                            @php
+                                $dias = $vencimento['dias'];
+                                $cor = 'text-info';
+                                if($dias <= 30){
+                                    $cor = 'text-danger fw-bold';
+                                    $badge = 'bg-danger';
+                                } elseif($dias <= 60){
+                                    $cor = 'text-warning fw-bold';
+                                    $badge = 'bg-warning text-dark';
+                                } else {
+                                    $badge = 'bg-info';
+                                }
+                            @endphp
+                            <tr>
+                                <td class="{{ $cor }}">{{ $vencimento['medicamento'] }}</td>
+                                <td>{{ $vencimento['lote'] }}</td>
+                                <td>{{ $vencimento['codigo_barras'] }}</td>
+                                <td class="{{ $cor }}">{{ dataDbForm($vencimento['dt_vencimento']) }}</td>
+                                <td>{{ $vencimento['quantidade'] }}</td>
+                                <td>
+                                    <span class="badge {{ $badge }}">
+                                        @if($dias < 0)
+                                            Vencido há {{ abs($dias) }} dias
+                                        @elseif($dias == 0)
+                                            Vence HOJE!
+                                        @else
+                                            Vence em {{ $dias }} dias
+                                        @endif
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <div class="card card-border-shadow-danger mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between">

@@ -41,6 +41,8 @@ class Procedimento extends Model
         'dt_hr_atendimento',
         'dt_hr_finalizacao',
         'user_id_cadastro',
+        'flag_coordenacao',
+        'flag_qualidade',
     ];
 
     public static function index_pesq($requestData){

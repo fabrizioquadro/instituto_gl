@@ -24,5 +24,6 @@ class Paciente extends Model
         'telefone',
         'email',
         'integrado_kamino',
+        'obs',
     ];
 }

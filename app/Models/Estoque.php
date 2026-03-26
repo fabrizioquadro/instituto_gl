@@ -152,4 +152,51 @@ class Estoque extends Model
         return $entrada - $saida;
     }
 
+    public static function get_medicamentos_vencimento($clinica_id){
+        $itens = SELF::select('medicamento_id','lote','codigo_barras','dt_vencimento')
+        ->where('clinica_id', $clinica_id)
+        ->where('tipo','Entrada')
+        ->whereNotNull('dt_vencimento')
+        ->distinct()
+        ->get();
+
+        $array_vencimento = array();
+        foreach($itens as $item){
+            $entrada = SELF::where('clinica_id', $clinica_id)
+            ->where('codigo_barras',$item->codigo_barras)
+            ->where('tipo','Entrada')
+            ->sum('quantidade');
+
+            $saida = SELF::where('clinica_id', $clinica_id)
+            ->where('codigo_barras',$item->codigo_barras)
+            ->where('tipo','Saida')
+            ->sum('quantidade');
+
+            $estoque = $entrada - $saida;
+            if($estoque > 0){
+                $hoje = strtotime(date('Y-m-d'));
+                $vencimento = strtotime($item->dt_vencimento);
+                $diferenca = ($vencimento - $hoje) / (60 * 60 * 24);
+
+                if($diferenca <= 90){
+                    $array = [
+                        'medicamento' => $item->medicamento->nome,
+                        'lote' => $item->lote,
+                        'codigo_barras' => $item->codigo_barras,
+                        'dt_vencimento' => $item->dt_vencimento,
+                        'dias' => (int)$diferenca,
+                        'quantidade' => (float)$estoque
+                    ];
+                    $array_vencimento[] = $array;
+                }
+            }
+        }
+        
+        // Ordenar por data de vencimento (mais próximos primeiro)
+        usort($array_vencimento, function($a, $b) {
+            return strtotime($a['dt_vencimento']) <=> strtotime($b['dt_vencimento']);
+        });
+
+        return $array_vencimento;
+    }
 }

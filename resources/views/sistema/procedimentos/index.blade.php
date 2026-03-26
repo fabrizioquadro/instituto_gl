@@ -30,6 +30,7 @@ $template = "layout.".session()->get('layout');
                         <th></th>
                         <th>Dt Cad</th>
                         <th>Paciente</th>
+                        <th>Nascimento</th>
                         <th>Procedimento</th>
                         <th>Semanas</th>
                         <th>Médico</th>

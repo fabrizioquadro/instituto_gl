@@ -38,6 +38,43 @@ $template = "layout.".session()->get('layout');
                 </tbody>
             </table>
         </div>
+        <hr>
+        <h6 class="card-title">Anexos</h6>
+        @php
+            $procedimento_primeiro = $procedimentos->first();
+            $arquivos = collect();
+            if($procedimento_primeiro){
+                $procedimentos_arqs = App\Models\Procedimento::where('codigo', $procedimento_primeiro->codigo)->get();
+                $in = array();
+                foreach($procedimentos_arqs as $proc){
+                    $in[] = $proc->id;
+                }
+                $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get();
+            }
+        @endphp
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($arquivos as $arquivo)
+                        <tr>
+                            <td>{{ $arquivo->nm_anexo }}</td>
+                            <td>
+                                <a href="{{ asset('public/procedimentos/'.$arquivo->procedimento_id.'/anexos/'.$arquivo->anexo) }}" target="_blank" class="btn btn-sm btn-label-primary waves-effect">
+                                    <span class="tf-icons mdi mdi-download me-1"></span>
+                                    Visualizar
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
         <div class="row">
             <div class="col-md-3 form-group">
                 <label for="">Valor Total:</label><br>
@@ -76,6 +113,28 @@ $vl_aplicado = 0;
                 <div class="col-md-12 form-group">
                     <label for="">Observação</label><br>
                     <b>{{ $obs }}</b>
+                </div>
+            </div>
+            <div class="row align-items-center mt-2">
+                <div class="col-md-2 form-group">
+                    <label class="switch">
+                        <input type="checkbox" class="switch-input flag-checkbox" data-id="{{ $procedimento->id }}" data-flag="flag_coordenacao" {{ $procedimento->flag_coordenacao == 1 ? 'checked' : '' }}>
+                        <span class="switch-toggle-slider">
+                            <span class="switch-on"></span>
+                            <span class="switch-off"></span>
+                        </span>
+                        <span class="switch-label">Coordenação</span>
+                    </label>
+                </div>
+                <div class="col-md-2 form-group">
+                    <label class="switch">
+                        <input type="checkbox" class="switch-input flag-checkbox" data-id="{{ $procedimento->id }}" data-flag="flag_qualidade" {{ $procedimento->flag_qualidade == 1 ? 'checked' : '' }}>
+                        <span class="switch-toggle-slider">
+                            <span class="switch-on"></span>
+                            <span class="switch-off"></span>
+                        </span>
+                        <span class="switch-label">Qualidade</span>
+                    </label>
                 </div>
             </div>
             <div class="table-responsive mt-3">
@@ -149,4 +208,26 @@ $vl_aplicado = 0;
     </div>
 </div>
 
+<script>
+window.addEventListener('load', function() {
+    $('.flag-checkbox').on('change', function() {
+        var id = $(this).data('id');
+        var flag = $(this).data('flag');
+        var value = $(this).is(':checked') ? 1 : 0;
+
+        $.post('{{ route("sistema.procedimentos.update_flag") }}', {
+            _token: '{{ csrf_token() }}',
+            id: id,
+            flag: flag,
+            value: value
+        }, function(response) {
+            if (response.success) {
+                console.log('Flag atualizada com sucesso');
+            } else {
+                alert('Erro ao atualizar flag: ' + response.message);
+            }
+        });
+    });
+});
+</script>
 @endsection

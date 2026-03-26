@@ -66,18 +66,32 @@ $template = "layout.".session()->get('layout');
                 </button>
             </div>
             <div class="row mt-2 gy-4">
-                <div class="col-md-4 form-group">
+                <div class="col-md-3 form-group">
                     <label for="">Paciente:</label><br>
                     <strong>{{ $procedimento->paciente->nm_paciente }}</strong>
                 </div>
-                <div class="col-md-4 form-group">
+                <div class="col-md-3 form-group">
                     <label for="">Nascimento:</label><br>
                     <strong>{{ str_replace('-','/',$nascimento) }}</strong>
                 </div>
-                <div class="col-md-4 form-group">
+                <div class="col-md-3 form-group">
+                    <label for="">CPF:</label><br>
+                    <strong>{{ $procedimento->paciente->cpf }}</strong>
+                </div>
+                <div class="col-md-3 form-group">
                     <label for="">Médico:</label><br>
                     <strong>{{ $procedimento->medico }}</strong>
                 </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <label for="">Obs Paciente:</label><br>
+                    <div class="alert alert-warning py-2 mb-0">
+                        <strong>{{ $procedimento->paciente->obs ?? 'Sem observações' }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2 gy-4">
                 <div class="col-md-6 form-group">
                     <label for="">Data Aplicação:</label><br>
                     <strong>{{ dataDbForm($procedimento->data_aplicacao) }}</strong>
@@ -98,11 +112,21 @@ $template = "layout.".session()->get('layout');
             <div class="d-flex justify-content-between">
                 <h4 class="card-title">Anexos</h4>
             </div>
+            @php
+            $procedimentos_arqs = App\Models\Procedimento::where('codigo', $procedimento->codigo)->get();
+            $in = array();
+            foreach($procedimentos_arqs as $proc){
+                $in[] = $proc->id;
+            }
+
+            $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get();
+
+            @endphp
             <div class="row">
                 <div class="col-12 col-md-6 mb-4 mb-xl-0">
                     <div class="demo-inline-spacing mt-3">
                         <div class="list-group">
-                            @if($procedimento->anexos->count() == 0)
+                            @if($arquivos->count() == 0)
                                 <div class="list-group-item list-group-item-action d-flex align-items-center waves-effect" style='cursor: default !important'>
                                     <div class="w-100">
                                         <div class="d-flex justify-content-between">
@@ -113,12 +137,12 @@ $template = "layout.".session()->get('layout');
                                     </div>
                                 </div>
                             @endif
-                            @foreach($procedimento->anexos as $arquivo)
+                            @foreach($arquivos as $arquivo)
                                 <div class="list-group-item list-group-item-action d-flex align-items-center waves-effect" style='cursor: default !important'>
                                     <div class="w-100">
                                         <div class="d-flex justify-content-between">
                                             <div class="user-info">
-                                                <a target="_blank" href="/public/procedimentos/{{ $procedimento->id }}/anexos/{{ $arquivo->anexo }}">
+                                                <a target="_blank" href="/public/procedimentos/{{ $arquivo->procedimento_id }}/anexos/{{ $arquivo->anexo }}">
                                                     <h6 class="mt-2 mb-0">{{ $arquivo->nm_anexo }}</h6>
                                                 </a>
                                             </div>

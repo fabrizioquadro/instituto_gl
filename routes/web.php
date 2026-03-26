@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\DashboardAdmController;
 use App\Http\Controllers\ClinicaAdmController;
@@ -227,6 +228,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/procedimentos/imprimir_cadastro/{codigo}', [ProcedimentoSistemaController::class, 'imprimir_cadastro'])->name('sistema.procedimentos.imprimir_cadastro');
         Route::get('/procedimentos/get_aplicacao', [ProcedimentoSistemaController::class, 'get_aplicacao'])->name('sistema.procedimentos.get_aplicacao');
         Route::get('/procedimentos/update_aplicacao', [ProcedimentoSistemaController::class, 'update_aplicacao'])->name('sistema.procedimentos.update_aplicacao');
+        Route::post('/procedimentos/update_flag', [ProcedimentoSistemaController::class, 'update_flag'])->name('sistema.procedimentos.update_flag');
         Route::get('/procedimentos/delete_aplicacao', [ProcedimentoSistemaController::class, 'delete_aplicacao'])->name('sistema.procedimentos.delete_aplicacao');
         Route::get('/procedimentos/insert_aplicacao', [ProcedimentoSistemaController::class, 'insert_aplicacao'])->name('sistema.procedimentos.insert_aplicacao');
         Route::post('/procedimentos/insert_combo', [ProcedimentoSistemaController::class, 'insert_combo'])->name('sistema.procedimentos.insert_combo');
@@ -239,6 +241,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/pacientes', [PacienteSistemaController::class, 'index'])->name('sistema.pacientes');
         Route::get('/pacientes/atualizar_integracao', [PacienteSistemaController::class, 'atualizar_integracao'])->name('sistema.pacientes.atualizar_integracao');
         Route::get('/pacientes/listar_pacientes_ajax', [PacienteSistemaController::class, 'listar_pacientes_ajax'])->name('sistema.pacientes.listar_pacientes_ajax');
+        Route::get('/pacientes/get_paciente_ajax', [PacienteSistemaController::class, 'get_paciente_ajax'])->name('sistema.pacientes.get_paciente_ajax');
         Route::get('/pacientes/procedimentos/{id}', [PacienteSistemaController::class, 'procedimentos'])->name('sistema.pacientes.procedimentos');
 
         Route::get('/financeiros', [FinanceiroSistemaController::class, 'index'])->name('sistema.financeiros');

@@ -389,6 +389,14 @@ else{
                 <strong>{{ dataDbForm($procedimento->data_aplicacao) }}</strong>
             </div>
         </div>
+        <div class="row mt-2">
+            <div class="col-md-12 form-group">
+                <label for="">Obs Paciente:</label><br>
+                <div class="alert alert-info py-2 mb-0">
+                    <strong>{{ $procedimento->paciente->obs ?? 'Sem observações' }}</strong>
+                </div>
+            </div>
+        </div>
         @if($controle_aviso_coleta == 'ultimo')
         <div class="row mt-2 gy-4 align-items-end">
             <div class="col-md-3 form-group">

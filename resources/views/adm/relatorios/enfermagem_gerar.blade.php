@@ -17,6 +17,7 @@
                         <th>Finalização</th>
                         <th>Paciente</th>
                         <th>Enfermeira</th>
+                        <th>Clinica</th>
                         <th>Medicamento</th>
                         <th>Quantidade</th>
                         <th>Unitário</th>
@@ -27,6 +28,8 @@
                         <th>Obs</th>
                         <th>Procedimento</th>
                         <th>Pagamento</th>
+                        <th>Coord.</th>
+                        <th>Qual.</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -64,6 +67,7 @@
                                     <td>{{ $finalizacao }}</td>
                                     <td>{{ $procedimento->paciente->nm_paciente }}</td>
                                     <td>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</td>
+                                    <td>{{ $procedimento->clinica_aplicacao->nome }}</td>
                                     <td>{{ $aplicacao->medicamento->nome }}</td>
                                     <td>{{ $aplicacao->quantidade }}</td>
                                     <td>R$ {{ valorDbForm($aplicacao->valor) }}</td>
@@ -74,6 +78,8 @@
                                     <td>{{ $aplicacao->obs }}</td>
                                     <td>{{ $procedimento->codigo.'/'.$procedimento->nr_procedimento }}</td>
                                     <td>{{ $procedimento->st_pagamento }}</td>
+                                    <td>{{ $procedimento->flag_coordenacao == 1 ? 'Sim' : 'Não' }}</td>
+                                    <td>{{ $procedimento->flag_qualidade == 1 ? 'Sim' : 'Não' }}</td>
                                 </tr>
                             @endif
                         @endforeach

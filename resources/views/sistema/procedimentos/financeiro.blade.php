@@ -49,15 +49,17 @@ $template = "layout.".session()->get('layout');
                     <div class="row gy-4 mt-3">
                         <div class="col-md-6">
                             <div class="form-floating form-floating-outline">
-                                <select id="pagamento_modelo" class="select2 form-select">
+                                <select id="pagamento_modelo" name="pagamento_modelo" class="select2 form-select">
+                                    <option value="" selected disabled>Selecione 1 opção</option>
                                     <option value="Pagamento Parcial">Pagamento Parcial</option>
                                     <option value="Pagamento Total">Pagamento Total</option>
-
+                                    <option value="Pagamento Avista">Pagamento Avista</option>
                                 </select>
-                                <label for="clinica_id">Pagamento:</label>
+                                <label for="pagamento_modelo">Pagamento:</label>
                             </div>
                         </div>
                     </div>
+                    <div id="detalhes_pagamento" style="display: none;">
                     <div class="row gy-4 mt-3">
                         <div class="col-md-4" style="display:none">
                             <div class="form-floating form-floating-outline">
@@ -152,18 +154,10 @@ $template = "layout.".session()->get('layout');
                             </tbody>
                         </table>
                     </div>
-                    <div class="row mt-3">
-                        <div class="col-md-12 form-group">
-                            <button type="button" id='botao_salvar' class="btn btn-primary me-2">Salvar</button>
-                            {{--
-                            @if($retorno == "sistema_dashboard")
-                                <a href="{{ route('sistema.dashboard') }}" class="btn btn-danger">Não Registrar Pagamento</a>
-                            @elseif($retorno == "adm_dashboard")
-                                <a href="{{ route('adm.sistema.dashboard') }}" class="btn btn-danger">Não Registrar Pagamento</a>
-                            @else
-                                <a href="{{ route('sistema.procedimentos') }}" class="btn btn-danger">Não Registrar Pagamento</a>
-                            @endif
-                            --}}
+                        <div class="row mt-3">
+                            <div class="col-md-12 form-group">
+                                <button type="button" id='botao_salvar' class="btn btn-primary me-2">Salvar</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -173,72 +167,185 @@ $template = "layout.".session()->get('layout');
 </div>
 <script>
 document.getElementById('botao_salvar').addEventListener('click', ()=>{
-    //vamos analizar se o  desconto é maios que zero para obrigar a  informação da observação
-    vl_desconto = document.getElementById('vl_desconto').value;
+    let modelo = document.getElementById('pagamento_modelo').value;
+
+    if(modelo == ""){
+        alert('Por favor, selecione uma opção de pagamento.');
+        return;
+    }
+
+    // Validação de formas de pagamento
+    let formas_preenchidas = 0;
+    let selects_formas = document.querySelectorAll("select[name^='forma_pagamento_']");
+    let has_empty_forma = false;
+    
+    selects_formas.forEach(select => {
+        if(select.value == "") {
+            has_empty_forma = true;
+        } else {
+            formas_preenchidas++;
+        }
+    });
+
+    if(formas_preenchidas == 0) {
+        alert('Selecione pelo menos uma forma de pagamento.');
+        return;
+    }
+
+    if(has_empty_forma) {
+        alert('Existem formas de pagamento não selecionadas. Por favor, corrija ou remova a linha.');
+        return;
+    }
+
+    // Verificar parcelas se for Crédito
+    let has_empty_parcelas = false;
+    let inputs_parcelas = document.querySelectorAll("select[name^='parcelas_']");
+    inputs_parcelas.forEach(select => {
+        let id_num = select.id.split('_')[1];
+        let forma = document.getElementById('forma_pagamento_' + id_num).value;
+        if(forma == 'Crédito' && select.value == "") {
+            has_empty_parcelas = true;
+        }
+    });
+
+    if(has_empty_parcelas) {
+        alert('Por favor, informe a quantidade de parcelas para pagamentos no Crédito.');
+        return;
+    }
+
+    // Validação de observação se houver desconto
+    let vl_desconto = document.getElementById('vl_desconto').value;
     vl_desconto = vl_desconto.replaceAll('.','');
     vl_desconto = parseFloat(vl_desconto.replace(',','.'));
 
     if(vl_desconto > 0){
-        obs = document.getElementById('obs_pagamento').value;
-        if(obs == ""){
-            alert('É necessário preencher a observação do pagamento.');
+        let obs = document.getElementById('obs_pagamento').value;
+        if(obs == "" || obs == null){
+            alert('É necessário preencher a observação do pagamento quando há desconto.');
             return ;
         }
     }
 
-    //vamos somar todos os valores de pagamentos
-    //let somatorio = 0;
-    //let variavel = "input.valor";
+    // Somatório dos pagamentos
+    let somatorio_pagos = 0;
+    let inputs_pagos = document.querySelectorAll("input.valor");
+    let has_zero_payment = false;
 
-    //inputs = document.querySelectorAll(variavel);
-    //[].forEach.call(inputs, function(input) {
-    //    valor = input.value;
-    //    valor = valor.replaceAll('.','');
-    //    valor = parseFloat(valor.replace(',','.'));
-    //    somatorio = somatorio + valor;
-    //});
+    inputs_pagos.forEach(input => {
+        let valor = input.value;
+        valor = valor.replaceAll('.','');
+        valor = parseFloat(valor.replace(',','.'));
+        if(valor <= 0) has_zero_payment = true;
+        somatorio_pagos += valor;
+    });
 
-    //total = document.getElementById('vl_pagamento').value;
-    //total = total.replaceAll('.','');
-    //total = parseFloat(total.replace(',','.'));
+    if(has_zero_payment) {
+        alert('O valor de cada forma de pagamento deve ser maior que zero.');
+        return;
+    }
 
-    //console.log(total, somatorio);
+    let total_final = document.getElementById('vl_pagamento').value;
+    total_final = total_final.replaceAll('.','');
+    total_final = parseFloat(total_final.replace(',','.'));
 
-    //if(total == somatorio){
-        document.getElementById('formulario').submit();
-    //}
-    //else{
-    //    alert('Valor do pagamento e soma dos valores da forma de pagamento não confere.');
-    //}
+    // Arredondar para evitar problemas de precisão de ponto flutuante
+    somatorio_pagos = Math.round(somatorio_pagos * 100) / 100;
+    total_final = Math.round(total_final * 100) / 100;
+
+    if(modelo == 'Pagamento Avista' || modelo == 'Pagamento Total'){
+        if(Math.abs(total_final - somatorio_pagos) > 0.01){
+            alert('A soma das formas de pagamento deve ser igual ao valor total: R$ ' + document.getElementById('vl_pagamento').value);
+            return;
+        }
+    }
+    else if(modelo == 'Pagamento Parcial'){
+        if(somatorio_pagos > total_final){
+            alert('No Pagamento Parcial, a soma das formas de pagamento não pode ser superior ao valor total.');
+            return;
+        }
+        if(somatorio_pagos <= 0) {
+            alert('A soma das formas de pagamento deve ser maior que zero.');
+            return;
+        }
+    }
+
+    document.getElementById('formulario').submit();
 });
 
 document.getElementById('pagamento_modelo').addEventListener('change', (e)=>{
-    if(e.target.value == 'Pagamento Total'){
-        document.getElementById('porcentagem_desconto').value = 3;
-        document.getElementById('obs_pagamento').value = 'Pagamento Total';
-        document.getElementById('botao_add_forma_pagamento').setAttribute('disabled','disabled');
+    let secao = document.getElementById('detalhes_pagamento');
+    secao.style.display = 'block';
 
-        document.getElementById('vl_pagamento_1').removeAttribute('onkeypress');
-        document.getElementById('vl_pagamento_1').setAttribute('readonly','readonly');
-        document.getElementById('vl_pagamento_1').value = document.getElementById('vl_pagamento');
+    let pc_desconto = document.getElementById('porcentagem_desconto');
+    let obs = document.getElementById('obs_pagamento');
+    let btn_add = document.getElementById('botao_add_forma_pagamento');
+    let vl_pago_1 = document.getElementById('vl_pagamento_1');
+    let parcelas_1 = document.getElementById('parcelas_1');
+    let vl_adicional = document.getElementById('vl_adicional');
+    let vl_desconto_input = document.getElementById('vl_desconto');
+
+    if(e.target.value == 'Pagamento Avista'){
+        pc_desconto.value = 3;
+        pc_desconto.setAttribute('readonly', 'readonly');
+        
+        obs.value = 'Pagamento Avista';
+        obs.setAttribute('readonly', 'readonly');
+        
+        btn_add.setAttribute('disabled','disabled');
+        vl_adicional.value = '0,00';
+        
+        // Remove extra forms if any
+        let rows = document.querySelectorAll('#tabela_formas tr');
+        rows.forEach((row, index) => {
+            if (index > 0) row.remove();
+        });
+        document.getElementById('contador_formas').value = 1;
+
+        vl_pago_1.setAttribute('readonly','readonly');
+        
+        parcelas_1.value = 1;
+        parcelas_1.setAttribute('disabled', 'disabled');
 
         calcula_desconto();
+        vl_pago_1.value = document.getElementById('vl_pagamento').value;
     }
-    else{
-        document.getElementById('porcentagem_desconto').value = 0;
-        document.getElementById('vl_desconto').value = '0,00';
-        document.getElementById('botao_add_forma_pagamento').removeAttribute('disabled');
+    else if(e.target.value == 'Pagamento Total'){
+        pc_desconto.value = 0;
+        pc_desconto.removeAttribute('readonly');
+        
+        obs.value = '';
+        obs.removeAttribute('readonly');
+        
+        btn_add.removeAttribute('disabled');
+        vl_pago_1.removeAttribute('readonly');
+        vl_adicional.removeAttribute('readonly');
+        
+        // Reset discount value if switching from Avista
+        vl_desconto_input.value = '0,00';
+        calcula_total();
+    }
+    else if(e.target.value == 'Pagamento Parcial'){
+        pc_desconto.value = 0;
+        pc_desconto.removeAttribute('readonly');
+        
+        obs.value = '';
+        obs.removeAttribute('readonly');
+        
+        btn_add.removeAttribute('disabled');
+        vl_pago_1.removeAttribute('readonly');
+        vl_adicional.removeAttribute('readonly');
 
-        document.getElementById('vl_pagamento_1').setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
-        document.getElementById('vl_pagamento_1').removeAttribute('readonly');
+        // Reset discount value if switching from Avista
+        vl_desconto_input.value = '0,00';
+        calcula_total();
     }
 })
 
 function adicionar_forma(){
-    contador = parseInt(document.getElementById('contador_formas').value);
+    let contador = parseInt(document.getElementById('contador_formas').value);
     contador++;
     document.getElementById('contador_formas').value = contador;
-    tr = document.createElement('tr');
+    let tr = document.createElement('tr');
     tr.setAttribute('id', 'linha_forma_' + contador);
     tr.innerHTML = `
         <td>${contador}</td>
@@ -279,43 +386,54 @@ function adicionar_forma(){
 }
 
 function excluir_forma(linha){
-    if(confirm('Tem certeza que deseja excluir a linha de pagamentp?')){
+    if(confirm('Tem certeza que deseja excluir a linha de pagamento?')){
         document.getElementById('linha_forma_' + linha).remove();
     }
 }
 
 function controle_parcelas(linha){
-    if(document.getElementById('forma_pagamento_' + linha).value == "Crédito"){
-        document.getElementById('parcelas_' + linha).removeAttribute('disabled');
-        document.getElementById('parcelas_' + linha).setAttribute('required','required');
+    let modelo = document.getElementById('pagamento_modelo').value;
+    let forma_pagamento = document.getElementById('forma_pagamento_' + linha).value;
+    let select_parcelas = document.getElementById('parcelas_' + linha);
+
+    if(modelo == 'Pagamento Avista'){
+        select_parcelas.value = 1;
+        select_parcelas.setAttribute('disabled','disabled');
+        return;
+    }
+
+    if(forma_pagamento == "Crédito"){
+        select_parcelas.removeAttribute('disabled');
+        select_parcelas.setAttribute('required','required');
     }
     else{
-        document.getElementById('parcelas_' + linha).setAttribute('disabled','disabled');
-        document.getElementById('parcelas_' + linha).removeAttribute('required');
+        select_parcelas.value = 1;
+        select_parcelas.setAttribute('disabled','disabled');
+        select_parcelas.removeAttribute('required');
     }
 }
 
 function calcula_desconto(){
-    desconto = parseInt(document.getElementById('porcentagem_desconto').value);
+    let desconto = parseInt(document.getElementById('porcentagem_desconto').value);
     if(desconto > 0){
         let somatorio = 0;
         let variavel = "input.somatorio";
 
-        inputs = document.querySelectorAll(variavel);
+        let inputs = document.querySelectorAll(variavel);
         [].forEach.call(inputs, function(input) {
             if(input.checked){
-                valor = input.dataset.valor;
+                let valor = input.dataset.valor;
                 valor = parseFloat(valor);
                 somatorio = somatorio + valor;
             }
         });
 
-        vl_consulta = document.getElementById('vl_consulta').value;
+        let vl_consulta = document.getElementById('vl_consulta').value;
         vl_consulta = vl_consulta.replaceAll('.','');
         vl_consulta = parseFloat(vl_consulta.replace(',','.'));
         somatorio += vl_consulta;
 
-        vl_desconto = somatorio * desconto / 100;
+        let vl_desconto = somatorio * desconto / 100;
 
         vl_desconto = vl_desconto.toFixed(2);
         vl_desconto = vl_desconto.replace('.',",");
@@ -330,24 +448,24 @@ function calcula_total(){
     let somatorio = 0;
     let variavel = "input.somatorio";
 
-    inputs = document.querySelectorAll(variavel);
+    let inputs = document.querySelectorAll(variavel);
     [].forEach.call(inputs, function(input) {
         if(input.checked){
-            valor = input.dataset.valor;
+            let valor = input.dataset.valor;
             valor = parseFloat(valor);
             somatorio = somatorio + valor;
         }
     });
 
-    vl_consulta = document.getElementById('vl_consulta').value;
+    let vl_consulta = document.getElementById('vl_consulta').value;
     vl_consulta = vl_consulta.replaceAll('.','');
     vl_consulta = parseFloat(vl_consulta.replace(',','.'));
 
-    vl_desconto = document.getElementById('vl_desconto').value;
+    let vl_desconto = document.getElementById('vl_desconto').value;
     vl_desconto = vl_desconto.replaceAll('.','');
     vl_desconto = parseFloat(vl_desconto.replace(',','.'));
 
-    vl_adicional = document.getElementById('vl_adicional').value;
+    let vl_adicional = document.getElementById('vl_adicional').value;
     vl_adicional = vl_adicional.replaceAll('.','');
     vl_adicional = parseFloat(vl_adicional.replace(',','.'));
 
@@ -358,7 +476,7 @@ function calcula_total(){
 
     document.getElementById('vl_pagamento').value = somatorio
 
-    if(document.getElementById('pagamento_modelo').value == "Pagamento Total"){
+    if(document.getElementById('pagamento_modelo').value == "Pagamento Avista"){
         document.getElementById('vl_pagamento_1').value = document.getElementById('vl_pagamento').value;
     }
 }
