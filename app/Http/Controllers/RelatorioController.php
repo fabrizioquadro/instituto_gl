@@ -476,7 +476,7 @@ class RelatorioController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         $cabecalho = [
-            'Medicamento', 'Quantidada', 'Status', 'Cadastro', 'Aplicação', 'Valor', 'Pago', 'Procedimento', 'Paciente', 'Médico'
+            'Medicamento', 'Quantidada', 'Status', 'Cadastro', 'Aplicação', 'Valor', 'Pago', 'Data Pagamento', 'Procedimento', 'Paciente', 'Médico'
         ];
 
         $sheet->fromArray($cabecalho, null, 'A1');
@@ -493,6 +493,7 @@ class RelatorioController extends Controller
                         dataDbForm($procedimento->data_aplicacao),
                         'R$ '.valorDbForm($aplicacao->total),
                         $procedimento->st_pagamento,
+                        ($procedimento->st_pagamento == 'Sim' || $procedimento->st_pagamento == 'Parcial') ? dataDbForm($procedimento->data_pagamento) : '',
                         $procedimento->codigo."/".$procedimento->nr_procedimento,
                         $procedimento->paciente->nm_paciente,
                         $procedimento->medico

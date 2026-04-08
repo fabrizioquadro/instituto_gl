@@ -25,6 +25,7 @@
                         <th>Aplicação</th>
                         <th>Valor</th>
                         <th>Pago</th>
+                        <th>Data Pagamento</th>
                         <th>Procedimento</th>
                         <th>Paciente</th>
                         <th>Médico</th>
@@ -42,6 +43,7 @@
                                     <td>{{ dataDbForm($procedimento->data_aplicacao) }}</td>
                                     <td>R$ {{ valorDbForm($aplicacao->total) }}</td>
                                     <td>{{ $procedimento->st_pagamento }}</td>
+                                    <td>{{ ($procedimento->st_pagamento == 'Sim' || $procedimento->st_pagamento == 'Parcial') ? dataDbForm($procedimento->data_pagamento) : '' }}</td>
                                     <td> <a href="{{ route('sistema.procedimentos.acessar', $procedimento->id) }}" target="_blank"> {{ $procedimento->codigo."/".$procedimento->nr_procedimento }} </a></td>
                                     <td>{{ $procedimento->paciente->nm_paciente }}</td>
                                     <td>{{ $procedimento->medico }}</td>
