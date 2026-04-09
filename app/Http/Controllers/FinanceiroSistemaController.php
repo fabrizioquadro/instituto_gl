@@ -191,16 +191,16 @@ class FinanceiroSistemaController extends Controller
         }
 
         //vamos recalcular tudo
-        $valor_pago = FinanceiroFormasPagamento::where('financeiro_id', $financeiro->id)->sum('vl_pagamento');
+        $formas = FinanceiroFormasPagamento::where('financeiro_id', $financeiro->id)->orderBy('created_at')->get();
+        $valor_pago_formas = $formas->sum('vl_pagamento');
 
-        if($valor_pago > 0){
-            if($valor_pago >= $financeiro->vl_consulta){
+        if($valor_pago_formas > 0){
+            if($valor_pago_formas >= $financeiro->vl_consulta){
                 $vl_consulta_pagamento = $financeiro->vl_consulta;
             }
-            elseif($valor_pago < $financeiro->vl_consulta){
-                $vl_consulta_pagamento = $valor_pago;
+            elseif($valor_pago_formas < $financeiro->vl_consulta){
+                $vl_consulta_pagamento = $valor_pago_formas;
             }
-            $valor_pago -= $vl_consulta_pagamento;
             $financeiro->vl_consulta_pagamento = $vl_consulta_pagamento;
             $financeiro->save();
         }
@@ -209,32 +209,77 @@ class FinanceiroSistemaController extends Controller
             $financeiro->save();
         }
 
-        //para aplicar o desconto nos procedimentos
-        $valor_pago += $financeiro->vl_desconto - $financeiro->vl_adicional;
+        // Para distribuir os pagamentos nos procedimentos com as datas corretas
+        // 1. Dinheiro disponível (excedente das formas + desconto - adicional)
+        $valor_disponivel = $valor_pago_formas - $financeiro->vl_consulta_pagamento + $financeiro->vl_desconto - $financeiro->vl_adicional;
+
+        // 2. Mapear chunks de dinheiro com datas
+        $chunks = [];
+        // Desconto entra como dinheiro na data do financeiro
+        if($financeiro->vl_desconto > 0){
+            $chunks[] = ['valor' => $financeiro->vl_desconto, 'data' => $financeiro->dt_pagamento];
+        }
+
+        // Pegar apenas a parte das formas que sobra após pagar a consulta
+        $ja_usado_consulta = $financeiro->vl_consulta_pagamento;
+        foreach($formas as $forma){
+            $valor_forma = $forma->vl_pagamento;
+            if($ja_usado_consulta > 0){
+                if($valor_forma > $ja_usado_consulta){
+                    $valor_forma -= $ja_usado_consulta;
+                    $ja_usado_consulta = 0;
+                } else {
+                    $ja_usado_consulta -= $valor_forma;
+                    $valor_forma = 0;
+                }
+            }
+            
+            if($valor_forma > 0){
+                $chunks[] = ['valor' => $valor_forma, 'data' => date('Y-m-d', strtotime($forma->created_at))];
+            }
+        }
+
+        // Subtrair adicionais do montante (reduz o dinheiro disponível, começando pelos chunks mais antigos ou apenas subtraindo do total)
+        // Por simplicidade, subtraímos do total disponível. No loop abaixo, ele vai parar de pagar quando atingir esse limite.
 
         $procedimentos = Procedimento::where('codigo', $codigo)
         ->where('st_pagamento','<>','Pendente')
         ->orderBy('nr_procedimento')->get();
 
+        $progresso_pagamento = 0;
         foreach($procedimentos as $procedimento){
-            if($valor_pago > 0){
-                if($valor_pago >= $procedimento->valor){
+            if($valor_disponivel > 0){
+                $data_pagamento = $financeiro->dt_pagamento;
+                if($valor_disponivel >= $procedimento->valor){
                     $st_pagamento = 'Sim';
                     $vl_pago = $procedimento->valor;
                 }
-                elseif($valor_pago < $procedimento->valor){
+                else {
                     $st_pagamento = 'Parcial';
-                    $vl_pago = $valor_pago;
+                    $vl_pago = $valor_disponivel;
                 }
 
-                $valor_pago -= $vl_pago;
+                // Encontrar a data do último chunk que contribuiu para este pagamento
+                $temp_acumulado = 0;
+                $limite_atual = $progresso_pagamento + $vl_pago;
+                foreach($chunks as $chunk){
+                    $temp_acumulado += $chunk['valor'];
+                    if($temp_acumulado >= $limite_atual){
+                        $data_pagamento = $chunk['data'];
+                        break;
+                    }
+                    $data_pagamento = $chunk['data']; // Vai pegando a última data se o acumulado ainda não chegou no limite
+                }
+
+                $valor_disponivel -= $vl_pago;
+                $progresso_pagamento += $vl_pago;
 
                 $procedimento->st_pagamento = $st_pagamento;
                 $procedimento->tipo_pagamento = $financeiro->tipo_pagamento;
                 $procedimento->forma_pagamento = $financeiro->forma_pagamento;
                 $procedimento->parcelas = $financeiro->parcelas;
                 $procedimento->obs_pagamento = $financeiro->obs_pagamento;
-                $procedimento->data_pagamento = $financeiro->dt_pagamento;
+                $procedimento->data_pagamento = $data_pagamento;
                 $procedimento->vl_pago = $vl_pago;
                 $procedimento->save();
             }

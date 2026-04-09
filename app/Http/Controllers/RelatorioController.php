@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Transferencia;
 use App\Models\Financeiro;
 use App\Models\Medicamento;
+use App\Http\Controllers\FinanceiroSistemaController;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -198,6 +199,16 @@ class RelatorioController extends Controller
     public function vendas_gerar(Request $request){
         $dados = $request->except('_token');
         $procedimentos = Procedimento::gerar_relatorio_vendas($dados);
+
+        // Forçar atualização das datas e status financeiros para corrigir dados antigos
+        $codigos = $procedimentos->pluck('codigo')->unique();
+        foreach($codigos as $codigo){
+            FinanceiroSistemaController::atualiza_financeiro_procedimento($codigo);
+        }
+
+        // Recarregar para garantir que pegamos as datas corrigidas
+        $procedimentos = Procedimento::gerar_relatorio_vendas($dados);
+
         $medicamento_id = $dados['medicamento_id'];
         $situacao = $dados['situacao'];
 
@@ -469,6 +480,16 @@ class RelatorioController extends Controller
     public function exportar_vendas(Request $request){
         $dados_req = json_decode($request->dados, true);
         $procedimentos = Procedimento::gerar_relatorio_vendas($dados_req);
+
+        // Forçar atualização das datas e status financeiros para corrigir dados antigos na exportação
+        $codigos = $procedimentos->pluck('codigo')->unique();
+        foreach($codigos as $codigo){
+            FinanceiroSistemaController::atualiza_financeiro_procedimento($codigo);
+        }
+
+        // Recarregar para garantir que exportamos as datas corrigidas
+        $procedimentos = Procedimento::gerar_relatorio_vendas($dados_req);
+
         $medicamento_id = isset($dados_req['medicamento_id']) ? $dados_req['medicamento_id'] : null;
         $situacao = isset($dados_req['situacao']) ? $dados_req['situacao'] : null;
 
