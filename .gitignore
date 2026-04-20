@@ -17,3 +17,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/public/procedimentos
+/public/rel_enfermagem
+/public/zips
