@@ -43,7 +43,12 @@ class Procedimento extends Model
         'user_id_cadastro',
         'flag_coordenacao',
         'flag_qualidade',
+        'agendamento',
+        'st_retirada',
+        'obs_retirada',
+        'tipo_atendimento',
     ];
+
 
     public static function index_pesq($requestData){
 
@@ -99,12 +104,20 @@ class Procedimento extends Model
         return $this->hasMany(Aplicacao::class);
     }
 
+    public function logs(){
+        return $this->hasMany(ProcedimentoLog::class);
+    }
+
     public function clinica(){
         return $this->belongsTo(Clinica::class);
     }
 
     public function cadastrante(){
         return $this->belongsTo(User::class,'user_id_cadastro','id');
+    }
+
+    public function aplicadora(){
+        return $this->belongsTo(User::class,'user_id_aplicacao','id');
     }
 
     public function clinica_aplicacao(){

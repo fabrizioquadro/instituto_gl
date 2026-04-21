@@ -115,12 +115,16 @@ class FinanceiroSistemaController extends Controller
                 $var = "vl_pagamento_".$i;
                 $vl_pagamento = $request->$var;
 
+                $var = "id_pagamento_".$i;
+                $id_pagamento = $request->$var;
+
                 if($forma_pagamento && $vl_pagamento){
                     $dados = [
                         'financeiro_id' => $financeiro->id,
                         'forma_pagamento' => $forma_pagamento,
                         'parcelas' => $parcelas,
                         'vl_pagamento' => valorFormDb($vl_pagamento),
+                        'id_pagamento' => $id_pagamento,
                     ];
 
                     FinanceiroFormasPagamento::create($dados);
@@ -322,12 +326,16 @@ class FinanceiroSistemaController extends Controller
                 $var = "vl_pagamento_".$i;
                 $vl_pagamento = $request->$var;
 
+                $var = "id_pagamento_".$i;
+                $id_pagamento = $request->$var;
+
                 if($forma_pagamento && $vl_pagamento){
                     $dados = [
                         'financeiro_id' => $financeiro->id,
                         'forma_pagamento' => $forma_pagamento,
                         'parcelas' => $parcelas,
                         'vl_pagamento' => valorFormDb($vl_pagamento),
+                        'id_pagamento' => $id_pagamento,
                         'user_id_cadastro' => $user->id,
                     ];
 

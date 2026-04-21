@@ -87,6 +87,7 @@ $template = "layout.".session()->get('layout');
                         <th></th>
                         <th>Forma Pagamento</th>
                         <th>Parcelas</th>
+                        <th>ID Pagamento</th>
                         <th>Valor</th>
                         <th>Dt/Hr Cadastro</th>
                         <th>Usuário</th>
@@ -102,6 +103,7 @@ $template = "layout.".session()->get('layout');
                             <td>{{ ++$i }}</td>
                             <td>{{ $forma->forma_pagamento }}</td>
                             <td>{{ $forma->parcelas }}</td>
+                            <td>{{ $forma->id_pagamento }}</td>
                             <td>R$ {{ valorDbForm($forma->vl_pagamento) }}</td>
                             <td>{{ $forma->created_at ? $forma->created_at->format('d/m/Y H:i:s') : '' }}</td>
                             <td>{{ $forma->cadastrante ? $forma->cadastrante->nome : '' }}</td>

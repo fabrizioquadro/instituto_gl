@@ -31,13 +31,30 @@ $template = "layout.".session()->get('layout');
             @if(isset($codigo))
                 <input type="hidden" name="codigo" value="{{ $codigo }}">
                 <div class="row mt-2 gy-4 align-items-end mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                          <div class="form-floating form-floating-outline">
                             <input required class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
                             <label for="anexos">Anexos:</label>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                         <div class="form-floating form-floating-outline">
+                            <input required class="form-control" type="text" id="agendamento" name="agendamento"/>
+                            <label for="agendamento">Agendamento:</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating form-floating-outline">
+                            <select required id="tipo_atendimento" name='tipo_atendimento' class="form-select">
+                                <option value="">Opções</option>
+                                <option value="Consulta Tratamento">Consulta Tratamento</option>
+                                <option value="Retorno">Retorno</option>
+                                <option value="Consulta Nova">Consulta Nova</option>
+                            </select>
+                            <label for="tipo_atendimento">Tipo de Atendimento:</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
                         <label for="">Paciente:</label><br>
                         <strong>{{ $paciente->nm_paciente }}</strong>
                     </div>
@@ -71,7 +88,7 @@ $template = "layout.".session()->get('layout');
                 </div>
                 <hr>
                 <div class="row mt-2 gy-4 align-items-end">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-floating form-floating-outline">
                             <select required id="medico" name='medico' class="select2 form-select">
                                 <option value="">Opções</option>
@@ -82,7 +99,24 @@ $template = "layout.".session()->get('layout');
                             <label for="medico">Médico:</label>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <div class="form-floating form-floating-outline">
+                            <input required class="form-control" type="text" id="agendamento" name="agendamento"/>
+                            <label for="agendamento">Agendamento:</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating form-floating-outline">
+                            <select required id="tipo_atendimento" name='tipo_atendimento' class="form-select">
+                                <option value="">Opções</option>
+                                <option value="Consulta Tratamento">Consulta Tratamento</option>
+                                <option value="Retorno">Retorno</option>
+                                <option value="Consulta Nova">Consulta Nova</option>
+                            </select>
+                            <label for="tipo_atendimento">Tipo de Atendimento:</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
                         <div class="form-floating form-floating-outline">
                             <input class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
                             <label for="anexos">Anexos:</label>

@@ -29,8 +29,10 @@
                         <td>Pagamento</td>
                         <td>Valor Rateio</td>
                         <td>Tipo</td>
+                        <td>Atendimento</td>
                         <td>Desconto Rateio</td>
                         <td>Forma Pagamento</td>
+                        <td>ID Pagamento</td>
                         <td>Parcelas</td>
                         <td>Clinica</td>
                         <td>Médico</td>
@@ -52,8 +54,10 @@
                             <td>{{ $linha['vl_pagamento'] }}</td>
                             <td>{{ $linha['vl_rateio'] }}</td>
                             <td>{{ $linha['tp_pagamento'] }}</td>
+                            <td>{{ $linha['tipo_atendimento'] }}</td>
                             <td>{{ $linha['desconto'] }}</td>
                             <td>{{ $linha['forma_pagamento'] }}</td>
+                            <td>{{ $linha['id_pagamento'] }}</td>
                             <td>{{ $linha['parcelas'] }}</td>
                             <td>{{ $linha['clinica'] }}</td>
                             <td>{{ $linha['medico'] }}</td>

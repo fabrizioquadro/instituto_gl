@@ -88,6 +88,9 @@ else{
             <div class="col-md-2 form-group">
                 <label for="">Data Aplicação:</label><br>
                 <strong>{{ dataDbForm($procedimento->data_aplicacao) }}</strong>
+                <button type="button" class="btn btn-sm btn-icon waves-effect" data-bs-toggle="modal" data-bs-target="#modal_editar_datas">
+                    <i class="mdi mdi-pencil-outline"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -193,12 +196,11 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                                             <a target="_blank" href="/public/procedimentos/{{ $arquivo->procedimento_id }}/anexos/{{ $arquivo->anexo }}">
                                                 <h6 class="mt-2 mb-0">{{ $arquivo->nm_anexo }}</h6>
                                             </a>
+                                            <small class="text-muted">Enviado em: {{ $arquivo->created_at->format('d/m/Y H:i') }}</small>
                                         </div>
-                                        {{--
                                         <div class="add-btn">
-                                            <button onclick="excluir_arquivo({{ $arquivo->id }})" class="btn btn-danger btn-sm waves-effect waves-light">Excluir</button>
+                                            <a href="{{ route('sistema.procedimentos.delete_anexo', $arquivo->id) }}" onclick="return confirm('Tem certeza que deseja excluir este anexo?')" class="btn btn-danger btn-sm waves-effect waves-light">Excluir</a>
                                         </div>
-                                        --}}
                                     </div>
                                 </div>
                             </div>
@@ -510,6 +512,32 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                 <span>* Esta ação será executada diretamente no banco de dados, não podendo ser desfeita.</span>
                 <div class="mb-3 mt-3">
                     <button class="btn btn-primary" type="submit">Salvar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modal_editar_datas" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ route('sistema.procedimentos.update_data') }}" class="modal-content" method="post">
+            @csrf
+            <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
+            <div class="modal-header">
+                <h5 class="modal-title" id="backDropModalTitle">Editar Data do Procedimento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mt-2 gy-4">
+                    <div class="col-md-12">
+                        <div class="form-floating form-floating-outline">
+                            <input required class="form-control" type="date" id="data_aplicacao_edit" name="data_aplicacao" value="{{ $procedimento->data_aplicacao }}"/>
+                            <label for="data_aplicacao_edit">Nova Data de Aplicação:</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 mt-3">
+                    <button class="btn btn-primary" type="submit">Salvar Alteração</button>
                 </div>
             </div>
         </form>

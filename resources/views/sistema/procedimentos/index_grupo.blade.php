@@ -36,10 +36,12 @@ $template = "layout.".session()->get('layout');
                         <th>Procedimento</th>
                         <th>Semana</th>
                         <th>Médico</th>
+                        <th>Atendimento</th>
                         <th>Dt Aplicação</th>
                         <th>Valor</th>
                         <th>Situação Pg</th>
                         <th>Situação</th>
+                        <th>Última Edição</th>
                     </tr>
                 </thead>
                 @foreach($procedimentos as $procedimento)
@@ -97,10 +99,23 @@ $template = "layout.".session()->get('layout');
                         <td>{{ $procedimento->codigo }}</td>
                         <td>{{ $procedimento->nr_procedimento }}</td>
                         <td>{{ $procedimento->medico }}</td>
+                        <td>{{ $procedimento->tipo_atendimento }}</td>
                         <td>{{ dataDbForm($procedimento->data_aplicacao) }}</td>
                         <td>{{ valorDbForm($procedimento->valor) }}</td>
                         <td>{!! $st_pagamento !!}</td>
                         <td>{!! $situacao !!}</td>
+                        <td>
+                            @php
+                                $ultima_edicao = $procedimento->logs->where('acao', 'Atualização')->last();
+                            @endphp
+                            @if($ultima_edicao)
+                                <span class="text-primary" style="font-weight: bold" title="Última alteração: {{ $ultima_edicao->created_at->format('d/m/Y H:i') }}">
+                                    <i class="mdi mdi-pencil-circle"></i> {{ $ultima_edicao->created_at->format('d/m/Y') }}
+                                </span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
                     </tr>
                 @endforeach
             </table>

@@ -24,4 +24,8 @@ class BaixaAberto extends Model
     public function user(){
         return $this->belongsTo(User::class);
     }
+
+    public function clinica(){
+        return $this->belongsTo(Clinica::class);
+    }
 }

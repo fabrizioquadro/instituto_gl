@@ -117,6 +117,8 @@ Route::middleware(['verificaAdministrador'])->group(function () {
         Route::get('/relatorios/vendas', [RelatorioController::class, 'vendas'])->name('adm.relatorios.vendas');
         Route::get('/relatorios/enfermagem', [RelatorioController::class, 'enfermagem'])->name('adm.relatorios.enfermagem');
         Route::get('/relatorios/transferencias', [RelatorioController::class, 'transferencias'])->name('adm.relatorios.transferencias');
+        Route::get('/relatorios/baixas', [RelatorioController::class, 'baixas'])->name('adm.relatorios.baixas');
+        Route::post('/relatorios/baixas/gerar', [RelatorioController::class, 'baixas_gerar'])->name('adm.relatorios.baixas.gerar');
         Route::post('/relatorios/financeiro/gerar', [RelatorioController::class, 'financeiro_gerar'])->name('adm.relatorios.financeiro.gerar');
         Route::post('/relatorios/vendas/gerar', [RelatorioController::class, 'vendas_gerar'])->name('adm.relatorios.vendas.gerar');
         Route::post('/relatorios/enfermagem/gerar', [RelatorioController::class, 'enfermagem_gerar'])->name('adm.relatorios.enfermagem.gerar');
@@ -228,14 +230,17 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/procedimentos/delete_grupo', [ProcedimentoSistemaController::class, 'delete_grupo'])->name('sistema.procedimentos.delete_grupo');
         Route::post('/procedimentos/imprimir', [ProcedimentoSistemaController::class, 'imprimir'])->name('sistema.procedimentos.imprimir');
         Route::get('/procedimentos/imprimir_paciente/{codigo}', [ProcedimentoSistemaController::class, 'imprimir_paciente'])->name('sistema.procedimentos.imprimir_paciente');
+        Route::post('/procedimentos/update_google_flag', [ProcedimentoSistemaController::class, 'update_google_flag'])->name('sistema.procedimentos.update_google_flag');
         Route::get('/procedimentos/imprimir_cadastro/{codigo}', [ProcedimentoSistemaController::class, 'imprimir_cadastro'])->name('sistema.procedimentos.imprimir_cadastro');
         Route::get('/procedimentos/get_aplicacao', [ProcedimentoSistemaController::class, 'get_aplicacao'])->name('sistema.procedimentos.get_aplicacao');
         Route::get('/procedimentos/update_aplicacao', [ProcedimentoSistemaController::class, 'update_aplicacao'])->name('sistema.procedimentos.update_aplicacao');
         Route::post('/procedimentos/update_flag', [ProcedimentoSistemaController::class, 'update_flag'])->name('sistema.procedimentos.update_flag');
+        Route::post('/procedimentos/update_data', [ProcedimentoSistemaController::class, 'update_data'])->name('sistema.procedimentos.update_data');
         Route::get('/procedimentos/delete_aplicacao', [ProcedimentoSistemaController::class, 'delete_aplicacao'])->name('sistema.procedimentos.delete_aplicacao');
         Route::get('/procedimentos/insert_aplicacao', [ProcedimentoSistemaController::class, 'insert_aplicacao'])->name('sistema.procedimentos.insert_aplicacao');
         Route::post('/procedimentos/insert_combo', [ProcedimentoSistemaController::class, 'insert_combo'])->name('sistema.procedimentos.insert_combo');
         Route::post('/procedimentos/adicionar_anexos', [ProcedimentoSistemaController::class, 'adicionar_anexos'])->name('sistema.procedimentos.adicionar_anexos');
+        Route::get('/procedimentos/delete_anexo/{id}', [ProcedimentoSistemaController::class, 'delete_anexo'])->name('sistema.procedimentos.delete_anexo');
         Route::get('/procedimentos/cancelar/{codigo}', [ProcedimentoSistemaController::class, 'cancelar'])->name('sistema.procedimentos.cancelar');
         Route::post('/procedimentos/cancelar_set/', [ProcedimentoSistemaController::class, 'cancelar_set'])->name('sistema.procedimentos.cancelar_set');
         Route::get('/procedimentos/editar_medico/{codigo}', [ProcedimentoSistemaController::class, 'editar_medico'])->name('sistema.procedimentos.editar_medico');

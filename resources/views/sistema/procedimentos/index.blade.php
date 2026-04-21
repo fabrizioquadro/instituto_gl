@@ -34,6 +34,7 @@ $template = "layout.".session()->get('layout');
                         <th>Procedimento</th>
                         <th>Semanas</th>
                         <th>Médico</th>
+                        <th>Atendimento</th>
                         <th>Dt 1ª Aplicação</th>
                         <th>Situação Pg</th>
                         <th>Situação</th>

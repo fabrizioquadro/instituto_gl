@@ -30,6 +30,14 @@ class Estoque extends Model
         return $this->belongsTo(Medicamento::class);
     }
 
+    public function clinica(){
+        return $this->belongsTo(Clinica::class);
+    }
+
+    public function baixa(){
+        return $this->belongsTo(Baixa::class);
+    }
+
     public static function get_lotes_medicamento($medicamento_id, $clinica_id){
         $lotes = SELF::select('lote')
         ->where('clinica_id', $clinica_id)

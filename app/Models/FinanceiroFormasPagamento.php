@@ -14,6 +14,7 @@ class FinanceiroFormasPagamento extends Model
         'forma_pagamento',
         'parcelas',
         'vl_pagamento',
+        'id_pagamento',
         'user_id_cadastro',
     ];
 

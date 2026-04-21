@@ -167,6 +167,11 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                                         <div data-i18n="Transferências">Transferências</div>
                                     </a>
                                 </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.baixas') }}" class="menu-link">
+                                        <div data-i18n="Baixas">Baixas</div>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li class="menu-header fw-medium mt-4">

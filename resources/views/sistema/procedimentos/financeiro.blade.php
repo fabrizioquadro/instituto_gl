@@ -113,6 +113,7 @@ $template = "layout.".session()->get('layout');
                                     <th>Numero</th>
                                     <th>Forma Pagamento</th>
                                     <th>Parcelas</th>
+                                    <th>ID Pagamento / DOC</th>
                                     <th>Valor</th>
                                     <th></th>
                                 </tr>
@@ -144,6 +145,7 @@ $template = "layout.".session()->get('layout');
                                             <option value="10">10</option>
                                         </select>
                                     </td>
+                                    <td><input class="form-control" type="text" id="id_pagamento_1" name="id_pagamento_1"/></td>
                                     <td><input required class="form-control valor" type="text" id="vl_pagamento_1" name="vl_pagamento_1" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/></td>
                                     <td>
                                         <button title="Excluir Forma de Pagamento" onclick="excluir_forma(1)" type="button" class="btn btn-icon btn-outline-danger waves-effect">
@@ -373,6 +375,7 @@ function adicionar_forma(){
                 <option value="10">10</option>
             </select>
         </td>
+        <td><input class="form-control" type="text" id="id_pagamento_${contador}" name="id_pagamento_${contador}"/></td>
         <td><input required class="form-control valor" type="text" id="vl_pagamento_${contador}" name="vl_pagamento_${contador}" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/></td>
         <td>
             <button title="Excluir Forma de Pagamento" onclick="excluir_forma(${contador})" type="button" class="btn btn-icon btn-outline-danger waves-effect">

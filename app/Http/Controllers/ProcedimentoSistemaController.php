@@ -95,6 +95,7 @@ class ProcedimentoSistemaController extends Controller
             $dado[] = $procedimento->codigo;
             $dado[] = $procedimento->get_nr_semanas();
             $dado[] = $procedimento->medico;
+            $dado[] = $procedimento->tipo_atendimento;
             $dado[] = dataDbForm($procedimento->data_aplicacao);
             $dado[] = $st_pagamento;
             $dado[] = $situacao;
@@ -118,7 +119,7 @@ class ProcedimentoSistemaController extends Controller
         if(!$user){
             $user = session()->get('user');
         }
-        $procedimentos = Procedimento::where('codigo',$codigo)->get();;
+        $procedimentos = Procedimento::where('codigo',$codigo)->with('logs')->get();
         //$pacientes = Paciente::all()->sortBy('nm_paciente');
 
         return view('sistema/procedimentos/index_grupo', compact('procedimentos','codigo'));
@@ -209,6 +210,8 @@ class ProcedimentoSistemaController extends Controller
                             'obs' => $obs,
                             'semana_sem_aplicacao' => 'Sim',
                             'user_id_cadastro' => $user->id,
+                            'agendamento' => $request->agendamento,
+                            'tipo_atendimento' => $request->tipo_atendimento,
                         ];
                         $procedimento = Procedimento::create($dados);
 
@@ -250,6 +253,8 @@ class ProcedimentoSistemaController extends Controller
                             'obs' => $obs,
                             'semana_sem_aplicacao' => 'Não',
                             'user_id_cadastro' => $user->id,
+                            'agendamento' => $request->agendamento,
+                            'tipo_atendimento' => $request->tipo_atendimento,
                         ];
                         $procedimento = Procedimento::create($dados);
 
@@ -395,7 +400,9 @@ class ProcedimentoSistemaController extends Controller
         $fin_proc = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first();
         $financeiro = Financeiro::where('id', $fin_proc->financeiro_id)->first();
 
-        return view('sistema/procedimentos/acessar', compact('procedimento','retorno','procedimentos_vinculados','controle_aviso_coleta','financeiro'));
+        $logs = $procedimento->logs()->orderBy('created_at','desc')->get();
+
+        return view('sistema/procedimentos/acessar', compact('procedimento','retorno','procedimentos_vinculados','controle_aviso_coleta','financeiro','logs'));
     }
 
     public function setar_pagamento(Request $request){
@@ -431,12 +438,16 @@ class ProcedimentoSistemaController extends Controller
                 $var = "vl_pagamento_".$i;
                 $vl_pagamento = $request->$var;
 
+                $var = "id_pagamento_".$i;
+                $id_pagamento = $request->$var;
+
                 if($forma_pagamento && $vl_pagamento){
                     $dados = [
                         'financeiro_id' => $financeiro->id,
                         'forma_pagamento' => $forma_pagamento,
                         'parcelas' => $parcelas,
                         'vl_pagamento' => valorFormDb($vl_pagamento),
+                        'id_pagamento' => $id_pagamento,
                         'user_id_cadastro' => $user->id,
                     ];
 
@@ -531,12 +542,16 @@ class ProcedimentoSistemaController extends Controller
                 $var = "vl_pagamento_".$i;
                 $vl_pagamento = $request->$var;
 
+                $var = "id_pagamento_".$i;
+                $id_pagamento = $request->$var;
+
                 if($forma_pagamento && $vl_pagamento){
                     $dados = [
                         'financeiro_id' => $financeiro->id,
                         'forma_pagamento' => $forma_pagamento,
                         'parcelas' => $parcelas,
                         'vl_pagamento' => valorFormDb($vl_pagamento),
+                        'id_pagamento' => $id_pagamento,
                         'user_id_cadastro' => $user->id,
                     ];
 
@@ -562,6 +577,8 @@ class ProcedimentoSistemaController extends Controller
             $procedimento->data_aplicacao = date('Y-m-d');
             $procedimento->st_biopedancia = $request->exames == "Biopedância" || $request->exames == "Biopedância e Coleta" ? 'Sim' : 'Não';
             $procedimento->st_coleta = $request->exames == "Coleta" || $request->exames == "Biopedância e Coleta" ? 'Sim' : 'Não';
+            $procedimento->st_retirada = $request->retirada == "Sim" ? 'Sim' : 'Não';
+            $procedimento->obs_retirada = $request->obs_retirada ? $request->obs_retirada : '';
             $procedimento->consulta_tratamento_agendada = $request->consulta_tratamento_agendada ? $request->consulta_tratamento_agendada : '';
             $procedimento->dt_hr_chegada = date('Y-m-d H:i:s');
             $procedimento->save();
@@ -606,6 +623,8 @@ class ProcedimentoSistemaController extends Controller
             $procedimento->data_aplicacao = date('Y-m-d');
             $procedimento->st_biopedancia = $request->exames == "Biopedância" || $request->exames == "Biopedância e Coleta" ? 'Sim' : 'Não';
             $procedimento->st_coleta = $request->exames == "Coleta" || $request->exames == "Biopedância e Coleta" ? 'Sim' : 'Não';
+            $procedimento->st_retirada = $request->retirada == "Sim" ? 'Sim' : 'Não';
+            $procedimento->obs_retirada = $request->obs_retirada ? $request->obs_retirada : '';
             $procedimento->autorizador_sem_pagamento = $autorizador->id;
             $procedimento->consulta_tratamento_agendada = $request->consulta_tratamento_agendada ? $request->consulta_tratamento_agendada : '';
             $procedimento->save();
@@ -710,12 +729,16 @@ class ProcedimentoSistemaController extends Controller
                     $var = "vl_pagamento_".$i;
                     $vl_pagamento = $request->$var;
 
+                    $var = "id_pagamento_".$i;
+                    $id_pagamento = $request->$var;
+
                     if($forma_pagamento && $vl_pagamento){
                         $dados = [
                             'financeiro_id' => $financeiro->id,
                             'forma_pagamento' => $forma_pagamento,
                             'parcelas' => $parcelas,
                             'vl_pagamento' => valorFormDb($vl_pagamento),
+                            'id_pagamento' => $id_pagamento,
                             'user_id_cadastro' => $user->id,
                         ];
 
@@ -994,6 +1017,73 @@ class ProcedimentoSistemaController extends Controller
                         </tr>
                     ';
                 }
+
+                if($procedimento->st_biopedancia == 'Sim'){
+                    $sit = in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? 'Aplicada' : 'Aberta';
+                    $dt = in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? dataDbForm(explode(' ',$procedimento->dt_hr_finalizacao)[0]) : '-';
+                    $enf_obj = in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? $procedimento->aplicadora : null;
+                    $enf = $enf_obj ? $enf_obj->nome : '-';
+                    if(!$enfermeira && $enf_obj) $enfermeira = $enf_obj;
+
+                    $tabela .= '
+                        <tr>
+                            <td style="border: 1px solid black;">Biopedância</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">1</td>
+                            <td style="border: 1px solid black;">'.$sit.'</td>
+                            <td style="border: 1px solid black;">'.$dt.'</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">'.$enf.'</td>
+                        </tr>
+                    ';
+                }
+
+                if($procedimento->st_coleta == 'Sim'){
+                    $sit = in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? 'Aplicada' : 'Aberta';
+                    $dt = in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? dataDbForm(explode(' ',$procedimento->dt_hr_finalizacao)[0]) : '-';
+                    $enf_obj = in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? $procedimento->aplicadora : null;
+                    $enf = $enf_obj ? $enf_obj->nome : '-';
+                    if(!$enfermeira && $enf_obj) $enfermeira = $enf_obj;
+
+                    $tabela .= '
+                        <tr>
+                            <td style="border: 1px solid black;">Coleta ('.$procedimento->tp_coleta.')</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">1</td>
+                            <td style="border: 1px solid black;">'.$sit.'</td>
+                            <td style="border: 1px solid black;">'.$dt.'</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">'.$enf.'</td>
+                        </tr>
+                    ';
+                }
+
+                if($procedimento->st_retirada == 'Sim'){
+                    $sit = in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? 'Aplicada' : 'Aberta';
+                    $dt = in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? dataDbForm(explode(' ',$procedimento->dt_hr_finalizacao)[0]) : '-';
+                    $enf_obj = in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? $procedimento->aplicadora : null;
+                    $enf = $enf_obj ? $enf_obj->nome : '-';
+                    if(!$enfermeira && $enf_obj) $enfermeira = $enf_obj;
+
+                    $tabela .= '
+                        <tr>
+                            <td style="border: 1px solid black;">Retirada</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">1</td>
+                            <td style="border: 1px solid black;">'.$sit.'</td>
+                            <td style="border: 1px solid black;">'.$dt.'</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">-</td>
+                            <td style="border: 1px solid black;">'.$enf.'</td>
+                        </tr>
+                    ';
+                }
+
                 $tabela .= '
                 </tbody>
             </table>
@@ -1059,7 +1149,12 @@ class ProcedimentoSistemaController extends Controller
         $link_zip = null;
 
         if(count($array_arquivos) > 0){
-            $path_zip = public_path("zips/relatorios/$codigo.zip");
+            $diretorio_zip = public_path("zips/relatorios");
+            if (!File::isDirectory($diretorio_zip)) {
+                File::makeDirectory($diretorio_zip, 0755, true, true);
+            }
+
+            $path_zip = $diretorio_zip."/$codigo.zip";
             $link_zip = "/public/zips/relatorios/$codigo.zip";
             $zip = new \ZipArchive();
 
@@ -1312,9 +1407,14 @@ class ProcedimentoSistemaController extends Controller
         ->sum('vl_pago');
 
         //vamos pegar a obs do Pagamento
-        $financeiro_id = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first()->financeiro_id;
-        $financeiro = Financeiro::where('id', $financeiro_id)->first();
-        $obs_pagamento = $financeiro->obs_pagamento;
+        $obs_pagamento = '';
+        $financeiro_proc = FinanceiroProcedimento::whereIn('procedimento_id', $array_in)->first();
+        if($financeiro_proc){
+            $financeiro = Financeiro::where('id', $financeiro_proc->financeiro_id)->first();
+            if($financeiro){
+                $obs_pagamento = $financeiro->obs_pagamento;
+            }
+        }
 
         return view('/sistema/procedimentos/imprimir_cadastro', compact('procedimentos','array_resumo',
         'vl_procedimentos','vl_pagamentos','obs_pagamento','cadastrante'));
@@ -1569,6 +1669,21 @@ class ProcedimentoSistemaController extends Controller
 
     }
 
+    public function delete_anexo($id){
+        try {
+            $anexo = ProcedimentoAnexo::where('id', $id)->first();
+            $path = public_path('procedimentos/'.$anexo->procedimento_id."/anexos/".$anexo->anexo);
+            if(file_exists($path)){
+                unlink($path);
+            }
+            $anexo->delete();
+
+            return redirect()->back()->with('mensagem','Anexo Excluído!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('mensagem_erro',$e->getMessage());
+        }
+    }
+
     public function adicionar_medicamentos($codigo){
         $procedimentos = Procedimento::where('codigo', $codigo)
         ->where('semana_sem_aplicacao','Não')
@@ -1689,5 +1804,27 @@ class ProcedimentoSistemaController extends Controller
             return response()->json(['success' => true, 'id' => $request->id, 'flag' => $flag, 'value' => $value]);
         }
         return response()->json(['success' => false, 'message' => 'Procedimento não encontrado']);
+    }
+
+    public function update_data(Request $request){
+        try {
+            $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
+            $procedimento->data_aplicacao = $request->data_aplicacao;
+            $procedimento->save();
+
+            return redirect()->back()->with('mensagem', 'Data do Procedimento Atualizada');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('mensagem_erro', $e->getMessage());
+        }
+    }
+
+    public function update_google_flag(Request $request){
+        $paciente = Paciente::find($request->id);
+        if ($paciente) {
+            $paciente->st_google = 1;
+            $paciente->save();
+            return response()->json(['success' => true]);
+        }
+        return response()->json(['success' => false, 'message' => 'Paciente não encontrado']);
     }
 }

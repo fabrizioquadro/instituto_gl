@@ -56,6 +56,7 @@ $template = "layout.".session()->get('layout');
                             <th>Numero</th>
                             <th>Forma Pagamento</th>
                             <th>Parcelas</th>
+                            <th>ID Pagamento / DOC</th>
                             <th>Valor</th>
                             <th></th>
                         </tr>
@@ -87,6 +88,7 @@ $template = "layout.".session()->get('layout');
                                     <option value="10">10</option>
                                 </select>
                             </td>
+                            <td><input class="form-control" type="text" id="id_pagamento_1" name="id_pagamento_1"/></td>
                             <td><input required class="form-control valor" type="text" id="vl_pagamento_1" name="vl_pagamento_1" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/></td>
                             <td>
                                 <button title="Excluir Forma de Pagamento" onclick="excluir_forma(1)" type="button" class="btn btn-icon btn-outline-danger waves-effect">
@@ -150,6 +152,7 @@ $template = "layout.".session()->get('layout');
                         <option value="10">10</option>
                     </select>
                 </td>
+                <td><input class="form-control" type="text" id="id_pagamento_${contador}" name="id_pagamento_${contador}"/></td>
                 <td><input required class="form-control valor" type="text" id="vl_pagamento_${contador}" name="vl_pagamento_${contador}" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="0,00"/></td>
                 <td>
                     <button title="Excluir Forma de Pagamento" onclick="excluir_forma(${contador})" type="button" class="btn btn-icon btn-outline-danger waves-effect">
@@ -225,19 +228,34 @@ $template = "layout.".session()->get('layout');
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="form-floating form-floating-outline">
-                        <select id="exames" name='exames' class="select2 form-select">
+                        <select id="exames_sem_pgt" name='exames' class="select2 form-select" onchange="document.getElementById('campo_obs_retirada_sem_pgt').style.display = this.value.includes('Retirada') ? 'block' : 'none'">
                             <option value="">Opções</option>
                             <option value="Biopedância">Biopedância</option>
                             <option value="Coleta">Coleta</option>
+                            <option value="Retirada">Retirada</option>
                             <option value="Biopedância e Coleta">Biopedância e Coleta</option>
+                            <option value="Biopedância e Retirada">Biopedância e Retirada</option>
+                            <option value="Coleta e Retirada">Coleta e Retirada</option>
+                            <option value="Biopedância, Coleta e Retirada">Biopedância, Coleta e Retirada</option>
                         </select>
                         <label for="exames">Exames Adicionais:</label>
                     </div>
                 </div>
-                <div class="col-md-6 form-group">
-                    <button type="submit" class="btn btn-primary me-2">Enviar Para Fila de Aplicação</button>
+                <div class="col-md-6" id="campo_obs_retirada_sem_pgt" style="display:none">
+                    <div class="form-floating form-floating-outline mb-3">
+                        <input type="text" class="form-control" name="obs_retirada" placeholder="Observação da Retirada"/>
+                        <input type="hidden" name="retirada" id="retirada_val_sem_pgt" value="Não">
+                        <label for="obs_retirada">Obs Retirada:</label>
+                    </div>
                 </div>
+                <script>
+                    document.getElementById('exames_sem_pgt').addEventListener('change', function() {
+                        document.getElementById('retirada_val_sem_pgt').value = this.value.includes('Retirada') ? 'Sim' : 'Não';
+                    });
+                </script>
+                    <div class="col-md-6 form-group">
+                        <button type="submit" class="btn btn-primary me-2">Enviar Para Fila de Aplicação</button>
+                    </div>
             </div>
         </form>
     </div>
@@ -292,17 +310,31 @@ $template = "layout.".session()->get('layout');
                 @endif
                 <div class="row mt-2 gy-4 align-items-end">
                     <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <select id="exames" name='exames' class="select2 form-select">
+                            <select id="exames_normal" name='exames' class="select2 form-select" onchange="document.getElementById('campo_obs_retirada_normal').style.display = this.value.includes('Retirada') ? 'block' : 'none'">
                                 <option value="">Opções</option>
                                 <option value="Biopedância">Biopedância</option>
                                 <option value="Coleta">Coleta</option>
+                                <option value="Retirada">Retirada</option>
                                 <option value="Biopedância e Coleta">Biopedância e Coleta</option>
+                                <option value="Biopedância e Retirada">Biopedância e Retirada</option>
+                                <option value="Coleta e Retirada">Coleta e Retirada</option>
+                                <option value="Biopedância, Coleta e Retirada">Biopedância, Coleta e Retirada</option>
                             </select>
                             <label for="exames">Exames Adicionais:</label>
                         </div>
                     </div>
-                    <div class="col-md-6 form-group">
+                    <div class="col-md-6" id="campo_obs_retirada_normal" style="display:none">
+                        <div class="form-floating form-floating-outline mb-3">
+                            <input type="text" class="form-control" name="obs_retirada" placeholder="Observação da Retirada"/>
+                            <input type="hidden" name="retirada" id="retirada_val_normal" value="Não">
+                            <label for="obs_retirada">Obs Retirada:</label>
+                        </div>
+                    </div>
+                    <script>
+                        document.getElementById('exames_normal').addEventListener('change', function() {
+                            document.getElementById('retirada_val_normal').value = this.value.includes('Retirada') ? 'Sim' : 'Não';
+                        });
+                    </script>
                         <button type="submit" class="btn btn-primary me-2">Enviar Para Fila de Aplicação</button>
                     </div>
                 </div>
@@ -377,18 +409,30 @@ else{
                 <strong>{{ $procedimento->paciente->nm_paciente }}</strong>
             </div>
             <div class="col-md-3 form-group">
-                <label for="">Médico:</label><br>
+                <label>Médico:</label><br>
                 <strong>{{ $procedimento->medico }}</strong>
             </div>
-            <div class="col-md-2 form-group">
+            <div class="col-md-3 form-group">
+                <label>Atendimento:</label><br>
+                <strong>{{ $procedimento->tipo_atendimento }}</strong>
+            </div>
+            <div class="col-md-3 form-group">
                 <label for="">Situação:</label><br>
                 {!! $situacao !!}
             </div>
-            <div class="col-md-2 form-group">
+            <div class="col-md-3 form-group">
                 <label for="">Data Aplicação:</label><br>
                 <strong>{{ dataDbForm($procedimento->data_aplicacao) }}</strong>
             </div>
         </div>
+        @if($procedimento->agendamento)
+        <div class="row mt-2">
+            <div class="col-md-12 form-group">
+                <label for="">Agendamento:</label><br>
+                <strong>{{ $procedimento->agendamento }}</strong>
+            </div>
+        </div>
+        @endif
         <div class="row mt-2">
             <div class="col-md-12 form-group">
                 <label for="">Obs Paciente:</label><br>
@@ -516,12 +560,11 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                                             <a target="_blank" href="/public/procedimentos/{{ $arquivo->procedimento_id }}/anexos/{{ $arquivo->anexo }}">
                                                 <h6 class="mt-2 mb-0">{{ $arquivo->nm_anexo }}</h6>
                                             </a>
+                                            <small class="text-muted">Enviado em: {{ $arquivo->created_at->format('d/m/Y H:i') }}</small>
                                         </div>
-                                        {{--
                                         <div class="add-btn">
-                                            <button onclick="excluir_arquivo({{ $arquivo->id }})" class="btn btn-danger btn-sm waves-effect waves-light">Excluir</button>
+                                            <a href="{{ route('sistema.procedimentos.delete_anexo', $arquivo->id) }}" onclick="return confirm('Tem certeza que deseja excluir este anexo?')" class="btn btn-danger btn-sm waves-effect waves-light">Excluir</a>
                                         </div>
-                                        --}}
                                     </div>
                                 </div>
                             </div>
@@ -611,6 +654,51 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                             <th>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</th>
                         </tr>
                     @endforeach
+                    @if($procedimento->st_biopedancia == 'Sim')
+                        <tr>
+                            <th>Biopedância</th>
+                            <th>-</th>
+                            <th>1</th>
+                            <th>-</th>
+                            <th>-</th>
+                            <th>{{ $procedimento->obs_biopedancia }}</th>
+                            <th>{{ in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? 'Aplicada' : 'Aberta' }}</th>
+                            <th>{{ in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? dataDbForm(explode(' ',$procedimento->dt_hr_finalizacao)[0]) : '-' }}</th>
+                            <th>-</th>
+                            <th>-</th>
+                            <th>{{ in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? ($procedimento->aplicadora ? $procedimento->aplicadora->nome : '') : '-' }}</th>
+                        </tr>
+                    @endif
+                    @if($procedimento->st_coleta == 'Sim')
+                        <tr>
+                            <th>Coleta ({{ $procedimento->tp_coleta }})</th>
+                            <th>-</th>
+                            <th>1</th>
+                            <th>-</th>
+                            <th>-</th>
+                            <th>{{ $procedimento->obs_coleta }}</th>
+                            <th>{{ in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? 'Aplicada' : 'Aberta' }}</th>
+                            <th>{{ in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? dataDbForm(explode(' ',$procedimento->dt_hr_finalizacao)[0]) : '-' }}</th>
+                            <th>-</th>
+                            <th>-</th>
+                            <th>{{ in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? ($procedimento->aplicadora ? $procedimento->aplicadora->nome : '') : '-' }}</th>
+                        </tr>
+                    @endif
+                    @if($procedimento->st_retirada == 'Sim')
+                        <tr>
+                            <th>Retirada</th>
+                            <th>-</th>
+                            <th>1</th>
+                            <th>-</th>
+                            <th>-</th>
+                            <th>{{ $procedimento->obs_retirada }}</th>
+                            <th>{{ in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? 'Aplicada' : 'Aberta' }}</th>
+                            <th>{{ in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? dataDbForm(explode(' ',$procedimento->dt_hr_finalizacao)[0]) : '-' }}</th>
+                            <th>-</th>
+                            <th>-</th>
+                            <th>{{ in_array($procedimento->situacao,['Aplicado','Aplicação Parcial']) ? ($procedimento->aplicadora ? $procedimento->aplicadora->nome : '') : '-' }}</th>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -685,6 +773,50 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                         <td>{!! $situacao !!}</td>
                     </tr>
                 @endforeach
+            </table>
+        </div>
+    </div>
+</div>
+<div class="card card-border-shadow-info mb-4">
+    <div class="card-body">
+        <h4 class="card-title">Histórico de Alterações</h4>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Autor</th>
+                        <th>Ação</th>
+                        <th>Descrição</th>
+                        <th>Detalhes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($logs as $log)
+                        <tr>
+                            <td>{{ $log->created_at->format('d/m/Y H:i:s') }}</td>
+                            <td>{{ $log->autor() }}</td>
+                            <td><span class="badge bg-label-info">{{ $log->acao }}</span></td>
+                            <td>{{ $log->descricao }}</td>
+                            <td>
+                                @if($log->dados_novos)
+                                    <button type="button" class="btn btn-xs btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#log_{{ $log->id }}">Ver Detalhes</button>
+                                    <div class="collapse" id="log_{{ $log->id }}">
+                                        <div class="mt-2 text-wrap" style="font-size: 0.8rem; min-width: 200px">
+                                            @foreach($log->dados_novos as $campo => $novo)
+                                                @php $antigo = $log->dados_antigos[$campo] ?? 'N/A'; @endphp
+                                                <strong>{{ ucfirst(str_replace('_', ' ', $campo)) }}:</strong> 
+                                                <span class="text-danger"><del>{{ is_array($antigo) ? json_encode($antigo) : $antigo }}</del></span> 
+                                                <i class="mdi mdi-arrow-right"></i> 
+                                                <span class="text-success">{{ is_array($novo) ? json_encode($novo) : $novo }}</span><br>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
             </table>
         </div>
     </div>

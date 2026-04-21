@@ -69,6 +69,15 @@ $template = "layout.".session()->get('layout');
                 <div class="col-md-3 form-group">
                     <label for="">Paciente:</label><br>
                     <strong>{{ $procedimento->paciente->nm_paciente }}</strong>
+                    <span id="google_badge_container">
+                        @if($procedimento->paciente->st_google == 1)
+                            <span class="badge bg-label-success ms-1" title="Paciente já avaliou no Google"><i class="mdi mdi-google"></i> Avaliado</span>
+                        @else
+                            <button type="button" onclick="marcarAvaliadoGoogle({{ $procedimento->paciente->id }})" class="btn btn-xs btn-outline-info ms-1" id="btn_google" title="Clique para marcar que o paciente avaliou no Google">
+                                <i class="mdi mdi-google"></i> Marcar Avaliado
+                            </button>
+                        @endif
+                    </span>
                 </div>
                 <div class="col-md-3 form-group">
                     <label for="">Nascimento:</label><br>
@@ -83,6 +92,14 @@ $template = "layout.".session()->get('layout');
                     <strong>{{ $procedimento->medico }}</strong>
                 </div>
             </div>
+            @if($procedimento->agendamento)
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <label for="">Agendamento:</label><br>
+                    <strong>{{ $procedimento->agendamento }}</strong>
+                </div>
+            </div>
+            @endif
             <div class="row mt-2">
                 <div class="col-md-12">
                     <label for="">Obs Paciente:</label><br>
@@ -366,83 +383,82 @@ $template = "layout.".session()->get('layout');
 </script>
 
 @if($procedimentos_vinculados->count() > 0)
-    <div class="card card-border-shadow-primary mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between">
-                <h4 class="card-title">Procedimentos Vinculados</h4>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead class="table-light">
-                        <tr>
-                            <th></th>
-                            <th>Dt Cad</th>
-                            <th>Paciente</th>
-                            <th>Procedimento</th>
-                            <th>Numero</th>
-                            <th>Médico</th>
-                            <th>Dt Aplicação</th>
-                            <th>Valor</th>
-                            <th>Situação Pg</th>
-                            <th>Situação</th>
-                        </tr>
-                    </thead>
-                    @foreach($procedimentos_vinculados as $proc)
-                        @php
-                        if($proc->situacao == "Agendado"){
-                            $situacao = '<span class="badge rounded-pill bg-label-warning">Agendado</span>';
-                        }
-                        elseif($proc->situacao == "Fila de Aplicação"){
-                            $situacao = '<span class="badge rounded-pill bg-label-primary">Fila de Aplicação</span>';
-                        }
-                        elseif($proc->situacao == "Atendimento"){
-                            $situacao = '<span class="badge rounded-pill bg-label-danger">Atendimento</span>';
-                        }
-                        elseif($proc->situacao == "Aplicado"){
-                            $situacao = '<span class="badge rounded-pill bg-label-success">Aplicado</span>';
-                        }
-                        elseif($proc->situacao == "Pendente"){
-                            $situacao = '<span class="badge rounded-pill bg-label-warning">Pendente</span>';
-                        }
-                        else{
-                            $situacao = '<span class="badge rounded-pill bg-label-secondary">'.$proc->situacao.'</span>';
-                        }
-
-                        if($proc->st_pagamento == 'Sim'){
-                            $st_pagamento = "<span class='badge bg-success'>$proc->st_pagamento</span>";
-                        }
-                        else{
-                            $st_pagamento = "<span class='badge bg-danger'>$proc->st_pagamento</span>";
-                        }
-
-                        @endphp
-                        <tr>
-                            <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow show" data-bs-toggle="dropdown" aria-expanded="true">
-                                        <i class="mdi mdi-dots-vertical"></i>
-                                    </button>
-                                    <div class="dropdown-menu" data-popper-placement="bottom-end">
-                                        <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.acessar', $proc->id) }}"><i class="mdi mdi-eye me-1"></i> Acessar</a>
-                                    </div>
-                                </div>
-                            </td>
-                            <td> <span style='display: none'>{{ strtotime($proc->data_cad) }}</span> {{ dataDbForm($proc->data_cad) }}</td>
-                            <td>{{ $proc->paciente->nm_paciente }}</td>
-                            <td>{{ $proc->codigo }}</td>
-                            <td>{{ $proc->nr_procedimento }}</td>
-                            <td>{{ $proc->medico }}</td>
-                            <td>{{ dataDbForm($proc->data_aplicacao) }}</td>
-                            <td>{{ valorDbForm($proc->valor) }}</td>
-                            <td>{!! $st_pagamento !!}</td>
-                            <td>{!! $situacao !!}</td>
-                        </tr>
-                    @endforeach
-                </table>
+    <hr>
+    <h4 class="mb-3 px-3">Procedimentos Vinculados</h4>
+    @foreach($procedimentos_vinculados as $proc)
+        <div class="card card-border-shadow-primary mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">Semana {{ $proc->nr_procedimento }}</h5>
+                    <div>
+                        <span class="me-3"><strong>Data Aplicação:</strong> {{ dataDbForm($proc->data_aplicacao) }}</span>
+                        @if($proc->situacao == "Agendado")
+                            <span class="badge rounded-pill bg-label-warning">Agendado</span>
+                        @elseif($proc->situacao == "Fila de Aplicação")
+                            <span class="badge rounded-pill bg-label-primary">Fila de Aplicação</span>
+                        @elseif($proc->situacao == "Atendimento")
+                            <span class="badge rounded-pill bg-label-danger">Atendimento</span>
+                        @elseif($proc->situacao == "Aplicado")
+                            <span class="badge rounded-pill bg-label-success">Aplicado</span>
+                        @elseif($proc->situacao == "Pendente" || $proc->situacao == "Aplicação Parcial")
+                            <span class="badge rounded-pill bg-label-warning">Pendente</span>
+                        @else
+                            <span class="badge rounded-pill bg-label-secondary">{{$proc->situacao}}</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label class="text-muted small">Observação:</label><br>
+                        <strong>{{ $proc->obs ?? 'Nenhuma observação' }}</strong>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Medicamento</th>
+                                <th>Unidade</th>
+                                <th>Quantidade</th>
+                                <th>Valor</th>
+                                <th>Total</th>
+                                <th>Situação</th>
+                                <th>Data Aplicação</th>
+                                <th>Lote</th>
+                                <th>C.Barras</th>
+                                <th>Enfermagem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($proc->aplicacaos as $aplicacao)
+                                @php
+                                $dt_aplicacao_item = null;
+                                if($aplicacao->lote){
+                                    $var_date = explode(' ',$aplicacao->lote->created_at);
+                                    $dt_aplicacao_item = dataDbForm($var_date[0]);
+                                }
+                                @endphp
+                                <tr>
+                                    <td>{{ $aplicacao->medicamento->nome }}</td>
+                                    <td>{{ $aplicacao->medicamento->unidade }}</td>
+                                    <td>{{ $aplicacao->quantidade }}</td>
+                                    <td>R$ {{ valorDbForm($aplicacao->valor) }}</td>
+                                    <td>R$ {{ valorDbForm($aplicacao->total) }}</td>
+                                    <td>{{ $aplicacao->situacao }}</td>
+                                    <td>{{ $dt_aplicacao_item }}</td>
+                                    <td>{!! $aplicacao->lotes() !!}</td>
+                                    <td>{!! $aplicacao->codigos() !!}</td>
+                                    <td>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
+    @endforeach
 @endif
+
 <script>
 var modalAbrirFrasco;
 var modal2Codigo;
@@ -749,5 +765,36 @@ document.getElementById('modal2Codigo_salvar').addEventListener('click', ()=>{
         alert('É necessário preencher todos os campos');
     }
 });
+</script>
+@endsection
+
+@section('scripts')
+<script>
+function marcarAvaliadoGoogle(pacienteId) {
+    if(confirm('Tem certeza que deseja marcar este paciente como avaliado no Google? Esta ação não pode ser desfeita.')) {
+        $.ajax({
+            url: "{{ route('sistema.procedimentos.update_google_flag') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                id: pacienteId
+            },
+            success: function(response) {
+                if(response.success) {
+                    $('#google_badge_container').html('<span class="badge bg-label-success ms-1"><i class="mdi mdi-google"></i> Avaliado</span>');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: 'Paciente marcado como avaliado no Google.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                } else {
+                    alert('Erro ao atualizar: ' + response.message);
+                }
+            }
+        });
+    }
+}
 </script>
 @endsection

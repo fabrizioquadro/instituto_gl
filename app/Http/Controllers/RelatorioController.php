@@ -88,9 +88,11 @@ class RelatorioController extends Controller
                             'vl_pagamento' => 'R$ '.valorDbForm($forma->vl_pagamento),
                             'vl_rateio' => 'R$ '.valorDbForm($rateio_pagamento['vl_consulta']),
                             'tp_pagamento' => 'Consulta',
+                            'tipo_atendimento' => $procedimento ? $procedimento->tipo_atendimento : '',
                             'desconto' => valorDbForm(0.00),
                             'desconto_total' => 'R$ '.valorDbForm($financeiro->vl_desconto),
                             'forma_pagamento' => $forma->forma_pagamento,
+                            'id_pagamento' => $forma->id_pagamento,
                             'parcelas' => $forma->parcelas,
                             'obs' => $financeiro->obs_pagamento,
                             'clinica' => $financeiro->clinica->nome,
@@ -115,9 +117,11 @@ class RelatorioController extends Controller
                             'vl_pagamento' => 'R$ '.valorDbForm($forma->vl_pagamento),
                             'vl_rateio' => 'R$ '.valorDbForm($rateio_pagamento['vl_aplicacao']),
                             'tp_pagamento' => 'Aplicação',
+                            'tipo_atendimento' => $procedimento ? $procedimento->tipo_atendimento : '',
                             'desconto' => valorDbForm($financeiro->vl_desconto),
                             'desconto_total' => 'R$ '.valorDbForm($financeiro->vl_desconto),
                             'forma_pagamento' => $forma->forma_pagamento,
+                            'id_pagamento' => $forma->id_pagamento,
                             'parcelas' => $forma->parcelas,
                             'obs' => $financeiro->obs_pagamento,
                             'clinica' => $financeiro->clinica->nome,
@@ -175,6 +179,7 @@ class RelatorioController extends Controller
                         'vl_consulta' => 'R$ '.valorDbForm($rateio_pagamento['vl_consulta']),
                         'vl_aplicacao' => 'R$ '.valorDbForm($rateio_pagamento['vl_aplicacao']),
                         'forma_pagamento' => $forma->forma_pagamento,
+                        'id_pagamento' => $forma->id_pagamento,
                         'parcelas' => $forma->parcelas,
                         'clinica' => $financeiro->clinica->nome,
                         'medico' => $financeiro->medico,
@@ -588,4 +593,84 @@ class RelatorioController extends Controller
         return response()->download($path)->deleteFileAfterSend(false);
     }
 
+    public function baixas(){
+        $clinicas = Clinica::all()->sortBy('nome');
+        $medicamentos = Medicamento::all()->sortBy('nome');
+        return view('adm/relatorios/baixas', compact('clinicas','medicamentos'));
+    }
+
+    public function baixas_gerar(Request $request){
+        $dados = $request->except('_token');
+        
+        // 1. Baixas de Fechados (Estoque com origem 'Baixa')
+        $queryFechados = \App\Models\Estoque::where('origem', 'Baixa')->where('tipo', 'Saida');
+        
+        if($request->dt_inc){
+            $queryFechados->where('created_at', '>=', $request->dt_inc . " 00:00:00");
+        }
+        if($request->dt_fn){
+            $queryFechados->where('created_at', '<=', $request->dt_fn . " 23:59:59");
+        }
+        if($request->clinica_id){
+            $queryFechados->where('clinica_id', $request->clinica_id);
+        }
+        if($request->medicamento_id){
+            $queryFechados->where('medicamento_id', $request->medicamento_id);
+        }
+        
+        $fechados = $queryFechados->with(['medicamento', 'clinica', 'baixa'])->get();
+
+        // 2. Baixas de Abertos (BaixaAberto)
+        $queryAbertos = \App\Models\BaixaAberto::query();
+        if($request->dt_inc){
+            $queryAbertos->where('created_at', '>=', $request->dt_inc . " 00:00:00");
+        }
+        if($request->dt_fn){
+            $queryAbertos->where('created_at', '<=', $request->dt_fn . " 23:59:59");
+        }
+        if($request->clinica_id){
+            $queryAbertos->where('clinica_id', $request->clinica_id);
+        }
+        if($request->medicamento_id){
+            $queryAbertos->whereHas('estoque', function($q) use ($request){
+                $q->where('medicamento_id', $request->medicamento_id);
+            });
+        }
+        
+        $abertos = $queryAbertos->with(['estoque.medicamento', 'clinica', 'user'])->get();
+
+        $movimentacoes = array();
+        
+        foreach($fechados as $item){
+            $movimentacoes[] = [
+                'data' => $item->created_at,
+                'clinica' => $item->clinica->nome ?? 'N/A',
+                'medicamento' => $item->medicamento->nome ?? 'N/A',
+                'lote' => $item->lote,
+                'quantidade' => $item->quantidade,
+                'tipo' => 'Fechado',
+                'motivo' => $item->baixa->motivo ?? 'N/A',
+                'usuario' => 'N/A'
+            ];
+        }
+
+        foreach($abertos as $item){
+            $movimentacoes[] = [
+                'data' => $item->created_at,
+                'clinica' => $item->clinica->nome ?? 'N/A',
+                'medicamento' => $item->estoque->medicamento->nome ?? 'N/A',
+                'lote' => $item->estoque->lote ?? 'N/A',
+                'quantidade' => $item->quantidade,
+                'tipo' => 'Aberto',
+                'motivo' => $item->motivo,
+                'usuario' => $item->user->nome ?? 'N/A'
+            ];
+        }
+
+        usort($movimentacoes, function($a, $b) {
+            return $b['data'] <=> $a['data'];
+        });
+
+        return view('adm/relatorios/baixas_gerar', compact('movimentacoes', 'dados'));
+    }
 }

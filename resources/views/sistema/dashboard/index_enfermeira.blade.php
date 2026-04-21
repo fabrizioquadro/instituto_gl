@@ -85,6 +85,9 @@ $template = "layout.".session()->get('layout');
                             if($procedimento->st_coleta == 'Sim'){
                                 $ds_procedimentos .= ", Coleta";
                             }
+                            if($procedimento->st_retirada == 'Sim'){
+                                $ds_procedimentos .= ", Retirada";
+                            }
                             $ds_procedimentos = substr($ds_procedimentos, 2);
 
                             if($procedimento->situacao == "Atendimento"){
@@ -145,6 +148,9 @@ $template = "layout.".session()->get('layout');
                             }
                             if($procedimento->st_coleta == 'Sim'){
                                 $ds_procedimentos .= ", Coleta";
+                            }
+                            if($procedimento->st_retirada == 'Sim'){
+                                $ds_procedimentos .= ", Retirada";
                             }
                             $ds_procedimentos = substr($ds_procedimentos, 2);
 
@@ -209,6 +215,9 @@ $template = "layout.".session()->get('layout');
                             }
                             if($procedimento->st_coleta == 'Sim'){
                                 $ds_procedimentos .= ", Coleta";
+                            }
+                            if($procedimento->st_retirada == 'Sim'){
+                                $ds_procedimentos .= ", Retirada";
                             }
                             $ds_procedimentos = substr($ds_procedimentos, 2);
 
