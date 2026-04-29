@@ -135,6 +135,7 @@ class UsuarioAdmController extends Controller
         try {
             $user = User::where('id', $request->user_id)->first();
             $user->password = bcrypt($request->password);
+            //dd($user);
             $user->save();
             return redirect()->route('adm.usuarios')->with('mensagem', 'Senha Alterada!');
         } catch (\Exception $e) {

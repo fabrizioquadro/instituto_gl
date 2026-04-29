@@ -19,14 +19,24 @@ $template = "layout.".session()->get('layout');
 <form action="{{ route('sistema.dashboard.set_aplicacao') }}" method="post">
     <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
     @csrf
+    @isset($visualizar)
+        <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+            <span class="alert-icon mdi mdi-information-outline me-2"></span>
+            <div>
+                <strong>Modo de Visualização:</strong> Você está apenas visualizando os dados. Nenhuma alteração será salva e o paciente não foi vinculado ao seu usuário.
+            </div>
+        </div>
+    @endisset
     <div class="card card-border-shadow-primary mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between">
                 <h4 class="card-title">Procedimento New</h4>
-                <button type="button" id="botao_abrir_frasco" class="btn btn-label-primary waves-effect">
-                    <span class="tf-icons mdi mdi-medication-outline me-1"></span>
-                    Abrir Frasco
-                </button>
+                @empty($visualizar)
+                    <button type="button" id="botao_abrir_frasco" class="btn btn-label-primary waves-effect">
+                        <span class="tf-icons mdi mdi-medication-outline me-1"></span>
+                        Abrir Frasco
+                    </button>
+                @endempty
             </div>
             <div class="row mt-2 gy-4">
                 <div class="col-md-3 form-group">
@@ -197,7 +207,7 @@ $template = "layout.".session()->get('layout');
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-floating form-floating-outline mb-4">
-                            <textarea class="form-control h-px-100" id="obs_biopedancia" name="obs_biopedancia"></textarea>
+                            <textarea {{ isset($visualizar) ? 'readonly' : '' }} class="form-control h-px-100" id="obs_biopedancia" name="obs_biopedancia">{{ $procedimento->obs_biopedancia }}</textarea>
                             <label for="obs_biopedancia">Obs Biopedância:</label>
                         </div>
                     </div>
@@ -214,20 +224,20 @@ $template = "layout.".session()->get('layout');
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-floating form-floating-outline mb-4">
-                            <textarea class="form-control h-px-100" id="obs_coleta" name="obs_coleta"></textarea>
+                            <textarea {{ isset($visualizar) ? 'readonly' : '' }} class="form-control h-px-100" id="obs_coleta" name="obs_coleta">{{ $procedimento->obs_coleta }}</textarea>
                             <label for="obs_coleta">Obs Coleta:</label>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-floating form-floating-outline">
-                        <select required id="tp_coleta" name='tp_coleta' class="select2 form-select">
+                        <select {{ isset($visualizar) ? 'disabled' : 'required' }} id="tp_coleta" name='tp_coleta' class="select2 form-select">
                             <option value="">Opções</option>
-                            <option value="Coleta Reduzida">Coleta Reduzida</option>
-                            <option value="Coleta Copleta">Coleta Copleta</option>
-                            <option value="Coleta Retorno">Coleta Retorno</option>
-                            <option value="Coleta Reduzida 2">Coleta Reduzida 2</option>
-                            <option value="Coleta Particular">Coleta Particular</option>
+                            <option {{ $procedimento->tp_coleta == 'Coleta Reduzida' ? 'selected' : '' }} value="Coleta Reduzida">Coleta Reduzida</option>
+                            <option {{ $procedimento->tp_coleta == 'Coleta Copleta' ? 'selected' : '' }} value="Coleta Copleta">Coleta Copleta</option>
+                            <option {{ $procedimento->tp_coleta == 'Coleta Retorno' ? 'selected' : '' }} value="Coleta Retorno">Coleta Retorno</option>
+                            <option {{ $procedimento->tp_coleta == 'Coleta Reduzida 2' ? 'selected' : '' }} value="Coleta Reduzida 2">Coleta Reduzida 2</option>
+                            <option {{ $procedimento->tp_coleta == 'Coleta Particular' ? 'selected' : '' }} value="Coleta Particular">Coleta Particular</option>
                         </select>
                         <label for="tp_coleta">Tipo Coleta:</label>
                     </div>
@@ -244,7 +254,7 @@ $template = "layout.".session()->get('layout');
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-floating form-floating-outline mb-4">
-                            <textarea class="form-control h-px-100" id="obs_aplicacao" name="obs_aplicacao"></textarea>
+                            <textarea {{ isset($visualizar) ? 'readonly' : '' }} class="form-control h-px-100" id="obs_aplicacao" name="obs_aplicacao"></textarea>
                             <label for="obs_aplicacao">Obs Aplicação:</label>
                         </div>
                     </div>
@@ -267,23 +277,25 @@ $template = "layout.".session()->get('layout');
                                 <tr>
                                     <td>
                                         @if($aplicacao->situacao == "Aberta" || $aplicacao->situacao == 'Pendente')
-                                            <input class="form-check-input" data-medicamento="{{ $aplicacao->medicamento->unidade }}" type="checkbox" value="Sim" onclick="controle_pendente({{ $aplicacao->medicamento->id }})" name="controle_pendente_{{ $aplicacao->medicamento->id }}" id="controle_pendente_{{ $aplicacao->medicamento->id }}"></td>
+                                            <input {{ isset($visualizar) ? 'disabled' : '' }} class="form-check-input" data-medicamento="{{ $aplicacao->medicamento->unidade }}" type="checkbox" value="Sim" onclick="controle_pendente({{ $aplicacao->medicamento->id }})" name="controle_pendente_{{ $aplicacao->medicamento->id }}" id="controle_pendente_{{ $aplicacao->medicamento->id }}"></td>
                                         @endif
                                     <td>{{ $aplicacao->medicamento->nome }}</td>
                                     <td>{{ $aplicacao->medicamento->unidade }}</td>
                                     <td>{{ $aplicacao->quantidade }}</td>
                                     @if($aplicacao->situacao == "Aberta" || $aplicacao->situacao == 'Pendente')
                                         @if($aplicacao->medicamento->unidade == "Ampola")
-                                            <td><input required onblur="busca_lote_por_codigo(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
+                                            <td><input {{ isset($visualizar) ? 'readonly' : 'required' }} onblur="busca_lote_por_codigo(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
                                             <td><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}"></td>
                                             <td></td>
                                         @else
-                                            <td id="td_aplicacao_codigo_{{ $aplicacao->medicamento->id }}"><input required onblur="busca_lote_por_codigo_frasco(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }}, {{ $aplicacao->quantidade }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
+                                            <td id="td_aplicacao_codigo_{{ $aplicacao->medicamento->id }}"><input {{ isset($visualizar) ? 'readonly' : 'required' }} onblur="busca_lote_por_codigo_frasco(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }}, {{ $aplicacao->quantidade }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
                                             <td id="td_aplicacao_lote_{{ $aplicacao->medicamento->id }}"><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}"></td>
                                             <td>
-                                                <button title="Aplicação com 2 codigo" onclick="abre_modal_2_codigo({{ $aplicacao->medicamento->id }})" type="button" class="btn rounded-pill btn-icon btn-outline-secondary waves-effect">
-                                                    <span class="tf-icons mdi mdi-numeric-2-box"></span>
-                                                </button>
+                                                @empty($visualizar)
+                                                    <button title="Aplicação com 2 codigo" onclick="abre_modal_2_codigo({{ $aplicacao->medicamento->id }})" type="button" class="btn rounded-pill btn-icon btn-outline-secondary waves-effect">
+                                                        <span class="tf-icons mdi mdi-numeric-2-box"></span>
+                                                    </button>
+                                                @endempty
                                             </td>
                                         @endif
                                     @else
@@ -300,7 +312,11 @@ $template = "layout.".session()->get('layout');
     @endif
     <div class="row mt-4 mb-4">
         <div class="col-md-6 form-group">
-            <button type="submit" class="btn btn-primary me-2">Registrar Aplicação</button>
+            @empty($visualizar)
+                <button type="submit" class="btn btn-primary me-2">Registrar Aplicação</button>
+            @else
+                <a href="{{ route('sistema.dashboard') }}" class="btn btn-secondary me-2">Voltar</a>
+            @endempty
         </div>
     </div>
 </form>

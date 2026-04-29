@@ -157,6 +157,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
     Route::prefix('sistema')->group(function(){
         Route::any('/dashboard', [DashboardSistemaController::class, 'index'])->name('sistema.dashboard');
         Route::get('/dashboard/enfermagem_acessar_procedimento/{id}', [DashboardSistemaController::class, 'enfermagem_acessar_procedimento'])->name('sistema.dashboard.enfermagem_acessar_procedimento');
+        Route::get('/dashboard/enfermagem_visualizar_procedimento/{id}', [DashboardSistemaController::class, 'enfermagem_visualizar_procedimento'])->name('sistema.dashboard.enfermagem_visualizar_procedimento');
         Route::get('/dashboard/busca_lote_por_codigo', [DashboardSistemaController::class, 'busca_lote_por_codigo'])->name('sistema.dashboard.busca_lote_por_codigo');
         Route::get('/dashboard/busca_lote_por_codigo_frasco', [DashboardSistemaController::class, 'busca_lote_por_codigo_frasco'])->name('sistema.dashboard.busca_lote_por_codigo_frasco');
         Route::post('/dashboard/abrir_frasco', [DashboardSistemaController::class, 'abrir_frasco'])->name('sistema.dashboard.abrir_frasco');

@@ -47,6 +47,8 @@ class Procedimento extends Model
         'st_retirada',
         'obs_retirada',
         'tipo_atendimento',
+        'user_nome_coordenacao',
+        'user_nome_qualidade',
     ];
 
 
@@ -312,5 +314,11 @@ class Procedimento extends Model
         return SELF::whereIn('id', $in)->get();
     }
 
+
+    public function get_ultima_edicao(){
+        return ProcedimentoLog::whereIn('procedimento_id', function($query){
+            $query->select('id')->from('procedimentos')->where('codigo', $this->codigo);
+        })->max('created_at');
+    }
 
 }

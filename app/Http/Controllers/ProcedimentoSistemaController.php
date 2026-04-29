@@ -100,6 +100,9 @@ class ProcedimentoSistemaController extends Controller
             $dado[] = $st_pagamento;
             $dado[] = $situacao;
             $dado[] = $procedimento->cadastrante ? $procedimento->cadastrante->nome : '';
+            
+            $ultima_edicao = $procedimento->get_ultima_edicao();
+            $dado[] = $ultima_edicao ? date('d/m/Y H:i:s', strtotime($ultima_edicao)) : '-';
 
             $dados[] = $dado;
         }
@@ -556,6 +559,8 @@ class ProcedimentoSistemaController extends Controller
                     ];
 
                     FinanceiroFormasPagamento::create($dados);
+
+                    ProcedimentoLog::registrar($procedimento->id, 'Financeiro', "Pagamento de R$ ".valorDbForm(valorFormDb($vl_pagamento))." ($forma_pagamento) adicionado.");
                 }
             }
 
@@ -1364,6 +1369,7 @@ class ProcedimentoSistemaController extends Controller
 
     public function imprimir_cadastro($codigo){
         $procedimentos = Procedimento::where('codigo', $codigo)
+        ->with('logs')
         ->orderBy('nr_procedimento')
         ->get();
 
@@ -1408,6 +1414,7 @@ class ProcedimentoSistemaController extends Controller
 
         //vamos pegar a obs do Pagamento
         $obs_pagamento = '';
+        $financeiro = null;
         $financeiro_proc = FinanceiroProcedimento::whereIn('procedimento_id', $array_in)->first();
         if($financeiro_proc){
             $financeiro = Financeiro::where('id', $financeiro_proc->financeiro_id)->first();
@@ -1417,7 +1424,7 @@ class ProcedimentoSistemaController extends Controller
         }
 
         return view('/sistema/procedimentos/imprimir_cadastro', compact('procedimentos','array_resumo',
-        'vl_procedimentos','vl_pagamentos','obs_pagamento','cadastrante'));
+        'vl_procedimentos','vl_pagamentos','obs_pagamento','cadastrante','financeiro'));
     }
 
     public function imprimir(Request $request){
@@ -1482,6 +1489,8 @@ class ProcedimentoSistemaController extends Controller
         $aplicacao->save();
 
         $procedimento->valor += $aplicacao->total;
+        $procedimento->flag_coordenacao = 0;
+        $procedimento->flag_qualidade = 0;
         $procedimento->save();
 
         FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
@@ -1530,6 +1539,8 @@ class ProcedimentoSistemaController extends Controller
         $aplicacao = Aplicacao::where('id', $_GET['aplicacao_id'])->first();
         $procedimento = Procedimento::where('id', $aplicacao->procedimento_id)->first();
         $procedimento->valor -= $aplicacao->total;
+        $procedimento->flag_coordenacao = 0;
+        $procedimento->flag_qualidade = 0;
         $procedimento->save();
         $aplicacao->delete();
 
@@ -1557,6 +1568,8 @@ class ProcedimentoSistemaController extends Controller
             $procedimento->situacao = 'Aplicação Parcial';
         }
 
+        $procedimento->flag_coordenacao = 0;
+        $procedimento->flag_qualidade = 0;
         $procedimento->save();
 
         FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
@@ -1619,11 +1632,15 @@ class ProcedimentoSistemaController extends Controller
                 $aplicacao = Aplicacao::create($dados);
 
                 $procedimento->valor += $aplicacao->total;
+                $procedimento->flag_coordenacao = 0;
+                $procedimento->flag_qualidade = 0;
                 $procedimento->save();
             }
 
             if($procedimento->situacao == "Aplicado"){
                 $procedimento->situacao = 'Aplicação Parcial';
+                $procedimento->flag_coordenacao = 0;
+                $procedimento->flag_qualidade = 0;
                 $procedimento->save();
             }
 
@@ -1730,6 +1747,8 @@ class ProcedimentoSistemaController extends Controller
                 if($procedimento->situacao == "Aplicado"){
                     $procedimento->situacao = 'Aplicação Parcial';
                 }
+                $procedimento->flag_coordenacao = 0;
+                $procedimento->flag_qualidade = 0;
                 $procedimento->save();
             }
 
@@ -1800,8 +1819,30 @@ class ProcedimentoSistemaController extends Controller
         if ($procedimento) {
             $flag = $request->flag;
             $value = ($request->value == 1 ? 1 : 0);
-            $procedimento->where('id', $request->id)->update([$flag => $value]);
-            return response()->json(['success' => true, 'id' => $request->id, 'flag' => $flag, 'value' => $value]);
+            
+            $update_data = [$flag => $value];
+            $user_nome = "";
+
+            if($value == 1){
+                $user = session()->get('user');
+                $adm = session()->get('administrador');
+                $user_nome = $adm ? $adm->nome : ($user ? $user->nome : "Sistema");
+
+                if($flag == 'flag_coordenacao'){
+                    $update_data['user_nome_coordenacao'] = $user_nome;
+                }elseif($flag == 'flag_qualidade'){
+                    $update_data['user_nome_qualidade'] = $user_nome;
+                }
+            }else{
+                if($flag == 'flag_coordenacao'){
+                    $update_data['user_nome_coordenacao'] = null;
+                }elseif($flag == 'flag_qualidade'){
+                    $update_data['user_nome_qualidade'] = null;
+                }
+            }
+
+            $procedimento->where('id', $request->id)->update($update_data);
+            return response()->json(['success' => true, 'id' => $request->id, 'flag' => $flag, 'value' => $value, 'user_nome' => $user_nome]);
         }
         return response()->json(['success' => false, 'message' => 'Procedimento não encontrado']);
     }

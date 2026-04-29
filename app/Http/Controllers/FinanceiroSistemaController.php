@@ -97,6 +97,8 @@ class FinanceiroSistemaController extends Controller
                     $procedimento->obs_pagamento = $financeiro->obs_pagamento;
                     $procedimento->data_pagamento = $financeiro->dt_pagamento;
                     $procedimento->save();
+
+                    ProcedimentoLog::registrar($procedimento->id, 'Financeiro', 'Financeiro criado para o procedimento.');
                 }
             }
 
@@ -340,6 +342,10 @@ class FinanceiroSistemaController extends Controller
                     ];
 
                     FinanceiroFormasPagamento::create($dados);
+
+                    foreach($financeiro->procedimentos() as $p){
+                        ProcedimentoLog::registrar($p->id, 'Financeiro', "Pagamento de R$ ".valorDbForm(valorFormDb($vl_pagamento))." ($forma_pagamento) adicionado.");
+                    }
                 }
             }
             $financeiro->obs_pagamento = $financeiro->obs_pagamento." / ".$request->obs_pagamento;
@@ -357,6 +363,11 @@ class FinanceiroSistemaController extends Controller
         try {
             $forma = FinanceiroFormasPagamento::where('id', $id)->first();
             $financeiro = Financeiro::where('id', $forma->financeiro_id)->first();
+            
+            foreach($financeiro->procedimentos() as $p){
+                ProcedimentoLog::registrar($p->id, 'Financeiro', "Pagamento de R$ ".valorDbForm($forma->vl_pagamento)." ($forma->forma_pagamento) excluído.");
+            }
+
             $forma->delete();
 
             $this->atualiza_financeiro_procedimento($financeiro->procedimentos()->first()->codigo);

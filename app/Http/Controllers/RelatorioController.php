@@ -262,6 +262,7 @@ class RelatorioController extends Controller
         $array_dados = [
             'Chegada',
             'Atendimento',
+            'Tipo',
             'Finalização',
             'Paciente',
             'Enfermeira',
@@ -315,6 +316,7 @@ class RelatorioController extends Controller
                     $array_dados = [
                         $chegada,
                         $atendimento,
+                        $procedimento->tipo_atendimento,
                         $finalizacao,
                         $procedimento->paciente->nm_paciente,
                         $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '',
@@ -397,6 +399,7 @@ class RelatorioController extends Controller
                             'tp_pagamento' => 'Consulta',
                             'desconto' => valorDbForm(0.00),
                             'forma_pagamento' => $forma->forma_pagamento,
+                            'id_pagamento' => $forma->id_pagamento,
                             'parcelas' => $forma->parcelas,
                             'clinica' => $financeiro->clinica->nome,
                             'medico' => $financeiro->medico,
@@ -422,6 +425,7 @@ class RelatorioController extends Controller
                             'tp_pagamento' => 'Aplicação',
                             'desconto' => valorDbForm($financeiro->vl_desconto),
                             'forma_pagamento' => $forma->forma_pagamento,
+                            'id_pagamento' => $forma->id_pagamento,
                             'parcelas' => $forma->parcelas,
                             'clinica' => $financeiro->clinica->nome,
                             'medico' => $financeiro->medico,
@@ -444,7 +448,7 @@ class RelatorioController extends Controller
 
         $cabecalho = [
             'ID', 'Data', 'Paciente', 'ID Feegow', 'CPF', 'Codigo', 'Valor Tratamento', 'Desconto Total',
-            'Pagamento', 'Valor Rateio', 'Tipo', 'Desconto Rateio', 'Forma Pagamento', 'Parcelas',
+            'Pagamento', 'Valor Rateio', 'Tipo', 'Desconto Rateio', 'Forma Pagamento', 'ID Pagamento', 'Parcelas',
             'Clinica', 'Médico', 'Nr Procedimentos', 'Obs'
         ];
 
@@ -466,6 +470,7 @@ class RelatorioController extends Controller
                 $linha['tp_pagamento'],
                 $linha['desconto'],
                 $linha['forma_pagamento'],
+                $linha['id_pagamento'],
                 $linha['parcelas'],
                 $linha['clinica'],
                 $linha['medico'],

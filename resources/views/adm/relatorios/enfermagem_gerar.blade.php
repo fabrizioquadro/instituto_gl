@@ -14,6 +14,7 @@
                     <tr>
                         <th>Chegada</th>
                         <th>Atendimento</th>
+                        <th>Tipo</th>
                         <th>Finalização</th>
                         <th>Paciente</th>
                         <th>Enfermeira</th>
@@ -64,6 +65,7 @@
                                 <tr>
                                     <td>{{ $chegada }}</td>
                                     <td>{{ $atendimento }}</td>
+                                    <td>{{ $procedimento->tipo_atendimento }}</td>
                                     <td>{{ $finalizacao }}</td>
                                     <td>{{ $procedimento->paciente->nm_paciente }}</td>
                                     <td>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</td>

@@ -39,6 +39,7 @@ $template = "layout.".session()->get('layout');
                         <th>Situação Pg</th>
                         <th>Situação</th>
                         <th>Cadastrante</th>
+                        <th>Última Edição</th>
                     </tr>
                 </thead>
             </table>

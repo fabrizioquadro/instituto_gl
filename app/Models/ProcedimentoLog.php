@@ -42,6 +42,9 @@ class ProcedimentoLog extends Model
     public static function registrar($procedimento_id, $acao, $descricao = null, $dados_antigos = null, $dados_novos = null)
     {
         $user = session()->get('user');
+        if(!$user){
+            $user = auth()->user();
+        }
         $adm = session()->get('administrador');
 
         return self::create([

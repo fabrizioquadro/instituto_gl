@@ -223,6 +223,55 @@ class DashboardSistemaController extends Controller
         }
     }
 
+    public function enfermagem_visualizar_procedimento($id){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+        $procedimento = Procedimento::where('id', $id)->first();
+
+        $procedimentos_vinculados = Procedimento::where('codigo', $procedimento->codigo)
+        ->where('id','<>', $procedimento->id)
+        ->orderBy('nr_procedimento')
+        ->get();
+        $controle = 'sistema';
+        if(!$user){
+            $user = session()->get('user');
+            $controle = 'admin';
+        }
+
+        $api = api();
+        $nascimento = $api->get_nascimento_paciente($procedimento->paciente->paciente_id_feegow);
+
+        $array_abertos = array();
+        $estoques = EstoqueAberto::where('clinica_id', $user->clinica_id)
+        ->where('situacao','Aberto')
+        ->get();
+        $clinica = Clinica::where('id', $user->clinica_id)->first();
+        foreach($estoques as $estoque){
+            $array = [
+                'clinica' => $clinica->nome,
+                'medicamento' => $estoque->medicamento->nome,
+                'abertura' => dataDbForm($estoque->dt_cadastro),
+                'usuario' => $estoque->user->nome,
+                'frasco' => $estoque->qt_inical." (mg)",
+                'restante' => $estoque->qt_restante." (mg)",
+                'lote' => $estoque->lote,
+                'codigo_barras' => $estoque->codigo_barras,
+            ];
+            $array_abertos[] = $array;
+        }
+
+        $visualizar = true;
+
+        if(isset($_GET['controle'])){
+            return view('sistema/dashboard/enfermeira_acessar_procedimento_new', compact('procedimento','user','controle','procedimentos_vinculados','nascimento','visualizar'));
+        }
+        else{
+            return view('sistema/dashboard/enfermeira_acessar_procedimento', compact('procedimento','user','controle','procedimentos_vinculados','nascimento','array_abertos','visualizar'));
+        }
+    }
+
     public function busca_lote_por_codigo(){
         $estoque = Estoque::where('codigo_barras', $_GET['codigo'])
         ->where('clinica_id', $_GET['clinica_id'])
