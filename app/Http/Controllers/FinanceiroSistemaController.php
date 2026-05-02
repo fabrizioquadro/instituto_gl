@@ -7,6 +7,7 @@ use App\Models\Financeiro;
 use App\Models\FinanceiroProcedimento;
 use App\Models\Procedimento;
 use App\Models\FinanceiroFormasPagamento;
+use App\Models\ProcedimentoLog;
 
 class FinanceiroSistemaController extends Controller
 {

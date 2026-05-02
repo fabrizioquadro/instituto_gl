@@ -18,6 +18,7 @@ use App\Models\Estoque;
 use App\Models\EstoqueAberto;
 use App\Models\Combo;
 use App\Models\ComboMedicamento;
+use App\Models\ProcedimentoLog;
 use Illuminate\Support\Facades\Hash;
 use Dompdf\Dompdf;
 use Dompdf\Options;
