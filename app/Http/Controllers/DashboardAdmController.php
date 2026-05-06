@@ -297,6 +297,7 @@ class DashboardAdmController extends Controller
         if($_GET['tipo'] == "Enfermagem"){
             $user = User::where('tipo', 'Enfermagem')
             ->where('clinica_id', $user->clinica_id)
+            ->where('st_usuario', 'Ativo')
             ->first();
         }
 
@@ -307,7 +308,7 @@ class DashboardAdmController extends Controller
     }
 
     public function alterar_enfermeira(){
-        $user = User::where('id', $_GET['user_id'])->first();
+        $user = User::where('id', $_GET['user_id'])->where('st_usuario', 'Ativo')->first();
 
         session()->put('user', $user);
 

@@ -49,6 +49,8 @@ class Procedimento extends Model
         'tipo_atendimento',
         'user_nome_coordenacao',
         'user_nome_qualidade',
+        'inicio_cadastro',
+        'finalizacao_cadastro',
     ];
 
 

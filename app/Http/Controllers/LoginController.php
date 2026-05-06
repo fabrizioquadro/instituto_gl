@@ -27,6 +27,9 @@ class LoginController extends Controller
     public function login(Request $request){
         $adm = Administrador::where('email', $request->email)->first();
         if($adm){
+            if($adm->st_usuario != 'Ativo'){
+                return redirect()->back()->with('erro', "Este usuário está inativo e não pode acessar o sistema.");
+            }
             if(Hash::check($request->password, $adm->password)){
                 session()->put('administrador', $adm);
                 session()->put('layout', 'admin');
@@ -40,18 +43,23 @@ class LoginController extends Controller
                 return redirect()->route('adm.dashboard');
             }
             else{
-                return redirect()->back()->with('erro', "Senha Inválido");
+                return redirect()->back()->with('erro', "Senha Inválida");
             }
         }
         else{
             $dados = $request->except('_token');
-            if(Auth::attempt($dados)){
+            if(Auth::attempt(array_merge($dados, ['st_usuario' => 'Ativo']))){
                 $request->session()->regenerate();
                 $user = auth()->user();
                 session()->put('layout', 'sistema');
                 return redirect()->route('sistema.dashboard');
             }
             else{
+                // Check if the email exists but is inactive to provide better feedback
+                $inactive_user = User::where('email', $request->email)->where('st_usuario', 'Inativo')->first();
+                if($inactive_user){
+                    return redirect()->back()->with('erro', "Este usuário está inativo e não pode acessar o sistema.");
+                }
                 return redirect()->back()->with('erro', "Email ou senha inválidos");
             }
         }

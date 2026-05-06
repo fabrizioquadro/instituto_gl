@@ -118,7 +118,9 @@ Route::middleware(['verificaAdministrador'])->group(function () {
         Route::get('/relatorios/enfermagem', [RelatorioController::class, 'enfermagem'])->name('adm.relatorios.enfermagem');
         Route::get('/relatorios/transferencias', [RelatorioController::class, 'transferencias'])->name('adm.relatorios.transferencias');
         Route::get('/relatorios/baixas', [RelatorioController::class, 'baixas'])->name('adm.relatorios.baixas');
+        Route::get('/relatorios/recepcao', [RelatorioController::class, 'recepcao'])->name('adm.relatorios.recepcao');
         Route::post('/relatorios/baixas/gerar', [RelatorioController::class, 'baixas_gerar'])->name('adm.relatorios.baixas.gerar');
+        Route::post('/relatorios/recepcao/gerar', [RelatorioController::class, 'recepcao_gerar'])->name('adm.relatorios.recepcao.gerar');
         Route::post('/relatorios/financeiro/gerar', [RelatorioController::class, 'financeiro_gerar'])->name('adm.relatorios.financeiro.gerar');
         Route::post('/relatorios/vendas/gerar', [RelatorioController::class, 'vendas_gerar'])->name('adm.relatorios.vendas.gerar');
         Route::post('/relatorios/enfermagem/gerar', [RelatorioController::class, 'enfermagem_gerar'])->name('adm.relatorios.enfermagem.gerar');
@@ -254,6 +256,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/pacientes/procedimentos/{id}', [PacienteSistemaController::class, 'procedimentos'])->name('sistema.pacientes.procedimentos');
 
         Route::get('/financeiros', [FinanceiroSistemaController::class, 'index'])->name('sistema.financeiros');
+        Route::get('/financeiros/caixa_diario', [RelatorioController::class, 'caixa_diario_sistema'])->name('sistema.financeiros.caixa_diario');
         Route::get('/financeiros/adicionar', [FinanceiroSistemaController::class, 'adicionar'])->name('sistema.financeiros.adicionar');
         Route::get('/financeiros/acessar/{id}', [FinanceiroSistemaController::class, 'acessar'])->name('sistema.financeiros.acessar');
         Route::get('/financeiros/get_procedimentos_abertos', [FinanceiroSistemaController::class, 'get_procedimentos_abertos'])->name('sistema.financeiros.get_procedimentos_abertos');

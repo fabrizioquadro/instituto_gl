@@ -615,7 +615,7 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
             </div>
         </div>
         <div class="table-responsive mt-3">
-            <table class="table table-sm">
+            <table class="table table-sm table-bordered">
                 <thead class="table-light">
                     <tr>
                         <th>Medicamento</th>
@@ -640,19 +640,7 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                             $dt_aplicacao = dataDbForm($var[0]);
                         }
                         @endphp
-                        <tr>
-                            <th>{{ $aplicacao->medicamento->nome }}</th>
-                            <th>{{ $aplicacao->medicamento->unidade }}</th>
-                            <th>{{ $aplicacao->quantidade }}</th>
-                            <th>R$ {{ valorDbForm($aplicacao->valor) }}</th>
-                            <th>R$ {{ valorDbForm($aplicacao->total) }}</th>
-                            <th>{{ $aplicacao->obs }}</th>
-                            <th>{{ $aplicacao->situacao }}</th>
-                            <th>{{ $dt_aplicacao }}</th>
-                            <th>{!! $aplicacao->lotes() !!}</th>
-                            <th>{!! $aplicacao->codigos() !!}</th>
-                            <th>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</th>
-                        </tr>
+                        @include('sistema.dashboard.inc.linha_aplicacao_recepcao', ['aplicacao' => $aplicacao, 'dt_aplicacao' => $dt_aplicacao])
                     @endforeach
                     @if($procedimento->st_biopedancia == 'Sim')
                         <tr>
@@ -792,8 +780,8 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($logs as $log)
-                        <tr>
+                    @foreach($logs as $index => $log)
+                        <tr class="{{ $index > 3 ? 'd-none more-logs' : '' }}">
                             <td>{{ $log->created_at->format('d/m/Y H:i:s') }}</td>
                             <td>{{ $log->autor() }}</td>
                             <td><span class="badge bg-label-info">{{ $log->acao }}</span></td>
@@ -818,6 +806,13 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                     @endforeach
                 </tbody>
             </table>
+            @if($logs->count() > 4)
+                <div class="text-center mt-2">
+                    <button type="button" id="btn-ver-mais-logs" class="btn btn-sm btn-outline-info" onclick="document.querySelectorAll('.more-logs').forEach(el => el.classList.remove('d-none')); this.style.display='none'">
+                        Ver mais ({{ $logs->count() - 4 }})
+                    </button>
+                </div>
+            @endif
         </div>
     </div>
 </div>

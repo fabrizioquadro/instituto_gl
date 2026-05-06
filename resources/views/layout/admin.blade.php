@@ -172,6 +172,11 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                                         <div data-i18n="Baixas">Baixas</div>
                                     </a>
                                 </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.recepcao') }}" class="menu-link">
+                                        <div data-i18n="Recepção">Recepção</div>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li class="menu-header fw-medium mt-4">
@@ -361,6 +366,12 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                                             <a class="dropdown-item" href="{{ route('adm.alterar_senha') }}">
                                                 <i class="mdi mdi-lock-reset me-2"></i>
                                                 <span class="align-middle">Alterar Senha</span>
+                                              </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('sistema.financeiros.caixa_diario') }}">
+                                                <i class="mdi mdi-cash-register me-2"></i>
+                                                <span class="align-middle">Caixa Diário</span>
                                               </a>
                                         </li>
                                         <li>

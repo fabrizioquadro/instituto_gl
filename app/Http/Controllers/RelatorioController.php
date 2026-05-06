@@ -34,13 +34,19 @@ class RelatorioController extends Controller
     }
 
     public function enfermagem(){
-        $enfermeiras = User::where('tipo','Enfermagem')->orderBy('nome')->get();
+        $enfermeiras = User::where('tipo','Enfermagem')->where('st_usuario', 'Ativo')->orderBy('nome')->get();
         $clinicas = Clinica::all()->sortBy('nome');
         return view('adm/relatorios/enfermagem', compact('clinicas','enfermeiras'));
     }
 
     public function transferencias(){
         return view('adm/relatorios/transferencias');
+    }
+
+    public function recepcao(){
+        $clinicas = Clinica::all()->sortBy('nome');
+        $recepcionistas = User::where('tipo','Secretária')->where('st_usuario', 'Ativo')->orderBy('nome')->get();
+        return view('adm/relatorios/recepcao', compact('clinicas','recepcionistas'));
     }
 
     public function financeiro_gerar(Request $request){
@@ -677,5 +683,48 @@ class RelatorioController extends Controller
         });
 
         return view('adm/relatorios/baixas_gerar', compact('movimentacoes', 'dados'));
+    }
+
+    public function recepcao_gerar(Request $request){
+        $dados = $request->except('_token');
+        
+        $query = Procedimento::query();
+        
+        if($request->dt_inc){
+            $query->where('data_cad', '>=', $request->dt_inc);
+        }
+        if($request->dt_fn){
+            $query->where('data_cad', '<=', $request->dt_fn);
+        }
+        if($request->clinica_id){
+            $query->where('clinica_id', $request->clinica_id);
+        }
+        if($request->user_id_cadastro){
+            $query->where('user_id_cadastro', $request->user_id_cadastro);
+        }
+
+        // Apenas procedimentos que tenham tanto o início quanto o fim registrados
+        $query->whereNotNull('inicio_cadastro')->whereNotNull('finalizacao_cadastro');
+
+        $procedimentos = $query->with(['paciente', 'cadastrante', 'clinica'])
+                              ->orderBy('inicio_cadastro', 'desc')
+                              ->get();
+
+        return view('adm/relatorios/recepcao_gerar', compact('procedimentos', 'dados'));
+    }
+
+    public function caixa_diario_sistema(){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+
+        $pagamentos = \App\Models\FinanceiroFormasPagamento::where('user_id_cadastro', $user->id)
+        ->where('created_at', '>=', date('Y-m-d').' 00:00:00')
+        ->where('created_at', '<=', date('Y-m-d').' 23:59:59')
+        ->with('financeiro.paciente')
+        ->get();
+
+        return view('sistema/relatorios/caixa_diario', compact('pagamentos','user'));
     }
 }

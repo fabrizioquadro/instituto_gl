@@ -31,6 +31,16 @@
                 <div class="col-md-6">
                     <div class="form-floating form-floating-outline">
                         <input class="form-control" type="file" id="imagem" name="imagem"/>
+                        <label for='imagem'>Imagem Perfil:</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline">
+                        <select required id="st_usuario" name='st_usuario' class="select2 form-select">
+                            <option value="Ativo">Ativo</option>
+                            <option value="Inativo">Inativo</option>
+                        </select>
+                        <label for="st_usuario">Status Usuário:</label>
                     </div>
                 </div>
             </div>

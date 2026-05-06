@@ -21,6 +21,7 @@ class User extends Authenticatable
         'clinica_id',
         'nome',
         'email',
+        'st_usuario',
         'password',
         'tipo',
         'coren',

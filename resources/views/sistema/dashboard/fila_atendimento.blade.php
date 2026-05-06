@@ -172,6 +172,54 @@ $template = "layout.".session()->get('layout');
                 </div>
             </div>
         </div>
+        <div class="card card-border-shadow-info mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Resumo de Atendimentos do Dia</h5>
+                @php
+                    $resumo_enfermeiras = [];
+                    foreach($procedimentos_aplicadas as $proc){
+                        $nome = $proc->aplicadora ? $proc->aplicadora->nome : 'Não Identificada';
+                        if(!isset($resumo_enfermeiras[$nome])){
+                            $resumo_enfermeiras[$nome] = 0;
+                        }
+                        $resumo_enfermeiras[$nome]++;
+                    }
+                    ksort($resumo_enfermeiras);
+                    $total_atendidos = $procedimentos_aplicadas->count();
+                @endphp
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Enfermeira</th>
+                                        <th class="text-center">Qtd. Pacientes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($resumo_enfermeiras as $enfermeira => $qtd)
+                                        <tr>
+                                            <td>{{ $enfermeira }}</td>
+                                            <td class="text-center"><b>{{ $qtd }}</b></td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th>TOTAL GERAL</th>
+                                        <th class="text-center">{{ $total_atendidos }}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <p class="mb-0">Total de pacientes atendidos hoje: <strong>{{ $total_atendidos }}</strong></p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <script>

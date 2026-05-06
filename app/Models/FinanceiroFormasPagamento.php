@@ -22,6 +22,10 @@ class FinanceiroFormasPagamento extends Model
         return $this->belongsTo(User::class,'user_id_cadastro','id');
     }
 
+    public function financeiro(){
+        return $this->belongsTo(Financeiro::class);
+    }
+
     public function get_rateio_financeiro(){
         $vl_pagamento = $this->vl_pagamento; //valor do pagamento atual
 

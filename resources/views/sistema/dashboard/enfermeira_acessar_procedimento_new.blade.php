@@ -260,7 +260,7 @@ $template = "layout.".session()->get('layout');
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-sm">
+                    <table class="table table-sm table-bordered">
                         <thead class="table-light">
                             <tr>
                                 <th>Pendente</th>
@@ -274,35 +274,7 @@ $template = "layout.".session()->get('layout');
                         </thead>
                         <tbody>
                             @foreach($procedimento->aplicacaos as $aplicacao)
-                                <tr>
-                                    <td>
-                                        @if($aplicacao->situacao == "Aberta" || $aplicacao->situacao == 'Pendente')
-                                            <input {{ isset($visualizar) ? 'disabled' : '' }} class="form-check-input" data-medicamento="{{ $aplicacao->medicamento->unidade }}" type="checkbox" value="Sim" onclick="controle_pendente({{ $aplicacao->medicamento->id }})" name="controle_pendente_{{ $aplicacao->medicamento->id }}" id="controle_pendente_{{ $aplicacao->medicamento->id }}"></td>
-                                        @endif
-                                    <td>{{ $aplicacao->medicamento->nome }}</td>
-                                    <td>{{ $aplicacao->medicamento->unidade }}</td>
-                                    <td>{{ $aplicacao->quantidade }}</td>
-                                    @if($aplicacao->situacao == "Aberta" || $aplicacao->situacao == 'Pendente')
-                                        @if($aplicacao->medicamento->unidade == "Ampola")
-                                            <td><input {{ isset($visualizar) ? 'readonly' : 'required' }} onblur="busca_lote_por_codigo(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
-                                            <td><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}"></td>
-                                            <td></td>
-                                        @else
-                                            <td id="td_aplicacao_codigo_{{ $aplicacao->medicamento->id }}"><input {{ isset($visualizar) ? 'readonly' : 'required' }} onblur="busca_lote_por_codigo_frasco(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }}, {{ $aplicacao->quantidade }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
-                                            <td id="td_aplicacao_lote_{{ $aplicacao->medicamento->id }}"><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}"></td>
-                                            <td>
-                                                @empty($visualizar)
-                                                    <button title="Aplicação com 2 codigo" onclick="abre_modal_2_codigo({{ $aplicacao->medicamento->id }})" type="button" class="btn rounded-pill btn-icon btn-outline-secondary waves-effect">
-                                                        <span class="tf-icons mdi mdi-numeric-2-box"></span>
-                                                    </button>
-                                                @endempty
-                                            </td>
-                                        @endif
-                                    @else
-                                        <td>{{$aplicacao->lotes()}}</td>
-                                        <td>{{$aplicacao->codigos()}}</td>
-                                    @endif
-                                </tr>
+                                @include('sistema.dashboard.inc.linha_aplicacao', ['aplicacao' => $aplicacao, 'visualizar' => $visualizar ?? null, 'user' => $user])
                             @endforeach
                         </tbody>
                     </table>
@@ -470,22 +442,34 @@ function busca_lote_por_codigo_frasco_2codigo(numero){
     }
 }
 
-function controle_pendente(medicamento_id){
-    if(document.getElementById('controle_pendente_' + medicamento_id).checked == true){
-        //document.getElementById('lote_' + medicamento_id).setAttribute('disabled','disabled');
-        document.getElementById('lote_' + medicamento_id).removeAttribute('required');
-        document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('required');
-        //if(document.getElementById('controle_pendente_' + medicamento_id).dataset.medicamento == "Ampola"){
-        //    document.getElementById('codigo_barras_' + medicamento_id).setAttribute('disabled','disabled');
-        //}
+function controle_pendente(medicamento_id, elem){
+    unidade = elem.dataset.medicamento;
+    if(unidade == 'Procedimento'){
+        if(document.getElementById('controle_pendente_' + medicamento_id).checked == true){
+            //document.getElementById('lote_' + medicamento_id).setAttribute('disabled','disabled');
+            document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('required');
+        }
+        else{
+            document.getElementById('codigo_barras_' + medicamento_id).setAttribute('required','required');
+        }
     }
     else{
-        document.getElementById('lote_' + medicamento_id).setAttribute('required','required');
-        document.getElementById('codigo_barras_' + medicamento_id).setAttribute('required','required');
-        //document.getElementById('lote_' + medicamento_id).removeAttribute('disabled');
-        //if(document.getElementById('controle_pendente_' + medicamento_id).dataset.medicamento == "Ampola"){
-        //    document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('disabled');
-        //}
+        if(document.getElementById('controle_pendente_' + medicamento_id).checked == true){
+            //document.getElementById('lote_' + medicamento_id).setAttribute('disabled','disabled');
+            document.getElementById('lote_' + medicamento_id).removeAttribute('required');
+            document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('required');
+            //if(document.getElementById('controle_pendente_' + medicamento_id).dataset.medicamento == "Ampola"){
+            //    document.getElementById('codigo_barras_' + medicamento_id).setAttribute('disabled','disabled');
+            //}
+        }
+        else{
+            document.getElementById('lote_' + medicamento_id).setAttribute('required','required');
+            document.getElementById('codigo_barras_' + medicamento_id).setAttribute('required','required');
+            //document.getElementById('lote_' + medicamento_id).removeAttribute('disabled');
+            //if(document.getElementById('controle_pendente_' + medicamento_id).dataset.medicamento == "Ampola"){
+            //    document.getElementById('codigo_barras_' + medicamento_id).removeAttribute('disabled');
+            //}
+        }
     }
 }
 

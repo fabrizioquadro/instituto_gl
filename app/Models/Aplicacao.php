@@ -18,6 +18,7 @@ class Aplicacao extends Model
         'total',
         'situacao',
         'obs',
+        'is_soro',
     ];
 
     public function medicamento(){

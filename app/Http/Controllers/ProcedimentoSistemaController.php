@@ -214,6 +214,7 @@ class ProcedimentoSistemaController extends Controller
                             'obs' => $obs,
                             'semana_sem_aplicacao' => 'Sim',
                             'user_id_cadastro' => $user->id,
+                            'inicio_cadastro' => $request->inicio_cadastro,
                             'agendamento' => $request->agendamento,
                             'tipo_atendimento' => $request->tipo_atendimento,
                         ];
@@ -257,6 +258,7 @@ class ProcedimentoSistemaController extends Controller
                             'obs' => $obs,
                             'semana_sem_aplicacao' => 'Não',
                             'user_id_cadastro' => $user->id,
+                            'inicio_cadastro' => $request->inicio_cadastro,
                             'agendamento' => $request->agendamento,
                             'tipo_atendimento' => $request->tipo_atendimento,
                         ];
@@ -291,6 +293,9 @@ class ProcedimentoSistemaController extends Controller
                                     $dados_situacao = 'Aplicada';
                                 }
 
+                                $var = "is_soro_".$i."_".$j;
+                                $is_soro = $request->$var ?? 0;
+
                                 $dados = [
                                     'procedimento_id' => $procedimento->id,
                                     'medicamento_id' => $medicamento_id,
@@ -298,6 +303,7 @@ class ProcedimentoSistemaController extends Controller
                                     'valor' => valorFormDb($valor),
                                     'total' => valorFormDb($total),
                                     'situacao' => $dados_situacao,
+                                    'is_soro' => $is_soro,
                                 ];
                                 Aplicacao::create($dados);
                             }
@@ -607,7 +613,7 @@ class ProcedimentoSistemaController extends Controller
     public function enviar_fila_aplicacao_sem_pagamento(Request $request){
         try {
             //vamos veridicar o administrador
-            $autorizador = Administrador::where('email',$request->autorizador_email)->first();
+            $autorizador = Administrador::where('email',$request->autorizador_email)->where('st_usuario', 'Ativo')->first();
             if(!$autorizador){
                 return redirect()->back()->with('mensagem_erro', "Autorizador inválido");
                 die();
@@ -801,6 +807,10 @@ class ProcedimentoSistemaController extends Controller
                         $procedimento->save();
                     }
                 }
+            }
+
+            if($procedimentos){
+                Procedimento::whereIn('id', $procedimentos)->update(['finalizacao_cadastro' => now()]);
             }
 
             if($controle_request){
@@ -1370,7 +1380,7 @@ class ProcedimentoSistemaController extends Controller
 
     public function imprimir_cadastro($codigo){
         $procedimentos = Procedimento::where('codigo', $codigo)
-        ->with('logs')
+        ->with(['logs', 'paciente'])
         ->orderBy('nr_procedimento')
         ->get();
 
@@ -1618,8 +1628,9 @@ class ProcedimentoSistemaController extends Controller
     public function insert_combo(Request $request){
         try {
             $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
-
             $medicamentos = ComboMedicamento::where('combo_id', $request->combo_id)->get();
+            $combo = Combo::find($request->combo_id);
+            $is_soro = $combo && str_starts_with(strtolower($combo->nome), 'soro');
 
             foreach($medicamentos as $linha){
                 $dados = [
@@ -1629,6 +1640,7 @@ class ProcedimentoSistemaController extends Controller
                     'valor' => $linha->valor_unitario,
                     'total' => round($linha->quantidade * $linha->valor_unitario, 2),
                     'situacao' => 'Aberta',
+                    'is_soro' => $is_soro,
                 ];
                 $aplicacao = Aplicacao::create($dados);
 
@@ -1730,6 +1742,9 @@ class ProcedimentoSistemaController extends Controller
                     $total = $request->$var;
 
                     if($medicamento_id != ""){
+                        $var = "is_soro_".$i;
+                        $is_soro = $request->$var ?? 0;
+
                         //entrando aqui vamos adicionar o medicamento a aplicacao
                         $dados = [
                             'procedimento_id' => $procedimento->id,
@@ -1738,6 +1753,7 @@ class ProcedimentoSistemaController extends Controller
                             'valor' => valorFormDb($valor),
                             'total' => valorFormDb($total),
                             'situacao' => 'Aberta',
+                            'is_soro' => $is_soro,
                         ];
 
                         Aplicacao::create($dados);

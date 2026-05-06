@@ -14,7 +14,7 @@ class UsuarioAdmController extends Controller
     public function index(){
         $user = session()->get('user');
         $clinica = Clinica::where('id', $user->clinica_id)->first();
-        $users = User::where('clinica_id', $user->clinica_id)->get();
+        $users = User::where('clinica_id', $user->clinica_id)->where('st_usuario', 'Ativo')->get();
         $opcoes = $this->opcoes;
         return view('adm/usuarios/index', compact('users','clinica','opcoes'));
     }
@@ -28,7 +28,7 @@ class UsuarioAdmController extends Controller
     public function insert(Request $request){
         try {
             $user = session()->get('user');
-            $dados = $request->only('nome','email','tipo','senha_certificado','coren');
+            $dados = $request->only('nome','email','st_usuario','tipo','senha_certificado','coren');
             $dados['password'] = bcrypt($request->password);
             $dados['clinica_id'] = $user->clinica_id;
 
@@ -75,7 +75,7 @@ class UsuarioAdmController extends Controller
 
     public function update(Request $request){
         try {
-            $dados = $request->only('nome','email','tipo','clinica_id','senha_certificado','coren');
+            $dados = $request->only('nome','email','st_usuario','tipo','clinica_id','senha_certificado','coren');
 
             foreach($this->opcoes as $opcao){
                 $coluna = $request->$opcao;

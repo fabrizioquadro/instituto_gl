@@ -75,6 +75,15 @@
                         <label for='coren'>Coren:</label>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline">
+                        <select required id="st_usuario" name='st_usuario' class="select2 form-select">
+                            <option value="Ativo">Ativo</option>
+                            <option value="Inativo">Inativo</option>
+                        </select>
+                        <label for="st_usuario">Status Usuário:</label>
+                    </div>
+                </div>
             </div>
             <div class="row mt-2 gy-4">
                 <div class="col-md-6">

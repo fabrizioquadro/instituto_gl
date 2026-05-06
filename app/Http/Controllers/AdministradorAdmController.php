@@ -8,7 +8,7 @@ use App\Models\Administrador;
 class AdministradorAdmController extends Controller
 {
     public function index(){
-        $adms = Administrador::all();
+        $adms = Administrador::where('st_usuario', 'Ativo')->get();
         return view('adm/administradores/index', compact('adms'));
     }
 

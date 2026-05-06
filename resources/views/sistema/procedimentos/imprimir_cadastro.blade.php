@@ -13,14 +13,25 @@ $template = "layout.".session()->get('layout');
                 <a href="{{ route('sistema.financeiros.acessar', $financeiro->id) }}" class="btn btn-sm btn-primary" target="_blank">Acessar Financeiro</a>
             @endif
         </div>
-        @if($cadastrante)
-            <div class="row">
-                <div class="col-md-12 form-group">
+        @php
+            $primeiro = $procedimentos->first();
+        @endphp
+        <div class="row">
+            <div class="col-md-4 form-group">
+                <label for="">Paciente:</label><br>
+                <b>{{ $primeiro->paciente->nm_paciente }}</b>
+            </div>
+            <div class="col-md-4 form-group">
+                <label for="">Médico:</label><br>
+                <b>{{ $primeiro->medico }}</b>
+            </div>
+            @if($cadastrante)
+                <div class="col-md-4 form-group">
                     <label for="">Cadastrante:</label><br>
                     <b>{{ $cadastrante }}</b>
                 </div>
-            </div>
-        @endif
+            @endif
+        </div>
         <div class="table-responsive">
             <table class="table">
                 <thead>
@@ -204,8 +215,8 @@ $vl_aplicado = 0;
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($procedimento->logs->sortByDesc('created_at') as $log)
-                            <tr>
+                        @foreach($procedimento->logs->sortByDesc('created_at')->values() as $index => $log)
+                            <tr class="{{ $index > 3 ? 'd-none more-logs-'.$procedimento->id : '' }}">
                                 <td>{{ $log->created_at->format('d/m/Y H:i:s') }}</td>
                                 <td>{{ $log->autor() }}</td>
                                 <td><span class="badge bg-label-info">{{ $log->acao }}</span></td>
@@ -230,6 +241,13 @@ $vl_aplicado = 0;
                         @endforeach
                     </tbody>
                 </table>
+                @if($procedimento->logs->count() > 4)
+                    <div class="text-center mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="document.querySelectorAll('.more-logs-{{ $procedimento->id }}').forEach(el => el.classList.remove('d-none')); this.style.display='none'">
+                            Ver mais ({{ $procedimento->logs->count() - 4 }})
+                        </button>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

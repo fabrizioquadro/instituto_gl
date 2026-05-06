@@ -26,6 +26,16 @@
                 <div class="col-md-6">
                     <div class="form-floating form-floating-outline">
                         <input class="form-control" type="file" id="imagem" name="imagem"/>
+                        <label for='imagem'>Imagem Perfil:</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline">
+                        <select required id="st_usuario" name='st_usuario' class="select2 form-select">
+                            <option @if($adm->st_usuario == "Ativo") selected @endif value="Ativo">Ativo</option>
+                            <option @if($adm->st_usuario == "Inativo") selected @endif value="Inativo">Inativo</option>
+                        </select>
+                        <label for="st_usuario">Status Usuário:</label>
                     </div>
                 </div>
             </div>

@@ -223,6 +223,12 @@ else{
                                               </a>
                                         </li>
                                         <li>
+                                            <a class="dropdown-item" href="{{ route('sistema.financeiros.caixa_diario') }}">
+                                                <i class="mdi mdi-cash-register me-2"></i>
+                                                <span class="align-middle">Caixa Diário</span>
+                                              </a>
+                                        </li>
+                                        <li>
                                             <div class="dropdown-divider"></div>
                                         </li>
                                         <li>
