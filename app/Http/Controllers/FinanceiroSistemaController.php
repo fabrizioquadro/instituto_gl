@@ -360,8 +360,73 @@ class FinanceiroSistemaController extends Controller
         }
     }
 
+    public function editar_pagamento($id){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+        $adm = session()->get('administrador');
+
+        if(!in_array($user->id ?? 0, [1, 14, 3]) && !in_array($adm->id ?? 0, [1, 14, 3])){
+            return redirect()->back()->with('mensagem_erro', 'Você não tem permissão para editar pagamentos.');
+        }
+        $forma = FinanceiroFormasPagamento::where('id', $id)->first();
+        $financeiro = Financeiro::where('id', $forma->financeiro_id)->first();
+        return view('sistema/financeiros/editar_pagamento', compact('forma', 'financeiro'));
+    }
+
+    public function update_pagamento(Request $request){
+        try {
+            $user = auth()->user();
+            if(!$user){
+                $user = session()->get('user');
+            }
+            $adm = session()->get('administrador');
+
+            if(!in_array($user->id ?? 0, [1, 14, 3]) && !in_array($adm->id ?? 0, [1, 14, 3])){
+                return redirect()->back()->with('mensagem_erro', 'Você não tem permissão para atualizar pagamentos.');
+            }
+
+            $forma = FinanceiroFormasPagamento::where('id', $request->id)->first();
+            $financeiro = Financeiro::where('id', $forma->financeiro_id)->first();
+
+            $forma_pagamento_antiga = $forma->forma_pagamento;
+            $vl_pagamento_antigo = $forma->vl_pagamento;
+
+            $forma->forma_pagamento = $request->forma_pagamento;
+            if($request->forma_pagamento == "Crédito"){
+                $forma->parcelas = $request->parcelas;
+            }
+            else{
+                $forma->parcelas = 1;
+            }
+            $forma->vl_pagamento = valorFormDb($request->vl_pagamento);
+            $forma->id_pagamento = $request->id_pagamento;
+            $forma->save();
+
+            foreach($financeiro->procedimentos() as $p){
+                ProcedimentoLog::registrar($p->id, 'Financeiro', "Pagamento de R$ ".valorDbForm($vl_pagamento_antigo)." ($forma_pagamento_antiga) alterado para R$ ".valorDbForm($forma->vl_pagamento)." ($forma->forma_pagamento).");
+            }
+
+            $this->atualiza_financeiro_procedimento($financeiro->procedimentos()->first()->codigo);
+
+            return redirect()->route('sistema.financeiros.acessar', $financeiro->id)->with('mensagem', 'Pagamento Atualizado');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.financeiros')->with('mensagem_erro', $e->getMessage());
+        }
+    }
+
     public function delete_pagamento($id = null){
         try {
+            $user = auth()->user();
+            if(!$user){
+                $user = session()->get('user');
+            }
+            $adm = session()->get('administrador');
+
+            if(!in_array($user->id ?? 0, [1, 14, 3]) && !in_array($adm->id ?? 0, [1, 14, 3])){
+                return redirect()->back()->with('mensagem_erro', 'Você não tem permissão para excluir pagamentos.');
+            }
             $forma = FinanceiroFormasPagamento::where('id', $id)->first();
             $financeiro = Financeiro::where('id', $forma->financeiro_id)->first();
             

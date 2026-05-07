@@ -108,7 +108,17 @@ $template = "layout.".session()->get('layout');
                             <td>{{ $forma->created_at ? $forma->created_at->format('d/m/Y H:i:s') : '' }}</td>
                             <td>{{ $forma->cadastrante ? $forma->cadastrante->nome : '' }}</td>
                             <td>
-                                @if(session()->has('administrador'))
+                                @php
+                                    $user_check = auth()->user();
+                                    if(!$user_check){
+                                        $user_check = session()->get('user');
+                                    }
+                                    $adm_check = session()->get('administrador');
+                                @endphp
+                                @if((isset($user_check->id) && in_array($user_check->id, [1, 14, 3])) || (isset($adm_check->id) && in_array($adm_check->id, [1, 14, 3])))
+                                    <a title="Editar Pagamento" href="{{ route('sistema.financeiros.editar_pagamento', $forma->id) }}" class="btn btn-icon btn-outline-primary waves-effect">
+                                        <span class="tf-icons mdi mdi-pencil"></span>
+                                    </a>
                                     <button title="Excluir Pagamento" onclick="excluir_pagamento({{ $forma->id }})" type="button" class="btn btn-icon btn-outline-danger waves-effect">
                                         <span class="tf-icons mdi mdi-delete"></span>
                                     </button>
@@ -119,7 +129,7 @@ $template = "layout.".session()->get('layout');
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3"> <b>TOTAL</b> </td>
+                        <td colspan="4"> <b>TOTAL</b> </td>
                         <td> <b>R$ {{ valorDbForm($financeiro->formas()->sum('vl_pagamento')) }}</b> </td>
                         <td></td>
                         <td></td>

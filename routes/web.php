@@ -263,6 +263,8 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/financeiros/adicionar_pagamento/{id}', [FinanceiroSistemaController::class, 'adicionar_pagamento'])->name('sistema.financeiros.adicionar_pagamento');
         Route::get('/financeiros/delete_pagamento/{id?}', [FinanceiroSistemaController::class, 'delete_pagamento'])->name('sistema.financeiros.delete_pagamento');
         Route::post('/financeiros/insert_pagamento', [FinanceiroSistemaController::class, 'insert_pagamento'])->name('sistema.financeiros.insert_pagamento');
+        Route::get('/financeiros/editar_pagamento/{id}', [FinanceiroSistemaController::class, 'editar_pagamento'])->name('sistema.financeiros.editar_pagamento');
+        Route::post('/financeiros/update_pagamento', [FinanceiroSistemaController::class, 'update_pagamento'])->name('sistema.financeiros.update_pagamento');
         Route::post('/financeiros/insert', [FinanceiroSistemaController::class, 'insert'])->name('sistema.financeiros.insert');
     });
 });
