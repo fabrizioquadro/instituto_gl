@@ -125,6 +125,20 @@ function set_valor_medicamento(medicamento){
     valor = parseInt(selectedOption.dataset.valor);
     valor = valor.toFixed(2);
     document.getElementById("valor_" + medicamento).value = valor.replace('.',',');
+
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {medicamento_id:select.value},
+        function(json){
+            if(json.unidade == "Procedimento" || json.nome.toLowerCase().startsWith('pellet')){
+                document.getElementById("valor_" + medicamento).removeAttribute('readonly');
+            }
+            else{
+                document.getElementById("valor_" + medicamento).setAttribute('readonly','readonly');
+            }
+        }
+    );
+
     calcula_total_medicamento(medicamento)
 }
 

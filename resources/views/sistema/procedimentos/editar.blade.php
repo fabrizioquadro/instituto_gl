@@ -589,6 +589,19 @@ function editar_aplicacao(aplicacao_id){
             document.getElementById('modal_editar_aplicacao_valor').value = json.valor;
             document.getElementById('modal_editar_aplicacao_total').value = json.total;
 
+            $.getJSON(
+                '{{ route("adm.medicamentos.buscar") }}',
+                {medicamento_id:json.medicamento_id},
+                function(med){
+                    if(med.unidade == "Procedimento" || med.nome.toLowerCase().startsWith('pellet')){
+                        document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
+                    }
+                    else{
+                        document.getElementById("modal_editar_aplicacao_valor").setAttribute('readonly','readonly');
+                    }
+                }
+            );
+
             modalEditarAplicacao = new bootstrap.Modal(document.getElementById('modal_editar_aplicacao'));
             modalEditarAplicacao.show();
         }
@@ -598,18 +611,50 @@ function editar_aplicacao(aplicacao_id){
 function set_valor_medicamento(){
     select = document.getElementById("modal_editar_aplicacao_medicamento_id");
     selectedOption = select.options[select.selectedIndex];
-    valor = parseInt(selectedOption.dataset.valor);
+    valor = parseFloat(selectedOption.dataset.valor);
     valor = valor.toFixed(2);
     document.getElementById("modal_editar_aplicacao_valor").value = valor.replace('.',',');
+
+    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
+
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {medicamento_id:select.value},
+        function(json){
+            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
+                document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
+            }
+            else{
+                document.getElementById("modal_editar_aplicacao_valor").setAttribute('readonly','readonly');
+            }
+        }
+    );
+
     modal_editar_aplicacao_calcula_total_medicamento();
 }
 
 function set_valor_medicamento_adicionar(){
     select = document.getElementById("modal_adicionar_aplicacao_medicamento_id");
     selectedOption = select.options[select.selectedIndex];
-    valor = parseInt(selectedOption.dataset.valor);
+    valor = parseFloat(selectedOption.dataset.valor);
     valor = valor.toFixed(2);
     document.getElementById("modal_adicionar_aplicacao_valor").value = valor.replace('.',',');
+
+    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
+
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {medicamento_id:select.value},
+        function(json){
+            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
+                document.getElementById("modal_adicionar_aplicacao_valor").removeAttribute('readonly');
+            }
+            else{
+                document.getElementById("modal_adicionar_aplicacao_valor").setAttribute('readonly','readonly');
+            }
+        }
+    );
+
     modal_adicionar_aplicacao_calcula_total_medicamento();
 }
 

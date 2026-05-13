@@ -351,16 +351,18 @@ document.getElementById('botao_imprimir').addEventListener('click', ()=>{
 function set_valor_medicamento(linha, medicamento){
     select = document.getElementById("medicamento_id_" + linha + '_' + medicamento);
     selectedOption = select.options[select.selectedIndex];
-    valor = parseInt(selectedOption.dataset.valor);
+    valor = parseFloat(selectedOption.dataset.valor);
     valor = valor.toFixed(2);
     document.getElementById("valor_" + linha + '_' + medicamento).value = valor.replace('.',',');
 
-    //se for procedimento pode editar o valor
+    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
+
+    //se for procedimento ou começar com Pellet pode editar o valor
     $.getJSON(
         '{{ route("adm.medicamentos.buscar") }}',
         {medicamento_id:select.value},
         function(json){
-            if(json.unidade == "Procedimento"){
+            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
                 document.getElementById("valor_" + linha + '_' + medicamento).removeAttribute('readonly');
                 document.getElementById("valor_" + linha + '_' + medicamento).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
             }
@@ -707,16 +709,18 @@ document.getElementById('botao_gerador').addEventListener('click', ()=>{
 function gerador_set_valor_medicamento(linha){
     select = document.getElementById("gerador_medicamento_id_" + linha);
     selectedOption = select.options[select.selectedIndex];
-    valor = parseInt(selectedOption.dataset.valor);
+    valor = parseFloat(selectedOption.dataset.valor);
     valor = valor.toFixed(2);
     document.getElementById("gerador_valor_" + linha).value = valor.replace('.',',');
 
-    //se for procedimento pode editar o valor
+    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
+
+    //se for procedimento ou começar com Pellet pode editar o valor
     $.getJSON(
         '{{ route("adm.medicamentos.buscar") }}',
         {medicamento_id:select.value},
         function(json){
-            if(json.unidade == "Procedimento"){
+            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
                 document.getElementById("gerador_valor_" + linha).removeAttribute('readonly');
                 document.getElementById("gerador_valor_" + linha).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
             }
