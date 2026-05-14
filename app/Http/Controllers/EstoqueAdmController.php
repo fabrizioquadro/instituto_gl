@@ -26,6 +26,7 @@ class EstoqueAdmController extends Controller
                 'estoque_minimo' => $medicamento->estoque_minimo,
             ];
 
+            $tem_estoque = false;
             //vamos buscar as entradas e saidas de cada clinica
             foreach($clinicas as $clinica){
                 $entrada = Estoque::where('clinica_id', $clinica->id)
@@ -41,10 +42,14 @@ class EstoqueAdmController extends Controller
                 $qt_clinica = $entrada - $saida;
                 $array[$clinica->nome] = $qt_clinica;
                 $quantidade += $qt_clinica;
+
+                if(abs($qt_clinica) > 0.001) {
+                    $tem_estoque = true;
+                }
             }
 
             $array['quantidade'] = $quantidade;
-            if($quantidade > 0){
+            if($tem_estoque){
                 $array_view[] = $array;
             }
         }
@@ -90,6 +95,7 @@ class EstoqueAdmController extends Controller
                 'codigo_barras' => $estoque->codigo_barras,
                 'data_vencimento' => dataDbForm($estoque->dt_vencimento),
             ];
+            $tem_estoque = false;
             //vamos buscar as entradas e saidas de cada clinica
             foreach($clinicas as $clinica){
                 $entrada = Estoque::where('clinica_id', $clinica->id)
@@ -107,10 +113,14 @@ class EstoqueAdmController extends Controller
                 $qt_clinica = $entrada - $saida;
                 $array[$clinica->nome] = $qt_clinica;
                 $quantidade += $qt_clinica;
+
+                if(abs($qt_clinica) > 0.001) {
+                    $tem_estoque = true;
+                }
             }
 
             $array['quantidade'] = $quantidade;
-            if($quantidade > 0){
+            if($tem_estoque){
                 $array_view[] = $array;
             }
         }
@@ -262,6 +272,7 @@ class EstoqueAdmController extends Controller
                         'unidade' => $medicamento_atual->unidade,
                         'estoque_minimo' => $medicamento_atual->estoque_minimo,
                     ];
+                    $tem_estoque_lote = false;
                     //vamos buscar as entradas e saidas de cada clinica
                     foreach($clinicas as $clinica){
                         $entrada = Estoque::where('clinica_id', $clinica->id)
@@ -279,10 +290,14 @@ class EstoqueAdmController extends Controller
                         $qt_clinica = $entrada - $saida;
                         $array_lote[$clinica->nome] = $qt_clinica;
                         $quantidade_lote += $qt_clinica;
+
+                        if(abs($qt_clinica) > 0.001) {
+                            $tem_estoque_lote = true;
+                        }
                     }
 
                     $array_lote['quantidade'] = $quantidade_lote;
-                    if($quantidade_lote > 0){
+                    if($tem_estoque_lote){
                         $array_view[] = $array_lote;
                     }
                 }
