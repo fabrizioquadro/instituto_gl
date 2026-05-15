@@ -367,7 +367,7 @@ class FinanceiroSistemaController extends Controller
         }
         $adm = session()->get('administrador');
 
-        if(!in_array($user->id ?? 0, [1, 14, 3]) && !in_array($adm->id ?? 0, [1, 14, 3])){
+        if(!isset($adm->id) && !in_array($user->id ?? 0, [1, 14, 3])){
             return redirect()->back()->with('mensagem_erro', 'Você não tem permissão para editar pagamentos.');
         }
         $forma = FinanceiroFormasPagamento::where('id', $id)->first();
@@ -383,7 +383,7 @@ class FinanceiroSistemaController extends Controller
             }
             $adm = session()->get('administrador');
 
-            if(!in_array($user->id ?? 0, [1, 14, 3]) && !in_array($adm->id ?? 0, [1, 14, 3])){
+            if(!isset($adm->id) && !in_array($user->id ?? 0, [1, 14, 3])){
                 return redirect()->back()->with('mensagem_erro', 'Você não tem permissão para atualizar pagamentos.');
             }
 
@@ -424,7 +424,7 @@ class FinanceiroSistemaController extends Controller
             }
             $adm = session()->get('administrador');
 
-            if(!in_array($user->id ?? 0, [1, 14, 3]) && !in_array($adm->id ?? 0, [1, 14, 3])){
+            if(!isset($adm->id) && !in_array($user->id ?? 0, [1, 14, 3])){
                 return redirect()->back()->with('mensagem_erro', 'Você não tem permissão para excluir pagamentos.');
             }
             $forma = FinanceiroFormasPagamento::where('id', $id)->first();
@@ -443,6 +443,50 @@ class FinanceiroSistemaController extends Controller
             return redirect()->route('sistema.financeiros')->with('mensagem_erro', $e->getMessage());
         }
 
+    }
+
+    public function editar_valores($id){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+        $adm = session()->get('administrador');
+
+        if(!isset($adm->id) && !in_array($user->id ?? 0, [1, 14, 3])){
+            return redirect()->back()->with('mensagem_erro', 'Você não tem permissão para editar os valores.');
+        }
+
+        $financeiro = Financeiro::where('id', $id)->first();
+        return view('sistema/financeiros/editar_valores', compact('financeiro'));
+    }
+
+    public function update_valores(Request $request){
+        try {
+            $user = auth()->user();
+            if(!$user){
+                $user = session()->get('user');
+            }
+            $adm = session()->get('administrador');
+
+            if(!isset($adm->id) && !in_array($user->id ?? 0, [1, 14, 3])){
+                return redirect()->back()->with('mensagem_erro', 'Você não tem permissão para atualizar os valores.');
+            }
+
+            $financeiro = Financeiro::where('id', $request->id)->first();
+            $financeiro->vl_desconto = valorFormDb($request->vl_desconto);
+            $financeiro->vl_adicional = valorFormDb($request->vl_adicional);
+            $financeiro->save();
+
+            foreach($financeiro->procedimentos() as $p){
+                ProcedimentoLog::registrar($p->id, 'Financeiro', "Valores alterados: Desconto R$ $request->vl_desconto | Adicional R$ $request->vl_adicional.");
+            }
+
+            $this->atualiza_financeiro_procedimento($financeiro->procedimentos()->first()->codigo);
+
+            return redirect()->route('sistema.financeiros.acessar', $financeiro->id)->with('mensagem', 'Valores Atualizados e Financeiro Recalculado');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.financeiros')->with('mensagem_erro', $e->getMessage());
+        }
     }
 
 }

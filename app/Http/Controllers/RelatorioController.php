@@ -713,6 +713,38 @@ class RelatorioController extends Controller
         return view('adm/relatorios/recepcao_gerar', compact('procedimentos', 'dados'));
     }
 
+    public function caixa(){
+        $usuarios = User::where('tipo','Secretária')->where('st_usuario', 'Ativo')->orderBy('nome')->get();
+        $clinicas = Clinica::all()->sortBy('nome');
+        return view('adm/relatorios/caixa', compact('usuarios','clinicas'));
+    }
+
+    public function caixa_gerar(Request $request){
+        $dados = $request->except('_token');
+        
+        $query = \App\Models\FinanceiroFormasPagamento::query();
+        
+        if($request->dt_inc){
+            $query->where('created_at', '>=', $request->dt_inc . " 00:00:00");
+        }
+        if($request->dt_fn){
+            $query->where('created_at', '<=', $request->dt_fn . " 23:59:59");
+        }
+        if($request->user_id){
+            $query->where('user_id_cadastro', $request->user_id);
+        }
+        if($request->clinica_id){
+            $query->whereHas('financeiro', function($q) use ($request){
+                $q->where('clinica_id', $request->clinica_id);
+            });
+        }
+
+        $pagamentos = $query->with(['financeiro.paciente', 'cadastrante'])->orderBy('created_at', 'desc')->get();
+        $user_filtro = $request->user_id ? User::find($request->user_id) : null;
+
+        return view('adm/relatorios/caixa_gerar', compact('pagamentos', 'dados', 'user_filtro'));
+    }
+
     public function caixa_diario_sistema(){
         $user = auth()->user();
         if(!$user){

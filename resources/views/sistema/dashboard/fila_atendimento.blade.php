@@ -177,38 +177,61 @@ $template = "layout.".session()->get('layout');
                 <h5 class="card-title">Resumo de Atendimentos do Dia</h5>
                 @php
                     $resumo_enfermeiras = [];
+                    $total_pacientes = 0;
+                    $total_aplicacao = 0;
+                    $total_bio = 0;
                     foreach($procedimentos_aplicadas as $proc){
                         $nome = $proc->aplicadora ? $proc->aplicadora->nome : 'Não Identificada';
                         if(!isset($resumo_enfermeiras[$nome])){
-                            $resumo_enfermeiras[$nome] = 0;
+                            $resumo_enfermeiras[$nome] = [
+                                'pacientes' => 0,
+                                'aplicacao' => 0,
+                                'bio' => 0
+                            ];
                         }
-                        $resumo_enfermeiras[$nome]++;
+                        $resumo_enfermeiras[$nome]['pacientes']++;
+                        $total_pacientes++;
+
+                        if($proc->aplicacaos->count() > 0){
+                            $resumo_enfermeiras[$nome]['aplicacao']++;
+                            $total_aplicacao++;
+                        }
+                        if($proc->st_biopedancia == 'Sim'){
+                            $resumo_enfermeiras[$nome]['bio']++;
+                            $total_bio++;
+                        }
                     }
                     ksort($resumo_enfermeiras);
-                    $total_atendidos = $procedimentos_aplicadas->count();
+                    $total_atendidos = $total_pacientes;
                 @endphp
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-10">
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Enfermeira</th>
                                         <th class="text-center">Qtd. Pacientes</th>
+                                        <th class="text-center">Qtd. Aplicação</th>
+                                        <th class="text-center">Qtd. Bio</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($resumo_enfermeiras as $enfermeira => $qtd)
+                                    @foreach($resumo_enfermeiras as $enfermeira => $dados)
                                         <tr>
                                             <td>{{ $enfermeira }}</td>
-                                            <td class="text-center"><b>{{ $qtd }}</b></td>
+                                            <td class="text-center"><b>{{ $dados['pacientes'] }}</b></td>
+                                            <td class="text-center"><b>{{ $dados['aplicacao'] }}</b></td>
+                                            <td class="text-center"><b>{{ $dados['bio'] }}</b></td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                                 <tfoot class="table-light">
                                     <tr>
                                         <th>TOTAL GERAL</th>
-                                        <th class="text-center">{{ $total_atendidos }}</th>
+                                        <th class="text-center">{{ $total_pacientes }}</th>
+                                        <th class="text-center">{{ $total_aplicacao }}</th>
+                                        <th class="text-center">{{ $total_bio }}</th>
                                     </tr>
                                 </tfoot>
                             </table>

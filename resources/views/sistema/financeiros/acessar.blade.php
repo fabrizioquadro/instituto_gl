@@ -4,6 +4,13 @@ $template = "layout.".session()->get('layout');
 @extends($template)
 
 @section('conteudo')
+@php
+    $user_check = auth()->user();
+    if(!$user_check){
+        $user_check = session()->get('user');
+    }
+    $adm_check = session()->get('administrador');
+@endphp
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between">
@@ -58,6 +65,11 @@ $template = "layout.".session()->get('layout');
                 <label for="">Valor Adicional:</label><br>
                 <b>R$ {{ valorDbForm($financeiro->vl_adicional) }}</b>
             </div>
+            @if(isset($adm_check->id) || (isset($user_check->id) && in_array($user_check->id, [1, 14, 3])))
+                <div class="col-md-2 form-group">
+                    <a href="{{ route('sistema.financeiros.editar_valores', $financeiro->id) }}" class="btn btn-sm btn-outline-primary"><i class="mdi mdi-pencil"></i> Editar Valores</a>
+                </div>
+            @endif
             <div class="col-md-2 form-group">
                 <label for="">Valor Pagamento:</label><br>
                 <b>R$ {{ valorDbForm($financeiro->formas()->sum('vl_pagamento')) }}</b>
@@ -107,15 +119,8 @@ $template = "layout.".session()->get('layout');
                             <td>R$ {{ valorDbForm($forma->vl_pagamento) }}</td>
                             <td>{{ $forma->created_at ? $forma->created_at->format('d/m/Y H:i:s') : '' }}</td>
                             <td>{{ $forma->cadastrante ? $forma->cadastrante->nome : '' }}</td>
-                            <td>
-                                @php
-                                    $user_check = auth()->user();
-                                    if(!$user_check){
-                                        $user_check = session()->get('user');
-                                    }
-                                    $adm_check = session()->get('administrador');
-                                @endphp
-                                @if((isset($user_check->id) && in_array($user_check->id, [1, 14, 3])) || (isset($adm_check->id) && in_array($adm_check->id, [1, 14, 3])))
+                                <td>
+                                @if(isset($adm_check->id) || (isset($user_check->id) && in_array($user_check->id, [1, 14, 3])))
                                     <a title="Editar Pagamento" href="{{ route('sistema.financeiros.editar_pagamento', $forma->id) }}" class="btn btn-icon btn-outline-primary waves-effect">
                                         <span class="tf-icons mdi mdi-pencil"></span>
                                     </a>

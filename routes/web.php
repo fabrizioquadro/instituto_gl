@@ -119,6 +119,8 @@ Route::middleware(['verificaAdministrador'])->group(function () {
         Route::get('/relatorios/transferencias', [RelatorioController::class, 'transferencias'])->name('adm.relatorios.transferencias');
         Route::get('/relatorios/baixas', [RelatorioController::class, 'baixas'])->name('adm.relatorios.baixas');
         Route::get('/relatorios/recepcao', [RelatorioController::class, 'recepcao'])->name('adm.relatorios.recepcao');
+        Route::get('/relatorios/caixa', [RelatorioController::class, 'caixa'])->name('adm.relatorios.caixa');
+        Route::post('/relatorios/caixa/gerar', [RelatorioController::class, 'caixa_gerar'])->name('adm.relatorios.caixa.gerar');
         Route::post('/relatorios/baixas/gerar', [RelatorioController::class, 'baixas_gerar'])->name('adm.relatorios.baixas.gerar');
         Route::post('/relatorios/recepcao/gerar', [RelatorioController::class, 'recepcao_gerar'])->name('adm.relatorios.recepcao.gerar');
         Route::post('/relatorios/financeiro/gerar', [RelatorioController::class, 'financeiro_gerar'])->name('adm.relatorios.financeiro.gerar');
@@ -265,6 +267,8 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/financeiros/insert_pagamento', [FinanceiroSistemaController::class, 'insert_pagamento'])->name('sistema.financeiros.insert_pagamento');
         Route::get('/financeiros/editar_pagamento/{id}', [FinanceiroSistemaController::class, 'editar_pagamento'])->name('sistema.financeiros.editar_pagamento');
         Route::post('/financeiros/update_pagamento', [FinanceiroSistemaController::class, 'update_pagamento'])->name('sistema.financeiros.update_pagamento');
+        Route::get('/financeiros/editar_valores/{id}', [FinanceiroSistemaController::class, 'editar_valores'])->name('sistema.financeiros.editar_valores');
+        Route::post('/financeiros/update_valores', [FinanceiroSistemaController::class, 'update_valores'])->name('sistema.financeiros.update_valores');
         Route::post('/financeiros/insert', [FinanceiroSistemaController::class, 'insert'])->name('sistema.financeiros.insert');
     });
 });
