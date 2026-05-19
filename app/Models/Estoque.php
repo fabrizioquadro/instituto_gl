@@ -188,7 +188,7 @@ class Estoque extends Model
 
                 if($diferenca <= 90){
                     $array = [
-                        'medicamento' => $item->medicamento->nome,
+                        'medicamento' => $item->medicamento ? $item->medicamento->nome : 'Medicamento Desconhecido (ID: ' . $item->medicamento_id . ')',
                         'lote' => $item->lote,
                         'codigo_barras' => $item->codigo_barras,
                         'dt_vencimento' => $item->dt_vencimento,

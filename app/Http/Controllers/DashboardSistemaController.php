@@ -55,7 +55,7 @@ class DashboardSistemaController extends Controller
             foreach($estoques as $estoque){
                 $array = [
                     'clinica' => $clinica->nome,
-                    'medicamento' => $estoque->medicamento->nome,
+                    'medicamento' => $estoque->medicamento ? $estoque->medicamento->nome : 'Medicamento Desconhecido (ID: ' . $estoque->medicamento_id . ')',
                     'abertura' => dataDbForm($estoque->dt_cadastro),
                     'usuario' => $estoque->user->nome,
                     'frasco' => $estoque->qt_inical." (mg)",
@@ -204,7 +204,7 @@ class DashboardSistemaController extends Controller
         foreach($estoques as $estoque){
             $array = [
                 'clinica' => $clinica->nome,
-                'medicamento' => $estoque->medicamento->nome,
+                'medicamento' => $estoque->medicamento ? $estoque->medicamento->nome : 'Medicamento Desconhecido (ID: ' . $estoque->medicamento_id . ')',
                 'abertura' => dataDbForm($estoque->dt_cadastro),
                 'usuario' => $estoque->user->nome,
                 'frasco' => $estoque->qt_inical." (mg)",
@@ -251,7 +251,7 @@ class DashboardSistemaController extends Controller
         foreach($estoques as $estoque){
             $array = [
                 'clinica' => $clinica->nome,
-                'medicamento' => $estoque->medicamento->nome,
+                'medicamento' => $estoque->medicamento ? $estoque->medicamento->nome : 'Medicamento Desconhecido (ID: ' . $estoque->medicamento_id . ')',
                 'abertura' => dataDbForm($estoque->dt_cadastro),
                 'usuario' => $estoque->user->nome,
                 'frasco' => $estoque->qt_inical." (mg)",
