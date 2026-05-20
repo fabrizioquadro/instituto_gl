@@ -392,6 +392,7 @@ class FinanceiroSistemaController extends Controller
 
             $forma_pagamento_antiga = $forma->forma_pagamento;
             $vl_pagamento_antigo = $forma->vl_pagamento;
+            $data_pagamento_antiga = date('d/m/Y H:i:s', strtotime($forma->created_at));
 
             $forma->forma_pagamento = $request->forma_pagamento;
             if($request->forma_pagamento == "Crédito"){
@@ -402,10 +403,15 @@ class FinanceiroSistemaController extends Controller
             }
             $forma->vl_pagamento = valorFormDb($request->vl_pagamento);
             $forma->id_pagamento = $request->id_pagamento;
+            if($request->created_at){
+                $forma->created_at = $request->created_at . ' ' . date('H:i:s');
+            }
             $forma->save();
 
+            $data_pagamento_nova = date('d/m/Y H:i:s', strtotime($forma->created_at));
+
             foreach($financeiro->procedimentos() as $p){
-                ProcedimentoLog::registrar($p->id, 'Financeiro', "Pagamento de R$ ".valorDbForm($vl_pagamento_antigo)." ($forma_pagamento_antiga) alterado para R$ ".valorDbForm($forma->vl_pagamento)." ($forma->forma_pagamento).");
+                ProcedimentoLog::registrar($p->id, 'Financeiro', "Pagamento de R$ ".valorDbForm($vl_pagamento_antigo)." ($forma_pagamento_antiga) em $data_pagamento_antiga alterado para R$ ".valorDbForm($forma->vl_pagamento)." ($forma->forma_pagamento) em $data_pagamento_nova.");
             }
 
             $this->atualiza_financeiro_procedimento($financeiro->procedimentos()->first()->codigo);

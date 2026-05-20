@@ -136,6 +136,35 @@ class RelatorioController extends Controller
                         ];
                         $array_financeiro[] = $linha_dados;
                     }
+
+                    if(isset($rateio_pagamento['vl_procedimento']) && $rateio_pagamento['vl_procedimento'] > 0){
+                        $linha_dados = [
+                            'financeiro_id' => $forma->financeiro_id,
+                            'pagamento_id' => $forma->id,
+                            'ordem' => strtotime($data),
+                            'data' => dataDbForm($data),
+                            'paciente' => $financeiro->paciente->nm_paciente,
+                            'paciente_id' => $financeiro->paciente->id,
+                            'id_feegow' => $financeiro->paciente->paciente_id_feegow,
+                            'cpf' => $financeiro->paciente->cpf,
+                            'codigo' => $codigo,
+                            'vl_tratamento' => 'R$ '.valorDbForm($financeiro->vl_procedimentos),
+                            'vl_pagamento' => 'R$ '.valorDbForm($forma->vl_pagamento),
+                            'vl_rateio' => 'R$ '.valorDbForm($rateio_pagamento['vl_procedimento']),
+                            'tp_pagamento' => 'Procedimento',
+                            'tipo_atendimento' => $procedimento ? $procedimento->tipo_atendimento : '',
+                            'desconto' => valorDbForm($financeiro->vl_desconto),
+                            'desconto_total' => 'R$ '.valorDbForm($financeiro->vl_desconto),
+                            'forma_pagamento' => $forma->forma_pagamento,
+                            'id_pagamento' => $forma->id_pagamento,
+                            'parcelas' => $forma->parcelas,
+                            'obs' => $financeiro->obs_pagamento,
+                            'clinica' => $financeiro->clinica->nome,
+                            'medico' => $financeiro->medico,
+                            'contador' => $contador,
+                        ];
+                        $array_financeiro[] = $linha_dados;
+                    }
                 }
             }
         }
@@ -429,6 +458,32 @@ class RelatorioController extends Controller
                             'vl_pagamento' => 'R$ '.valorDbForm($forma->vl_pagamento),
                             'vl_rateio' => 'R$ '.valorDbForm($rateio_pagamento['vl_aplicacao']),
                             'tp_pagamento' => 'Aplicação',
+                            'desconto' => valorDbForm($financeiro->vl_desconto),
+                            'forma_pagamento' => $forma->forma_pagamento,
+                            'id_pagamento' => $forma->id_pagamento,
+                            'parcelas' => $forma->parcelas,
+                            'clinica' => $financeiro->clinica->nome,
+                            'medico' => $financeiro->medico,
+                            'contador' => $contador,
+                            'obs' => $financeiro->obs_pagamento,
+                        ];
+                        $array_financeiro[] = $dados;
+                    }
+
+                    if(isset($rateio_pagamento['vl_procedimento']) && $rateio_pagamento['vl_procedimento'] > 0){
+                        $dados = [
+                            'pagamento_id' => $forma->id,
+                            'ordem' => strtotime($data),
+                            'data' => dataDbForm($data),
+                            'paciente' => $financeiro->paciente->nm_paciente,
+                            'id_feegow' => $financeiro->paciente->paciente_id_feegow,
+                            'cpf' => $financeiro->paciente->cpf,
+                            'codigo' => $codigo,
+                            'vl_tratamento' => 'R$ '.valorDbForm($financeiro->vl_procedimentos),
+                            'desconto_total' => 'R$ '.valorDbForm($financeiro->vl_desconto),
+                            'vl_pagamento' => 'R$ '.valorDbForm($forma->vl_pagamento),
+                            'vl_rateio' => 'R$ '.valorDbForm($rateio_pagamento['vl_procedimento']),
+                            'tp_pagamento' => 'Procedimento',
                             'desconto' => valorDbForm($financeiro->vl_desconto),
                             'forma_pagamento' => $forma->forma_pagamento,
                             'id_pagamento' => $forma->id_pagamento,

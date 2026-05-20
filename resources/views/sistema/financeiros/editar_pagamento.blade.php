@@ -34,6 +34,7 @@ $template = "layout.".session()->get('layout');
                                     <th>Forma Pagamento</th>
                                     <th>Parcelas</th>
                                     <th>ID Pagamento / DOC</th>
+                                    <th>Data Lançamento</th>
                                     <th>Valor</th>
                                 </tr>
                             </thead>
@@ -57,6 +58,7 @@ $template = "layout.".session()->get('layout');
                                         </select>
                                     </td>
                                     <td><input class="form-control" type="text" id="id_pagamento" name="id_pagamento" value="{{ $forma->id_pagamento }}"/></td>
+                                    <td><input required class="form-control" type="date" id="created_at" name="created_at" value="{{ date('Y-m-d', strtotime($forma->created_at)) }}"/></td>
                                     <td><input required class="form-control valor" type="text" id="vl_pagamento" name="vl_pagamento" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="{{ valorDbForm($forma->vl_pagamento) }}"/></td>
                                 </tr>
                             </tbody>
