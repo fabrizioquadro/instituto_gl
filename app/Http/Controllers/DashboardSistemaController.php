@@ -78,6 +78,7 @@ class DashboardSistemaController extends Controller
                 $dados_pesquisa['dt_procedimentos'] = $_POST['dt_procedimentos'];
                 $dados_pesquisa['st_pagamento'] = $_POST['st_pagamento'];
                 $dados_pesquisa['situacao'] = $_POST['situacao'];
+                $dados_pesquisa['tipo_atendimento'] = isset($_POST['tipo_atendimento']) ? $_POST['tipo_atendimento'] : '';
                 $dados_pesquisa['paciente_id'] = $paciente_id;
                 $dados_pesquisa['paciente_controle'] = $paciente ? $paciente->id : '';
 
@@ -89,6 +90,7 @@ class DashboardSistemaController extends Controller
                 $dados_pesquisa['dt_procedimentos'] = $data;
                 $dados_pesquisa['st_pagamento'] = '';
                 $dados_pesquisa['situacao'] = 'Agendado';
+                $dados_pesquisa['tipo_atendimento'] = '';
                 $dados_pesquisa['paciente_controle'] = '';
 
                 $procedimentos = Procedimento::where('clinica_id', $user->clinica_id)
@@ -275,6 +277,7 @@ class DashboardSistemaController extends Controller
     public function busca_lote_por_codigo(){
         $estoque = Estoque::where('codigo_barras', $_GET['codigo'])
         ->where('clinica_id', $_GET['clinica_id'])
+        ->where('medicamento_id', $_GET['medicamento_id'])
         ->first();
 
         if($estoque){

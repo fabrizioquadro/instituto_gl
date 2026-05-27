@@ -228,6 +228,9 @@ class Procedimento extends Model
         if($pesquisar['st_pagamento']){
             $sql .= " AND st_pagamento='$pesquisar[st_pagamento]'";
         }
+        if(isset($pesquisar['tipo_atendimento']) && $pesquisar['tipo_atendimento']){
+            $sql .= " AND tipo_atendimento='$pesquisar[tipo_atendimento]'";
+        }
 
         $result = \DB::select($sql);
 

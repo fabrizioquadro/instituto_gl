@@ -513,6 +513,176 @@
         </div>
     </div>
 @endif
+    <div class="row">
+        <div class="col-md-6 mt-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Consumo de Medicamentos (Quantidade)</h5>
+                    <div id="donutChart_consumo"></div>
+                </div>
+            </div>
+            <script>
+                window.addEventListener('load',()=>{
+                    legendColor = '#696969';
+                    headingColor = '#696969';
+                    fontFamily = 'arial'
+                    const donutChartEl = document.querySelector('#donutChart_consumo'),
+                        donutChartConfig = {
+                            chart: {
+                                height: 390,
+                                fontFamily: 'Inter',
+                                type: 'donut'
+                            },
+                            labels: [{!! $label_consumo !!}],
+                            series: [{!! $valores_consumo !!}],
+                            colors: [{!! $cores_consumo !!}],
+                            stroke: {
+                                show: false,
+                                curve: 'straight'
+                            },
+                            dataLabels: {
+                                enabled: true,
+                                formatter: function (val, opt) {
+                                    // val is percentage calculated by ApexCharts, but we want to show quantity in tooltip if possible.
+                                    // Actually, let's keep the percentage for the dataLabels (inside the slice)
+                                    return parseInt(val, 10) + '%';
+                                }
+                            },
+                            tooltip: {
+                                y: {
+                                    formatter: function(value) {
+                                        return value + " unidades";
+                                    }
+                                }
+                            },
+                            legend: {
+                                show: true,
+                                position: 'bottom',
+                                markers: {
+                                    size: 6
+                                },
+                                itemMargin: {
+                                    vertical: 3,
+                                    horizontal: 10
+                                },
+                                labels: {
+                                    colors: legendColor,
+                                    useSeriesColors: false
+                                }
+                            },
+                            plotOptions: {
+                                pie: {
+                                    donut: {
+                                        labels: {
+                                            show: true,
+                                            name: {
+                                                fontSize: '2rem',
+                                                fontFamily: fontFamily
+                                            },
+                                            value: {
+                                                fontSize: '1.5rem',
+                                                color: legendColor,
+                                                fontFamily: fontFamily,
+                                                formatter: function (val) {
+                                                    return val + ' unid';
+                                                }
+                                            },
+                                            total: {
+                                                show: true,
+                                                fontSize: '1.5rem',
+                                                color: headingColor,
+                                                label: 'Total',
+                                                formatter: function (w) {
+                                                    return w.globals.seriesTotals.reduce((a, b) => {
+                                                        return a + b
+                                                    }, 0) + ' unid';
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            responsive: [
+                                {
+                                    breakpoint: 992,
+                                    options: {
+                                        chart: {
+                                            height: 380
+                                        },
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                colors: legendColor,
+                                                useSeriesColors: false
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    breakpoint: 576,
+                                    options: {
+                                        chart: {
+                                            height: 320
+                                        },
+                                        plotOptions: {
+                                            pie: {
+                                                donut: {
+                                                    labels: {
+                                                        show: true,
+                                                        name: {
+                                                            fontSize: '1.5rem'
+                                                        },
+                                                        value: {
+                                                            fontSize: '1rem'
+                                                        },
+                                                        total: {
+                                                            fontSize: '1.5rem'
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                colors: legendColor,
+                                                useSeriesColors: false
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    breakpoint: 420,
+                                    options: {
+                                        chart: {
+                                            height: 280
+                                        },
+                                        legend: {
+                                            show: false
+                                        }
+                                    }
+                                },
+                                {
+                                    breakpoint: 360,
+                                    options: {
+                                        chart: {
+                                            height: 250
+                                        },
+                                        legend: {
+                                            show: false
+                                        }
+                                    }
+                                }
+                            ]
+                        };
+                        if (typeof donutChartEl !== undefined && donutChartEl !== null) {
+                            const donutChart = new ApexCharts(donutChartEl, donutChartConfig);
+                            donutChart.render();
+                        }
+                    });
+            </script>
+        </div>
+    </div>
 <div class="card card-border-shadow-primary mt-3">
     <div class="card-body">
         <h4 class="card-title">Medicamentos com vencimento nos próximos 60 dias</h4>

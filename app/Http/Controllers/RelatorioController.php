@@ -328,6 +328,9 @@ class RelatorioController extends Controller
             if($procedimento->dt_hr_chegada){
                 $var = explode(' ',$procedimento->dt_hr_chegada);
                 $chegada = dataDbForm($var[0])." ".$var[1];
+            } elseif ($procedimento->inicio_cadastro) {
+                $var = explode(' ',$procedimento->inicio_cadastro);
+                $chegada = dataDbForm($var[0])." ".($var[1] ?? '00:00:00');
             }
 
             if($procedimento->dt_hr_atendimento){
@@ -737,7 +740,118 @@ class RelatorioController extends Controller
             return $b['data'] <=> $a['data'];
         });
 
-        return view('adm/relatorios/baixas_gerar', compact('movimentacoes', 'dados'));
+    }
+
+    public function exportar_baixas(Request $request){
+        $dados = json_decode($request->dados, true);
+        
+        $queryFechados = \App\Models\Estoque::where('origem', 'Baixa')->where('tipo', 'Saida');
+        
+        if(isset($dados['dt_inc'])){
+            $queryFechados->where('created_at', '>=', $dados['dt_inc'] . " 00:00:00");
+        }
+        if(isset($dados['dt_fn'])){
+            $queryFechados->where('created_at', '<=', $dados['dt_fn'] . " 23:59:59");
+        }
+        if(isset($dados['clinica_id'])){
+            $queryFechados->where('clinica_id', $dados['clinica_id']);
+        }
+        if(isset($dados['medicamento_id'])){
+            $queryFechados->where('medicamento_id', $dados['medicamento_id']);
+        }
+        
+        $fechados = $queryFechados->with(['medicamento', 'clinica', 'baixa'])->get();
+
+        $queryAbertos = \App\Models\BaixaAberto::query();
+        if(isset($dados['dt_inc'])){
+            $queryAbertos->where('created_at', '>=', $dados['dt_inc'] . " 00:00:00");
+        }
+        if(isset($dados['dt_fn'])){
+            $queryAbertos->where('created_at', '<=', $dados['dt_fn'] . " 23:59:59");
+        }
+        if(isset($dados['clinica_id'])){
+            $queryAbertos->where('clinica_id', $dados['clinica_id']);
+        }
+        if(isset($dados['medicamento_id'])){
+            $queryAbertos->whereHas('estoque', function($q) use ($dados){
+                $q->where('medicamento_id', $dados['medicamento_id']);
+            });
+        }
+        
+        $abertos = $queryAbertos->with(['estoque.medicamento', 'clinica', 'user'])->get();
+
+        $movimentacoes = array();
+        
+        foreach($fechados as $item){
+            $movimentacoes[] = [
+                'data' => $item->created_at,
+                'clinica' => $item->clinica->nome ?? 'N/A',
+                'medicamento' => $item->medicamento->nome ?? 'N/A',
+                'lote' => $item->lote,
+                'quantidade' => $item->quantidade,
+                'tipo' => 'Fechado',
+                'motivo' => $item->baixa->motivo ?? 'N/A',
+                'usuario' => 'N/A'
+            ];
+        }
+
+        foreach($abertos as $item){
+            $movimentacoes[] = [
+                'data' => $item->created_at,
+                'clinica' => $item->clinica->nome ?? 'N/A',
+                'medicamento' => $item->estoque->medicamento->nome ?? 'N/A',
+                'lote' => $item->estoque->lote ?? 'N/A',
+                'quantidade' => $item->quantidade,
+                'tipo' => 'Aberto',
+                'motivo' => $item->motivo,
+                'usuario' => $item->user->nome ?? 'N/A'
+            ];
+        }
+
+        usort($movimentacoes, function($a, $b) {
+            return $b['data'] <=> $a['data'];
+        });
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $array_dados = [
+            'Data',
+            'Clínica',
+            'Medicamento',
+            'Lote',
+            'Quantidade',
+            'Tipo',
+            'Motivo',
+            'Usuário'
+        ];
+
+        $linhaAtual = 1;
+        $sheet->fromArray($array_dados, null, 'A' . $linhaAtual);
+
+        foreach($movimentacoes as $linha){
+            $linhaAtual++;
+            $array = [
+                $linha['data']->format('d/m/Y H:i'),
+                $linha['clinica'],
+                $linha['medicamento'],
+                $linha['lote'],
+                number_format($linha['quantidade'], 2, ',', '.'),
+                $linha['tipo'],
+                $linha['motivo'],
+                $linha['usuario']
+            ];
+            $sheet->fromArray($array, null, 'A' . $linhaAtual);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $arquivo = "Exportar Relatorio - Baixas - ".date('d.m.Y - H:i').'.xlsx';
+        $arquivo = str_replace(":",'h',$arquivo);
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment; filename=\"{$arquivo}\"");
+        $writer->save("php://output");
+        exit();
     }
 
     public function recepcao_gerar(Request $request){
@@ -813,5 +927,135 @@ class RelatorioController extends Controller
         ->get();
 
         return view('sistema/relatorios/caixa_diario', compact('pagamentos','user'));
+    }
+    public function estoque(){
+        $clinicas = Clinica::all()->sortBy('nome');
+        $medicamentos = Medicamento::all()->sortBy('nome');
+        return view('adm/relatorios/estoque', compact('clinicas','medicamentos'));
+    }
+
+    public function estoque_gerar(Request $request){
+        $dados = $request->except('_token');
+        
+        $query = \App\Models\Estoque::query();
+        
+        if($request->clinica_id){
+            $query->where('clinica_id', $request->clinica_id);
+        }
+        if($request->medicamento_id){
+            $query->where('medicamento_id', $request->medicamento_id);
+        }
+
+        $estoques = $query->with(['medicamento', 'clinica'])->get();
+
+        $agrupados = [];
+
+        foreach($estoques as $estoque){
+            $chave = $estoque->clinica_id . '_' . $estoque->medicamento_id . '_' . $estoque->lote . '_' . $estoque->codigo_barras;
+            
+            if(!isset($agrupados[$chave])){
+                $agrupados[$chave] = [
+                    'clinica' => $estoque->clinica->nome ?? 'N/A',
+                    'medicamento' => $estoque->medicamento->nome ?? 'N/A',
+                    'lote' => $estoque->lote,
+                    'codigo_barras' => $estoque->codigo_barras,
+                    'dt_vencimento' => $estoque->dt_vencimento,
+                    'saldo' => 0
+                ];
+            }
+            
+            if($estoque->tipo == 'Entrada'){
+                $agrupados[$chave]['saldo'] += $estoque->quantidade;
+            } else {
+                $agrupados[$chave]['saldo'] -= $estoque->quantidade;
+            }
+        }
+
+        // Filtra apenas saldos > 0
+        $resultados = array_filter($agrupados, function($item) {
+            return $item['saldo'] > 0;
+        });
+
+        // Ordena por medicamento
+        usort($resultados, function($a, $b) {
+            return strcmp($a['medicamento'], $b['medicamento']);
+        });
+
+        return view('adm/relatorios/estoque_gerar', compact('resultados', 'dados'));
+    }
+
+    public function exportar_estoque(Request $request){
+        $dados = json_decode($request->dados, true);
+        
+        $query = \App\Models\Estoque::query();
+        if(isset($dados['clinica_id']) && $dados['clinica_id']){
+            $query->where('clinica_id', $dados['clinica_id']);
+        }
+        if(isset($dados['medicamento_id']) && $dados['medicamento_id']){
+            $query->where('medicamento_id', $dados['medicamento_id']);
+        }
+
+        $estoques = $query->with(['medicamento', 'clinica'])->get();
+
+        $agrupados = [];
+        foreach($estoques as $estoque){
+            $chave = $estoque->clinica_id . '_' . $estoque->medicamento_id . '_' . $estoque->lote . '_' . $estoque->codigo_barras;
+            if(!isset($agrupados[$chave])){
+                $agrupados[$chave] = [
+                    'clinica' => $estoque->clinica->nome ?? 'N/A',
+                    'medicamento' => $estoque->medicamento->nome ?? 'N/A',
+                    'lote' => $estoque->lote,
+                    'codigo_barras' => $estoque->codigo_barras,
+                    'dt_vencimento' => $estoque->dt_vencimento,
+                    'saldo' => 0
+                ];
+            }
+            if($estoque->tipo == 'Entrada'){
+                $agrupados[$chave]['saldo'] += $estoque->quantidade;
+            } else {
+                $agrupados[$chave]['saldo'] -= $estoque->quantidade;
+            }
+        }
+
+        $resultados = array_filter($agrupados, function($item) {
+            return $item['saldo'] > 0;
+        });
+
+        usort($resultados, function($a, $b) {
+            return strcmp($a['medicamento'], $b['medicamento']);
+        });
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $cabecalho = [
+            'Clínica', 'Medicamento', 'Código de Barras', 'Lote', 'Vencimento', 'Quantidade em Estoque'
+        ];
+        $sheet->fromArray($cabecalho, null, 'A1');
+
+        $linhaTotal = 2;
+        foreach($resultados as $linha){
+            $array_excel = [
+                $linha['clinica'],
+                $linha['medicamento'],
+                $linha['codigo_barras'],
+                $linha['lote'],
+                dataDbForm($linha['dt_vencimento']),
+                $linha['saldo']
+            ];
+            $sheet->fromArray($array_excel, null, 'A' . $linhaTotal);
+            $linhaTotal++;
+        }
+
+        $arq = "Estoque_".date('YmdHis');
+        $path = public_path('rel_estoque/'.$arq.'.xlsx');
+        if(!is_dir(public_path('rel_estoque'))){
+            mkdir(public_path('rel_estoque'), 0755, true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($path);
+
+        return response()->download($path)->deleteFileAfterSend(false);
     }
 }

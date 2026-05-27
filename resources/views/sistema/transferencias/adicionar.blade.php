@@ -48,16 +48,16 @@ $template = "layout.".session()->get('layout');
                     <thead>
                         <tr>
                             <th style='width: 30% !important'>Medicamento</th>
+                            <th>C. Barras</th>
                             <th>Lote</th>
                             <th>Quantidade</th>
-                            <th>C. Barras</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody id="tabela_medicamentos">
                         <tr id="linha_adicionar_1">
                             <td>
-                                <select onchange="get_lotes_medicamento(1)" required name="medicamento_id_1" id="medicamento_id_1" class="form-control">
+                                <select onchange="get_codigos_barras_transferencia(1)" required name="medicamento_id_1" id="medicamento_id_1" class="form-control">
                                     <option value="">Opções</option>
                                     @foreach($medicamentos as $medicamento)
                                         <option value="{{ $medicamento->id }}">{{ $medicamento->nome." - ".$medicamento->fabricante }}</option>
@@ -65,12 +65,16 @@ $template = "layout.".session()->get('layout');
                                 </select>
                             </td>
                             <td>
+                                <select onchange="get_lotes_medicamento_por_codigo(1)" required name="codigo_barras_1" id="codigo_barras_1" class="form-control">
+                                    <option>Opções</option>
+                                </select>
+                            </td>
+                            <td>
                                 <select onchange="seta_quantidade_estoque(1)" required name="lote_1" id="lote_1" class="form-control">
                                     <option>Opções</option>
                                 </select>
                             </td>
-                            <td><input name="quantidade_1" id="quantidade_1" required type="number" class="form-control"></td>
-                            <td><input name="codigo_barras_1" id="codigo_barras_1" type="text" class="form-control"></td>
+                            <td><input name="quantidade_1" id="quantidade_1" required type="number" step="any" class="form-control"></td>
                             <td></td>
                         </tr>
                     </tbody>
@@ -92,7 +96,7 @@ document.getElementById('botao_adicionar_medicamento').addEventListener('click',
 
     html = `
     <td>
-        <select onchange="get_lotes_medicamento(${contador})" required name="medicamento_id_${contador}" id="medicamento_id_${contador}" class="form-control">
+        <select onchange="get_codigos_barras_transferencia(${contador})" required name="medicamento_id_${contador}" id="medicamento_id_${contador}" class="form-control">
             <option value="">Opções</option>
             @foreach($medicamentos as $medicamento)
                 <option value="{{ $medicamento->id }}">{{ $medicamento->nome." - ".$medicamento->fabricante }}</option>
@@ -100,12 +104,16 @@ document.getElementById('botao_adicionar_medicamento').addEventListener('click',
         </select>
     </td>
     <td>
+        <select onchange="get_lotes_medicamento_por_codigo(${contador})" required name="codigo_barras_${contador}" id="codigo_barras_${contador}" class="form-control">
+            <option>Opções</option>
+        </select>
+    </td>
+    <td>
         <select onchange="seta_quantidade_estoque(${contador})" required name="lote_${contador}" id="lote_${contador}" class="form-control">
             <option>Opções</option>
         </select>
     </td>
-    <td><input name="quantidade_${contador}" id="quantidade_${contador}" required type="number" class="form-control"></td>
-    <td><input name="codigo_barras_${contador}" id="codigo_barras_${contador}" required type="text" class="form-control"></td>
+    <td><input name="quantidade_${contador}" id="quantidade_${contador}" required type="number" step="any" class="form-control"></td>
         <td>
             <button title='Excluir Linha' onclick='excluir_linha_medicamento(${contador})' type="button" class="btn btn-sm rounded-pill btn-icon btn-label-danger btn-fab demo waves-effect">
                 <span class="tf-icons mdi mdi-delete mdi-24px"></span>
@@ -119,13 +127,37 @@ document.getElementById('botao_adicionar_medicamento').addEventListener('click',
     document.getElementById('tabela_medicamentos').appendChild(tr);
 })
 
-function get_lotes_medicamento(linha){
+function get_codigos_barras_transferencia(linha){
     medicamento_id = document.getElementById('medicamento_id_' + linha).value;
     if(medicamento_id){
         $.getJSON(
-            "{{ route('sistema.baixas.get_lotes_medicamento') }}",
+            "{{ route('sistema.transferencias.get_codigos_barras') }}",
             {
                 medicamento_id : medicamento_id
+            },
+            function(json){
+                document.getElementById('codigo_barras_' + linha).innerHTML = json.codigos;
+                document.getElementById('lote_' + linha).innerHTML = "<option value=''>Opções</option>";
+                document.getElementById('quantidade_' + linha).removeAttribute('max');
+            }
+        );
+    }
+    else{
+        document.getElementById('codigo_barras_' + linha).innerHTML = "<option value=''>Opções</option>";
+        document.getElementById('lote_' + linha).innerHTML = "<option value=''>Opções</option>";
+        document.getElementById('quantidade_' + linha).removeAttribute('max');
+    }
+}
+
+function get_lotes_medicamento_por_codigo(linha){
+    medicamento_id = document.getElementById('medicamento_id_' + linha).value;
+    codigo_barras = document.getElementById('codigo_barras_' + linha).value;
+    if(medicamento_id && codigo_barras){
+        $.getJSON(
+            "{{ route('sistema.transferencias.get_lotes_por_codigo_barras') }}",
+            {
+                medicamento_id : medicamento_id,
+                codigo_barras : codigo_barras
             },
             function(json){
                 document.getElementById('lote_' + linha).innerHTML = json.lotes;
@@ -141,7 +173,7 @@ function get_lotes_medicamento(linha){
 function seta_quantidade_estoque(linha){
     select = document.getElementById('lote_' + linha);
     selectedOption = select.options[select.selectedIndex];
-    quantidade = parseInt(selectedOption.dataset.quantidade);
+    quantidade = parseFloat(selectedOption.dataset.quantidade);
     document.getElementById('quantidade_' + linha).setAttribute('max', quantidade);
 }
 

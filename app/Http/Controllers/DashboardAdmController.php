@@ -217,12 +217,46 @@ class DashboardAdmController extends Controller
         $valores_medicamentos = substr($valores_medicamentos,1);
         $cores_medicamentos = substr($cores_medicamentos,1);
 
+        //consumo de medicamentos (quantidades aplicadas de todo o banco)
+        $consumos = Aplicacao::selectRaw('medicamento_id, sum(quantidade) as total_quantidade')
+                             ->where('situacao', 'Aplicada')
+                             ->groupBy('medicamento_id')
+                             ->get();
+        $array_consumo = array();
+        foreach($consumos as $c){
+            if($c->total_quantidade > 0){
+                $med = Medicamento::find($c->medicamento_id);
+                if($med) {
+                    $array = [
+                        'medicamento' => $med->nome,
+                        'quantidade' => $c->total_quantidade,
+                    ];
+                    $array_consumo[] = $array;
+                }
+            }
+        }
+        
+        $label_consumo = "";
+        $valores_consumo = "";
+        $cores_consumo = "";
+        $c = 0;
+        foreach($array_consumo as $array){
+            $label_consumo .= ",'".$array['medicamento']."'";
+            $valores_consumo .= ",".$array['quantidade'];
+            $cores_consumo .= ",'".$this->cores[$c++ % count($this->cores)]."'";
+        }
+
+        $label_consumo = substr($label_consumo,1) ?: "''";
+        $valores_consumo = substr($valores_consumo,1) ?: "0";
+        $cores_consumo = substr($cores_consumo,1) ?: "''";
+
         $administrador = session()->get('administrador');
 
         return view('adm/dashboard/index', compact('array_view','controle',
         'vl_faturamento','label_clinicas','valores_clinicas','cores_clinicas',
         'label_medicos','valores_medicos','cores_medicos','label_medicamentos',
-        'valores_medicamentos','cores_medicamentos','administrador'));
+        'valores_medicamentos','cores_medicamentos','administrador',
+        'label_consumo','valores_consumo','cores_consumo'));
     }
 
     public function perfil(){

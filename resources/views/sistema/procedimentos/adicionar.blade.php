@@ -51,6 +51,7 @@ $template = "layout.".session()->get('layout');
                                 <option value="Consulta Tratamento">Consulta Tratamento</option>
                                 <option value="Retorno">Retorno</option>
                                 <option value="Consulta Nova">Consulta Nova</option>
+                                <option value="Coleta/Bio">Coleta/Bio</option>
                             </select>
                             <label for="tipo_atendimento">Tipo de Atendimento:</label>
                         </div>
@@ -113,6 +114,7 @@ $template = "layout.".session()->get('layout');
                                 <option value="Consulta Tratamento">Consulta Tratamento</option>
                                 <option value="Retorno">Retorno</option>
                                 <option value="Consulta Nova">Consulta Nova</option>
+                                <option value="Coleta/Bio">Coleta/Bio</option>
                             </select>
                             <label for="tipo_atendimento">Tipo de Atendimento:</label>
                         </div>

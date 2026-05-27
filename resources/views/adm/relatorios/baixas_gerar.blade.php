@@ -5,10 +5,10 @@
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
             <h4 class="card-title">Resultado do Relatório de Baixas</h4>
-            <form action="{{ route('adm.relatorios.exportar') }}" method="post" target="_blank">
+            <form action="{{ route('adm.relatorios.exportar_baixas') }}" method="post" target="_blank">
                 @csrf
-                <textarea style="display: none" name="data" id="data_exportar"></textarea>
-                <button type="submit" onclick="exportar()" class="btn btn-label-success waves-effect">
+                <input type="hidden" name="dados" value="{{ json_encode($dados) }}">
+                <button type="submit" class="btn btn-label-success waves-effect">
                     <span class="tf-icons mdi mdi-file-excel me-1"></span> Exportar Excel
                 </button>
             </form>
@@ -95,10 +95,4 @@
     </div>
 </div>
 
-<script>
-function exportar() {
-    var data = document.getElementById('tabela_relatorio').innerHTML;
-    document.getElementById('data_exportar').value = data;
-}
-</script>
 @endsection

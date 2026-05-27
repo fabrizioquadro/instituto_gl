@@ -59,7 +59,7 @@ $template = "layout.".session()->get('layout');
                                         <option>Opções</option>
                                     </select>
                                 </td>
-                                <td><input name="quantidade_{{ $i }}" id="quantidade_{{ $i }}" required type="number" class="form-control"></td>
+                                <td><input name="quantidade_{{ $i }}" id="quantidade_{{ $i }}" required type="number" step="any" class="form-control"></td>
                                 <td></td>
                             </tr>
                         @endforeach
@@ -94,7 +94,7 @@ document.getElementById('botao_adicionar_medicamento').addEventListener('click',
             <option>Opções</option>
         </select>
     </td>
-    <td><input name="quantidade_${contador}" id="quantidade_${contador}" required type="number" class="form-control"></td>
+    <td><input name="quantidade_${contador}" id="quantidade_${contador}" required type="number" step="any" class="form-control"></td>
         <td>
             <button title='Excluir Linha' onclick='excluir_linha_medicamento(${contador})' type="button" class="btn btn-sm rounded-pill btn-icon btn-label-danger btn-fab demo waves-effect">
                 <span class="tf-icons mdi mdi-delete mdi-24px"></span>
@@ -130,7 +130,7 @@ function get_lotes_medicamento(linha){
 function seta_quantidade_estoque(linha){
     select = document.getElementById('lote_' + linha);
     selectedOption = select.options[select.selectedIndex];
-    quantidade = parseInt(selectedOption.dataset.quantidade);
+    quantidade = parseFloat(selectedOption.dataset.quantidade);
     document.getElementById('quantidade_' + linha).setAttribute('max', quantidade);
 }
 

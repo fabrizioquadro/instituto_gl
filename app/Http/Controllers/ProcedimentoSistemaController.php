@@ -639,6 +639,7 @@ class ProcedimentoSistemaController extends Controller
             $procedimento->obs_retirada = $request->obs_retirada ? $request->obs_retirada : '';
             $procedimento->autorizador_sem_pagamento = $autorizador->id;
             $procedimento->consulta_tratamento_agendada = $request->consulta_tratamento_agendada ? $request->consulta_tratamento_agendada : '';
+            $procedimento->dt_hr_chegada = date('Y-m-d H:i:s');
             $procedimento->save();
 
             if($request->retorno == 'sistema_dashboard'){

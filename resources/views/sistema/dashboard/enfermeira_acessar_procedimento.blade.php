@@ -455,7 +455,8 @@ function busca_lote_por_codigo(e, medicamento_id, clinica_id, quantidade){
             {
                 codigo : e.value,
                 clinica_id : clinica_id,
-                quantidade : quantidade
+                quantidade : quantidade,
+                medicamento_id : medicamento_id
             },
             function(json){
                 if(json.controle == 'true'){
@@ -467,7 +468,7 @@ function busca_lote_por_codigo(e, medicamento_id, clinica_id, quantidade){
                     document.getElementById('codigo_barras_' + medicamento_id).value = '';
                 }
                 else{
-                    alert('Codigo Inválido!');
+                    alert('Código de barras inválido para este medicamento!');
                     document.getElementById('lote_' + medicamento_id).value = '';
                     document.getElementById('codigo_barras_' + medicamento_id).value = '';
                 }
@@ -781,5 +782,36 @@ function marcarAvaliadoGoogle(pacienteId) {
         });
     }
 }
+    // Bloqueio de Digitação Manual Inteligente para Código de Barras
+    let lastKeyTime = Date.now();
+    $(document).on('keydown', 'input[id^="codigo_barras_"]', function(e) {
+        // Permitir teclas de controle: Backspace, Tab, Enter, Setas
+        if ([8, 9, 13, 37, 38, 39, 40].includes(e.keyCode)) {
+            return;
+        }
+        
+        let currentTime = Date.now();
+        let timeDiff = currentTime - lastKeyTime;
+        
+        // Permitir a primeira tecla se o campo estiver vazio
+        if ($(this).val().length === 0) {
+            lastKeyTime = currentTime;
+            return;
+        }
+
+        // Se o tempo entre teclas for maior que 50ms, bloqueia (digitação manual)
+        if (timeDiff > 50) {
+            e.preventDefault();
+            return false;
+        }
+        
+        lastKeyTime = currentTime;
+    });
+
+    // Bloqueio de Cópia e Colar
+    $(document).on('paste drop', 'input[id^="codigo_barras_"]', function(e) {
+        e.preventDefault();
+        return false;
+    });
 </script>
 @endsection

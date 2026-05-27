@@ -137,4 +137,31 @@ class TransferenciaSistemaController extends Controller
         $transferencia = Transferencia::where('id', $id)->first();
         return view('sistema/transferencias/visualizar', compact('transferencia','user'));
     }
+    public function get_codigos_barras(){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+        $estoques = \App\Models\Estoque::get_codigos_barras_transferencia($_GET['medicamento_id'], $user->clinica_id);
+        $html = "<option value=''>Opções</option>";
+        foreach($estoques as $estoque){
+            $html .= "<option value='".$estoque['codigo_barras']."'>".$estoque['codigo_barras']."</option>";
+        }
+        $retorno['codigos'] = $html;
+        echo json_encode($retorno);
+    }
+
+    public function get_lotes_por_codigo_barras(){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+        $estoques = \App\Models\Estoque::get_lotes_por_codigo_barras_transferencia($_GET['medicamento_id'], $_GET['codigo_barras'], $user->clinica_id);
+        $html = "<option value=''>Opções</option>";
+        foreach($estoques as $estoque){
+            $html .= "<option value='".$estoque['lote']."' data-quantidade='".$estoque['estoque']."'>".$estoque['lote']."</option>";
+        }
+        $retorno['lotes'] = $html;
+        echo json_encode($retorno);
+    }
 }

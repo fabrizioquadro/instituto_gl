@@ -131,7 +131,11 @@ Route::middleware(['verificaAdministrador'])->group(function () {
         Route::post('/relatorios/exportar/enfermagem', [RelatorioController::class, 'exportar_enfermagem'])->name('adm.relatorios.exportar_enfermagem');
         Route::post('/relatorios/exportar/financeiro', [RelatorioController::class, 'exportar_financeiro'])->name('adm.relatorios.exportar_financeiro');
         Route::post('/relatorios/exportar/vendas', [RelatorioController::class, 'exportar_vendas'])->name('adm.relatorios.exportar_vendas');
+        Route::post('/relatorios/exportar/baixas', [RelatorioController::class, 'exportar_baixas'])->name('adm.relatorios.exportar_baixas');
         Route::post('/relatorios/exportar/transferencias', [RelatorioController::class, 'exportar_transferencias'])->name('adm.relatorios.exportar_transferencias');
+        Route::get('/relatorios/estoque', [RelatorioController::class, 'estoque'])->name('adm.relatorios.estoque');
+        Route::post('/relatorios/estoque/gerar', [RelatorioController::class, 'estoque_gerar'])->name('adm.relatorios.estoque.gerar');
+        Route::post('/relatorios/exportar/estoque', [RelatorioController::class, 'exportar_estoque'])->name('adm.relatorios.exportar_estoque');
 
         Route::get('/combos', [ComboController::class, 'index'])->name('adm.combos');
         Route::get('/combos/adicionar', [ComboController::class, 'adicionar'])->name('adm.combos.adicionar');
@@ -211,6 +215,8 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/transferencias/visualizar/{id}', [TransferenciaSistemaController::class, 'visualizar'])->name('sistema.transferencias.visualizar');
         Route::post('/transferencias/insert', [TransferenciaSistemaController::class, 'insert'])->name('sistema.transferencias.insert');
         Route::post('/transferencias/delete', [TransferenciaSistemaController::class, 'delete'])->name('sistema.transferencias.delete');
+        Route::get('/transferencias/get_codigos_barras', [TransferenciaSistemaController::class, 'get_codigos_barras'])->name('sistema.transferencias.get_codigos_barras');
+        Route::get('/transferencias/get_lotes_por_codigo_barras', [TransferenciaSistemaController::class, 'get_lotes_por_codigo_barras'])->name('sistema.transferencias.get_lotes_por_codigo_barras');
 
         Route::get('/estoques', [EstoqueSistemaController::class, 'index'])->name('sistema.estoques');
 

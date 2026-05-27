@@ -43,6 +43,9 @@
                         if($procedimento->dt_hr_chegada){
                             $var = explode(' ',$procedimento->dt_hr_chegada);
                             $chegada = dataDbForm($var[0])." ".$var[1];
+                        } elseif ($procedimento->inicio_cadastro) {
+                            $var = explode(' ',$procedimento->inicio_cadastro);
+                            $chegada = dataDbForm($var[0])." ".($var[1] ?? '00:00:00');
                         }
 
                         if($procedimento->dt_hr_atendimento){

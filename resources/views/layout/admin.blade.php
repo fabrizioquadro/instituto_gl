@@ -182,6 +182,11 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                                         <div data-i18n="Caixa">Caixa</div>
                                     </a>
                                 </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.estoque') }}" class="menu-link">
+                                        <div data-i18n="Estoque">Estoque</div>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li class="menu-header fw-medium mt-4">

@@ -67,23 +67,32 @@ $template = "layout.".session()->get('layout');
             </div>
             <h6 class="card-title">Filtros</h6>
             <div class="d-flex justify-content-between align-items-center row py-3 gap-3 gap-md-0">
-                <div class="col-md-4 product_status">
+                <div class="col-md-3 product_status">
                     <input onchange="submit()" type="date" id="dt_procedimentos" name="dt_procedimentos" class="form-control" value="{{ $dados_pesquisa['dt_procedimentos'] }}">
                 </div>
-                <div class="col-md-4 product_category">
+                <div class="col-md-3 product_category">
                     <select onchange="submit()" id="st_pagamento" name="st_pagamento" class="form-select text-capitalize">
                         <option value="">Pagamento</option>
                         <option @if($dados_pesquisa['st_pagamento'] == 'Sim') selected @endif value="Sim">Pago</option>
                         <option @if($dados_pesquisa['st_pagamento'] == 'Não') selected @endif value="Não">Não Pago</option>
                     </select>
                 </div>
-                <div class="col-md-4 product_stock">
+                <div class="col-md-3 product_stock">
                     <select onchange="submit()" id="situacao" name="situacao" class="form-select text-capitalize">
                         <option value=""> Situação </option>
                         <option @if($dados_pesquisa['situacao'] == "Agendado") selected @endif  value="Agendado">Agendado</option>
                         <option @if($dados_pesquisa['situacao'] == "Atendimento") selected @endif  value="Atendimento">Atendimento</option>
                         <option @if($dados_pesquisa['situacao'] == "Fila de Aplicação") selected @endif  value="Fila de Aplicação">Fila de Aplicação</option>
                         <option @if($dados_pesquisa['situacao'] == "Aplicação Parcial") selected @endif  value="Aplicação Parcial">Aplicação Parcial</option>
+                    </select>
+                </div>
+                <div class="col-md-3 product_stock">
+                    <select onchange="submit()" id="tipo_atendimento" name="tipo_atendimento" class="form-select text-capitalize">
+                        <option value=""> Tipo de Atendimento </option>
+                        <option @if($dados_pesquisa['tipo_atendimento'] == "Consulta Tratamento") selected @endif value="Consulta Tratamento">Consulta Tratamento</option>
+                        <option @if($dados_pesquisa['tipo_atendimento'] == "Retorno") selected @endif value="Retorno">Retorno</option>
+                        <option @if($dados_pesquisa['tipo_atendimento'] == "Consulta Nova") selected @endif value="Consulta Nova">Consulta Nova</option>
+                        <option @if($dados_pesquisa['tipo_atendimento'] == "Coleta/Bio") selected @endif value="Coleta/Bio">Coleta/Bio</option>
                     </select>
                 </div>
             </div>

@@ -110,6 +110,79 @@ class Estoque extends Model
         return $array_retorno;
     }
 
+    public static function get_codigos_barras_transferencia($medicamento_id, $clinica_id){
+        $codigos = SELF::select('codigo_barras')
+        ->where('clinica_id', $clinica_id)
+        ->where('medicamento_id', $medicamento_id)
+        ->distinct()
+        ->get();
+
+        $array_retorno = array();
+        foreach($codigos as $linha){
+            $codigo = $linha->codigo_barras;
+
+            $entrada = SELF::where('clinica_id', $clinica_id)
+            ->where('medicamento_id', $medicamento_id)
+            ->where('codigo_barras',$codigo)
+            ->where('tipo','Entrada')
+            ->sum('quantidade');
+
+            $saida = SELF::where('clinica_id', $clinica_id)
+            ->where('medicamento_id', $medicamento_id)
+            ->where('codigo_barras',$codigo)
+            ->where('tipo','Saida')
+            ->sum('quantidade');
+
+            $estoque = $entrada - $saida;
+            if($estoque > 0 && !empty($codigo)){
+                $array = [
+                    'codigo_barras' => $codigo,
+                    'estoque' => $estoque,
+                ];
+                $array_retorno[] = $array;
+            }
+        }
+        return $array_retorno;
+    }
+
+    public static function get_lotes_por_codigo_barras_transferencia($medicamento_id, $codigo_barras, $clinica_id){
+        $lotes = SELF::select('lote')
+        ->where('clinica_id', $clinica_id)
+        ->where('medicamento_id', $medicamento_id)
+        ->where('codigo_barras', $codigo_barras)
+        ->distinct()
+        ->get();
+
+        $array_retorno = array();
+        foreach($lotes as $linha){
+            $lote = $linha->lote;
+            
+            $entrada = SELF::where('clinica_id', $clinica_id)
+            ->where('medicamento_id', $medicamento_id)
+            ->where('codigo_barras', $codigo_barras)
+            ->where('lote',$lote)
+            ->where('tipo','Entrada')
+            ->sum('quantidade');
+
+            $saida = SELF::where('clinica_id', $clinica_id)
+            ->where('medicamento_id', $medicamento_id)
+            ->where('codigo_barras', $codigo_barras)
+            ->where('lote',$lote)
+            ->where('tipo','Saida')
+            ->sum('quantidade');
+
+            $estoque = $entrada - $saida;
+            if($estoque > 0){
+                $array = [
+                    'lote' => $lote,
+                    'estoque' => $estoque,
+                ];
+                $array_retorno[] = $array;
+            }
+        }
+        return $array_retorno;
+    }
+
     public static function get_lotes_medicamento_mg($medicamento_id, $clinica_id){
         $codigos = SELF::select('codigo_barras')
         ->where('clinica_id', $clinica_id)
