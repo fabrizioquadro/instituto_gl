@@ -114,6 +114,7 @@ Route::middleware(['verificaAdministrador'])->group(function () {
         Route::post('/estoques/exportar', [EstoqueAdmController::class, 'exportar'])->name('adm.estoques.exportar');
 
         Route::get('/relatorios/financeiro', [RelatorioController::class, 'financeiro'])->name('adm.relatorios.financeiro');
+        Route::get('/relatorios/financeiro-simplificado', [RelatorioController::class, 'financeiro_simplificado'])->name('adm.relatorios.financeiro_simplificado');
         Route::get('/relatorios/vendas', [RelatorioController::class, 'vendas'])->name('adm.relatorios.vendas');
         Route::get('/relatorios/enfermagem', [RelatorioController::class, 'enfermagem'])->name('adm.relatorios.enfermagem');
         Route::get('/relatorios/transferencias', [RelatorioController::class, 'transferencias'])->name('adm.relatorios.transferencias');
@@ -124,12 +125,14 @@ Route::middleware(['verificaAdministrador'])->group(function () {
         Route::post('/relatorios/baixas/gerar', [RelatorioController::class, 'baixas_gerar'])->name('adm.relatorios.baixas.gerar');
         Route::post('/relatorios/recepcao/gerar', [RelatorioController::class, 'recepcao_gerar'])->name('adm.relatorios.recepcao.gerar');
         Route::post('/relatorios/financeiro/gerar', [RelatorioController::class, 'financeiro_gerar'])->name('adm.relatorios.financeiro.gerar');
+        Route::post('/relatorios/financeiro-simplificado/gerar', [RelatorioController::class, 'financeiro_simplificado_gerar'])->name('adm.relatorios.financeiro_simplificado.gerar');
         Route::post('/relatorios/vendas/gerar', [RelatorioController::class, 'vendas_gerar'])->name('adm.relatorios.vendas.gerar');
         Route::post('/relatorios/enfermagem/gerar', [RelatorioController::class, 'enfermagem_gerar'])->name('adm.relatorios.enfermagem.gerar');
         Route::post('/relatorios/transferencias/gerar', [RelatorioController::class, 'transferencias_gerar'])->name('adm.relatorios.transferencias.gerar');
         Route::post('/relatorios/exportar', [RelatorioController::class, 'exportar'])->name('adm.relatorios.exportar');
         Route::post('/relatorios/exportar/enfermagem', [RelatorioController::class, 'exportar_enfermagem'])->name('adm.relatorios.exportar_enfermagem');
         Route::post('/relatorios/exportar/financeiro', [RelatorioController::class, 'exportar_financeiro'])->name('adm.relatorios.exportar_financeiro');
+        Route::post('/relatorios/exportar/financeiro-simplificado', [RelatorioController::class, 'exportar_financeiro_simplificado'])->name('adm.relatorios.exportar_financeiro_simplificado');
         Route::post('/relatorios/exportar/vendas', [RelatorioController::class, 'exportar_vendas'])->name('adm.relatorios.exportar_vendas');
         Route::post('/relatorios/exportar/baixas', [RelatorioController::class, 'exportar_baixas'])->name('adm.relatorios.exportar_baixas');
         Route::post('/relatorios/exportar/transferencias', [RelatorioController::class, 'exportar_transferencias'])->name('adm.relatorios.exportar_transferencias');

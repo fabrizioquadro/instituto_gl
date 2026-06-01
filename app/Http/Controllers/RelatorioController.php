@@ -1117,4 +1117,214 @@ class RelatorioController extends Controller
 
         return response()->download($path)->deleteFileAfterSend(false);
     }
+
+    public function financeiro_simplificado(){
+        $clinicas = Clinica::all()->sortBy('nome');
+        return view('adm/relatorios/financeiro_simplificado', compact('clinicas'));
+    }
+
+    public function financeiro_simplificado_gerar(Request $request){
+        $dados = $request->except('_token');
+        $financeiros = Financeiro::get_pagamentos_relatorio($dados);
+
+        $dt_inc = false;
+        $dt_fn = false;
+
+        if($request->dt_inc){
+            $dt_inc = $request->dt_inc;
+            $dt_inc_stamp = strtotime($dt_inc." 00:00:00");
+        }
+
+        if($request->dt_fn){
+            $dt_fn = $request->dt_fn;
+            $dt_fn_stamp = strtotime($dt_fn." 23:59:59");
+        }
+
+        $array_financeiro = array();
+
+        foreach($financeiros as $financeiro){
+            foreach($financeiro->formas as $forma){
+                $dt_forma_stamp = strtotime($forma->created_at);
+                if( (!$dt_inc || $dt_forma_stamp >= $dt_inc_stamp ) && (!$dt_fn || $dt_forma_stamp <= $dt_fn_stamp) ){
+                    $procedimento = $financeiro->procedimentos()->first();
+                    $rateio_pagamento = $forma->get_rateio_financeiro();
+                    $var = explode(" ",$forma->created_at);
+                    $data = $var[0];
+                    $contador = $procedimento ? Procedimento::where('codigo', $procedimento->codigo)->count() : '0';
+                    $codigo = $procedimento ? $procedimento->codigo : '';
+
+                    $vl_consulta = floatval($rateio_pagamento['vl_consulta'] ?? 0);
+                    $vl_procedimento_detalhe = floatval($rateio_pagamento['vl_procedimento'] ?? 0);
+                    
+                    if (isset($rateio_pagamento['detalhes_procedimentos']) && count($rateio_pagamento['detalhes_procedimentos']) > 0) {
+                        $vl_procedimento_detalhe = 0;
+                        foreach($rateio_pagamento['detalhes_procedimentos'] as $dp){
+                            $vl_procedimento_detalhe += floatval($dp['valor'] ?? 0);
+                        }
+                    }
+
+                    $vl_procedimentos_total = $vl_consulta + $vl_procedimento_detalhe;
+                    $vl_aplicacoes_total = floatval($rateio_pagamento['vl_aplicacao'] ?? 0);
+
+                    if (($vl_procedimentos_total + $vl_aplicacoes_total) > 0) {
+                        $linha_dados = [
+                            'financeiro_id' => $forma->financeiro_id,
+                            'pagamento_id' => $forma->id,
+                            'ordem' => strtotime($data),
+                            'data' => dataDbForm($data),
+                            'paciente' => $financeiro->paciente->nm_paciente,
+                            'paciente_id' => $financeiro->paciente->id,
+                            'id_feegow' => $financeiro->paciente->paciente_id_feegow,
+                            'cpf' => $financeiro->paciente->cpf,
+                            'codigo' => $codigo,
+                            'vl_tratamento' => 'R$ '.valorDbForm($financeiro->vl_procedimentos),
+                            'vl_pagamento' => 'R$ '.valorDbForm($forma->vl_pagamento),
+                            'vl_procedimentos' => 'R$ '.valorDbForm($vl_procedimentos_total),
+                            'vl_aplicacoes' => 'R$ '.valorDbForm($vl_aplicacoes_total),
+                            'tipo_atendimento' => $procedimento ? $procedimento->tipo_atendimento : '',
+                            'desconto_total' => 'R$ '.valorDbForm($financeiro->vl_desconto),
+                            'forma_pagamento' => $forma->forma_pagamento,
+                            'id_pagamento' => $forma->id_pagamento,
+                            'parcelas' => $forma->parcelas,
+                            'obs' => $financeiro->obs_pagamento,
+                            'clinica' => $financeiro->clinica->nome,
+                            'medico' => $financeiro->medico,
+                            'contador' => $contador,
+                        ];
+                        $array_financeiro[] = $linha_dados;
+                    }
+                }
+            }
+        }
+
+        usort($array_financeiro, function($a, $b) {
+            return $a['ordem'] <=> $b['ordem'];
+        });
+
+        return view('adm/relatorios/financeiro_simplificado_gerar', compact('array_financeiro', 'dados'));
+    }
+
+    public function exportar_financeiro_simplificado(Request $request){
+        $dados_req = json_decode($request->dados, true);
+        $financeiros = Financeiro::get_pagamentos_relatorio($dados_req);
+
+        $dt_inc = false;
+        $dt_fn = false;
+
+        if(isset($dados_req['dt_inc']) && $dados_req['dt_inc']){
+            $dt_inc = $dados_req['dt_inc'];
+            $dt_inc_stamp = strtotime($dt_inc." 00:00:00");
+        }
+
+        if(isset($dados_req['dt_fn']) && $dados_req['dt_fn']){
+            $dt_fn = $dados_req['dt_fn'];
+            $dt_fn_stamp = strtotime($dt_fn." 23:59:59");
+        }
+
+        $array_financeiro = array();
+
+        foreach($financeiros as $financeiro){
+            foreach($financeiro->formas as $forma){
+                $dt_forma_stamp = strtotime($forma->created_at);
+                if( (!$dt_inc || $dt_forma_stamp >= $dt_inc_stamp ) && (!$dt_fn || $dt_forma_stamp <= $dt_fn_stamp) ){
+                    $procedimento = $financeiro->procedimentos()->first();
+                    $rateio_pagamento = $forma->get_rateio_financeiro();
+                    $var = explode(" ",$forma->created_at);
+                    $data = $var[0];
+                    $contador = $procedimento ? Procedimento::where('codigo', $procedimento->codigo)->count() : '0';
+                    $codigo = $procedimento ? $procedimento->codigo : '';
+
+                    $vl_consulta = floatval($rateio_pagamento['vl_consulta'] ?? 0);
+                    $vl_procedimento_detalhe = floatval($rateio_pagamento['vl_procedimento'] ?? 0);
+                    
+                    if (isset($rateio_pagamento['detalhes_procedimentos']) && count($rateio_pagamento['detalhes_procedimentos']) > 0) {
+                        $vl_procedimento_detalhe = 0;
+                        foreach($rateio_pagamento['detalhes_procedimentos'] as $dp){
+                            $vl_procedimento_detalhe += floatval($dp['valor'] ?? 0);
+                        }
+                    }
+
+                    $vl_procedimentos_total = $vl_consulta + $vl_procedimento_detalhe;
+                    $vl_aplicacoes_total = floatval($rateio_pagamento['vl_aplicacao'] ?? 0);
+
+                    if (($vl_procedimentos_total + $vl_aplicacoes_total) > 0) {
+                        $dados = [
+                            'pagamento_id' => $forma->id,
+                            'ordem' => strtotime($data),
+                            'data' => dataDbForm($data),
+                            'paciente' => $financeiro->paciente->nm_paciente,
+                            'id_feegow' => $financeiro->paciente->paciente_id_feegow,
+                            'cpf' => $financeiro->paciente->cpf,
+                            'codigo' => $codigo,
+                            'vl_tratamento' => 'R$ '.valorDbForm($financeiro->vl_procedimentos),
+                            'desconto_total' => 'R$ '.valorDbForm($financeiro->vl_desconto),
+                            'vl_pagamento' => 'R$ '.valorDbForm($forma->vl_pagamento),
+                            'vl_procedimentos' => 'R$ '.valorDbForm($vl_procedimentos_total),
+                            'vl_aplicacoes' => 'R$ '.valorDbForm($vl_aplicacoes_total),
+                            'forma_pagamento' => $forma->forma_pagamento,
+                            'id_pagamento' => $forma->id_pagamento,
+                            'parcelas' => $forma->parcelas,
+                            'clinica' => $financeiro->clinica->nome,
+                            'medico' => $financeiro->medico,
+                            'contador' => $contador,
+                            'obs' => $financeiro->obs_pagamento,
+                        ];
+                        $array_financeiro[] = $dados;
+                    }
+                }
+            }
+        }
+
+        usort($array_financeiro, function($a, $b) {
+            return $a['ordem'] <=> $b['ordem'];
+        });
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $cabecalho = [
+            'ID', 'Data', 'Paciente', 'ID Feegow', 'CPF', 'Codigo', 'Valor Tratamento', 'Desconto Total',
+            'Pagamento', 'Procedimentos', 'Aplicações', 'Forma Pagamento', 'ID Pagamento', 'Parcelas',
+            'Clinica', 'Médico', 'Nr Procedimentos', 'Obs'
+        ];
+
+        $sheet->fromArray($cabecalho, null, 'A1');
+
+        $linhaTotal = 2;
+        foreach($array_financeiro as $linha){
+            $array_excel = [
+                $linha['pagamento_id'],
+                $linha['data'],
+                $linha['paciente'],
+                $linha['id_feegow'],
+                $linha['cpf'],
+                $linha['codigo'],
+                $linha['vl_tratamento'],
+                $linha['desconto_total'],
+                $linha['vl_pagamento'],
+                $linha['vl_procedimentos'],
+                $linha['vl_aplicacoes'],
+                $linha['forma_pagamento'],
+                $linha['id_pagamento'],
+                $linha['parcelas'],
+                $linha['clinica'],
+                $linha['medico'],
+                $linha['contador'],
+                $linha['obs']
+            ];
+            $sheet->fromArray($array_excel, null, 'A' . $linhaTotal);
+            $linhaTotal++;
+        }
+
+        $arq = "Financeiro_Simplificado_".date('YmdHis');
+        $path = public_path('rel_financeiro/'.$arq.'.xlsx');
+        if(!is_dir(public_path('rel_financeiro'))){
+            mkdir(public_path('rel_financeiro'), 0755, true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($path);
+
+        return response()->download($path)->deleteFileAfterSend(false);
+    }
 }

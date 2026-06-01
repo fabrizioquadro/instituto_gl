@@ -153,6 +153,11 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                                     </a>
                                 </li>
                                 <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.financeiro_simplificado') }}" class="menu-link">
+                                        <div data-i18n="Financ. Simplificado">Financ. Simplificado</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
                                     <a href="{{ route('adm.relatorios.vendas') }}" class="menu-link">
                                         <div data-i18n="Vendas">Vendas</div>
                                     </a>
