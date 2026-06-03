@@ -222,6 +222,31 @@ $template = "layout.".session()->get('layout');
                     </div>
                 </div>
             </div>
+            <div class="card card-border-shadow-info mt-4" id="card_resumo_medicamentos" style="display: none;">
+                <div class="card-body">
+                    <h6 class="card-title">Resumo de Medicações Adicionadas</h6>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Medicamento</th>
+                                    <th>Quantidade Total</th>
+                                    <th>Valor Unitário</th>
+                                    <th>Total Parcial</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela_resumo_medicamentos">
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="3" class="text-end">Total Geral:</th>
+                                    <th id="resumo_total_geral">R$ 0,00</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
             <div class="card card-border-shadow-primary mt-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -444,7 +469,74 @@ function calcula_total_procedimento_all(){
 
     somatorio = somatorio.toFixed(2);
     somatorio = somatorio.replace('.',",");
-    document.getElementById('total_geral_procedimento').value = somatorio
+    document.getElementById('total_geral_procedimento').value = somatorio;
+
+    atualiza_resumo_medicamentos();
+}
+
+function atualiza_resumo_medicamentos() {
+    let resumo = {};
+    let num_procedimentos = parseInt(document.getElementById('contador_procedimentos').value);
+    
+    for(let i = 1; i <= num_procedimentos; i++) {
+        if(!document.getElementById('contador_medicamentos_' + i)) continue;
+        
+        let num_meds = parseInt(document.getElementById('contador_medicamentos_' + i).value);
+        for(let j = 1; j <= num_meds; j++) {
+            let select = document.getElementById('medicamento_id_' + i + '_' + j);
+            if(!select) continue;
+            
+            let med_id = select.value;
+            if(med_id === "") continue;
+            let med_nome = select.options[select.selectedIndex].text;
+            
+            let val_qtd = document.getElementById('quantidade_' + i + '_' + j).value;
+            let val_tot = document.getElementById('total_' + i + '_' + j).value;
+            let val_uni = document.getElementById('valor_' + i + '_' + j).value;
+            
+            let qtd = parseFloat(val_qtd ? val_qtd.replace(',','.') : 0);
+            let tot = parseFloat(val_tot ? val_tot.replaceAll('.','').replace(',','.') : 0);
+            let uni = parseFloat(val_uni ? val_uni.replaceAll('.','').replace(',','.') : 0);
+            
+            if(isNaN(qtd)) qtd = 0;
+            if(isNaN(tot)) tot = 0;
+            if(isNaN(uni)) uni = 0;
+            
+            if(!resumo[med_id]) {
+                resumo[med_id] = { nome: med_nome, qtd: 0, val_unitario: uni, tot: 0 };
+            }
+            resumo[med_id].qtd += qtd;
+            resumo[med_id].tot += tot;
+            // Atualiza o valor unitario caso tenha mudado
+            resumo[med_id].val_unitario = uni;
+        }
+    }
+    
+    let html = '';
+    let total_geral = 0;
+    
+    for(let med_id in resumo) {
+        let r = resumo[med_id];
+        
+        html += `
+        <tr>
+            <td>${r.nome}</td>
+            <td>${r.qtd}</td>
+            <td>R$ ${r.val_unitario.toFixed(2).replace('.', ',')}</td>
+            <td>R$ ${r.tot.toFixed(2).replace('.', ',')}</td>
+        </tr>
+        `;
+        total_geral += r.tot;
+    }
+    
+    document.getElementById('tabela_resumo_medicamentos').innerHTML = html;
+    document.getElementById('resumo_total_geral').innerText = 'R$ ' + total_geral.toFixed(2).replace('.', ',');
+    
+    if(Object.keys(resumo).length > 0) {
+        document.getElementById('card_resumo_medicamentos').style.display = 'block';
+    } else {
+        document.getElementById('card_resumo_medicamentos').style.display = 'none';
+    }
 }
 
 function adicionar_medicamento(linha){

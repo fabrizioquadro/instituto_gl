@@ -799,6 +799,7 @@ class RelatorioController extends Controller
             return $b['data'] <=> $a['data'];
         });
 
+        return view('adm/relatorios/baixas_gerar', compact('movimentacoes', 'dados'));
     }
 
     public function exportar_baixas(Request $request){

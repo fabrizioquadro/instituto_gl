@@ -180,13 +180,19 @@ $template = "layout.".session()->get('layout');
                     $total_pacientes = 0;
                     $total_aplicacao = 0;
                     $total_bio = 0;
+                    $total_coleta = 0;
                     foreach($procedimentos_aplicadas as $proc){
+                        if(str_contains($proc->tipo_atendimento, 'Consulta') || str_contains($proc->tipo_atendimento, 'Retorno')) {
+                            continue;
+                        }
+
                         $nome = $proc->aplicadora ? $proc->aplicadora->nome : 'Não Identificada';
                         if(!isset($resumo_enfermeiras[$nome])){
                             $resumo_enfermeiras[$nome] = [
                                 'pacientes' => 0,
                                 'aplicacao' => 0,
-                                'bio' => 0
+                                'bio' => 0,
+                                'coleta' => 0
                             ];
                         }
                         $resumo_enfermeiras[$nome]['pacientes']++;
@@ -199,6 +205,10 @@ $template = "layout.".session()->get('layout');
                         if($proc->st_biopedancia == 'Sim'){
                             $resumo_enfermeiras[$nome]['bio']++;
                             $total_bio++;
+                        }
+                        if($proc->st_coleta == 'Sim'){
+                            $resumo_enfermeiras[$nome]['coleta']++;
+                            $total_coleta++;
                         }
                     }
                     ksort($resumo_enfermeiras);
@@ -214,6 +224,7 @@ $template = "layout.".session()->get('layout');
                                         <th class="text-center">Qtd. Pacientes</th>
                                         <th class="text-center">Qtd. Aplicação</th>
                                         <th class="text-center">Qtd. Bio</th>
+                                        <th class="text-center">Qtd. Coleta</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -223,6 +234,7 @@ $template = "layout.".session()->get('layout');
                                             <td class="text-center"><b>{{ $dados['pacientes'] }}</b></td>
                                             <td class="text-center"><b>{{ $dados['aplicacao'] }}</b></td>
                                             <td class="text-center"><b>{{ $dados['bio'] }}</b></td>
+                                            <td class="text-center"><b>{{ $dados['coleta'] }}</b></td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -232,6 +244,7 @@ $template = "layout.".session()->get('layout');
                                         <th class="text-center">{{ $total_pacientes }}</th>
                                         <th class="text-center">{{ $total_aplicacao }}</th>
                                         <th class="text-center">{{ $total_bio }}</th>
+                                        <th class="text-center">{{ $total_coleta }}</th>
                                     </tr>
                                 </tfoot>
                             </table>

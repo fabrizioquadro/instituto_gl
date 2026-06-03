@@ -81,7 +81,7 @@ $template = "layout.".session()->get('layout');
                     <strong>{{ $procedimento->paciente->nm_paciente }}</strong>
                     <span id="google_badge_container">
                         @if($procedimento->paciente->st_google == 1)
-                            <span class="badge bg-label-success ms-1" title="Paciente já avaliou no Google"><i class="mdi mdi-google"></i> Avaliado</span>
+                            <span class="badge bg-label-success ms-1" title="Paciente já avaliou no Google"><i class="mdi mdi-google"></i> Paciente já respondeu</span>
                         @else
                             @empty($visualizar)
                                 <button type="button" onclick="marcarAvaliadoGoogle({{ $procedimento->paciente->id }})" class="btn btn-xs btn-outline-info ms-1" id="btn_google" title="Clique para marcar que o paciente avaliou no Google">
@@ -767,7 +767,7 @@ function marcarAvaliadoGoogle(pacienteId) {
             },
             success: function(response) {
                 if(response.success) {
-                    $('#google_badge_container').html('<span class="badge bg-label-success ms-1"><i class="mdi mdi-google"></i> Avaliado</span>');
+                    $('#google_badge_container').html('<span class="badge bg-label-success ms-1"><i class="mdi mdi-google"></i> Paciente já respondeu</span>');
                     Swal.fire({
                         icon: 'success',
                         title: 'Sucesso!',
@@ -782,7 +782,20 @@ function marcarAvaliadoGoogle(pacienteId) {
         });
     }
 }
+    // Ação do Leitor (Enter = Tab/Blur) para todos os usuários
+    $(document).on('keydown', 'input[id^="codigo_barras_"]', function(e) {
+        if (e.keyCode === 13) {
+            e.preventDefault();
+            $(this).blur();
+            return false;
+        }
+    });
+
     // Bloqueio de Digitação Manual Inteligente para Código de Barras
+    @php
+        $is_admin = session()->has('administrador') || (session()->has('user') && session()->get('user')->tipo == 'Administrador');
+    @endphp
+    @if(!$is_admin)
     let lastKeyTime = Date.now();
     $(document).on('keydown', 'input[id^="codigo_barras_"]', function(e) {
         // Permitir teclas de controle: Backspace, Tab, Enter, Setas
@@ -813,5 +826,6 @@ function marcarAvaliadoGoogle(pacienteId) {
         e.preventDefault();
         return false;
     });
+    @endif
 </script>
 @endsection

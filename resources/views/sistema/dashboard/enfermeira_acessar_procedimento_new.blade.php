@@ -668,7 +668,20 @@ document.getElementById('modal2Codigo_salvar').addEventListener('click', ()=>{
         alert('É necessário preencher todos os campos');
     }
 });
+    // Ação do Leitor (Enter = Tab/Blur) para todos os usuários
+    $(document).on('keydown', 'input[id^="codigo_barras_"]', function(e) {
+        if (e.keyCode === 13) {
+            e.preventDefault();
+            $(this).blur();
+            return false;
+        }
+    });
+
     // Bloqueio de Digitação Manual Inteligente para Código de Barras
+    @php
+        $is_admin = session()->has('administrador') || (session()->has('user') && session()->get('user')->tipo == 'Administrador');
+    @endphp
+    @if(!$is_admin)
     let lastKeyTime = Date.now();
     $(document).on('keydown', 'input[id^="codigo_barras_"]', function(e) {
         // Permitir teclas de controle: Backspace, Tab, Enter, Setas
@@ -699,5 +712,40 @@ document.getElementById('modal2Codigo_salvar').addEventListener('click', ()=>{
         e.preventDefault();
         return false;
     });
+    @endif
+</script>
+@endsection
+
+@section('scripts')
+<script>
+function marcarAvaliadoGoogle(pacienteId) {
+    if(confirm('Tem certeza que deseja marcar este paciente como avaliado no Google? Esta ação não pode ser desfeita.')) {
+        $.ajax({
+            url: "{{ route('sistema.procedimentos.update_google_flag') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                id: pacienteId
+            },
+            success: function(response) {
+                if(response.success) {
+                    $('#google_badge_container').html('<span class="badge bg-label-success ms-1"><i class="mdi mdi-google"></i> Paciente já respondeu...</span>');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: 'Paciente marcado como avaliado no Google.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                } else {
+                    alert('Erro ao atualizar: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Erro na comunicação com o servidor.');
+            }
+        });
+    }
+}
 </script>
 @endsection

@@ -812,6 +812,27 @@ class ProcedimentoSistemaController extends Controller
 
             if($procedimentos){
                 Procedimento::whereIn('id', $procedimentos)->update(['finalizacao_cadastro' => now()]);
+                
+                if($request->enviar_fila == 1) {
+                    // Encontrar apenas o primeiro procedimento do grupo (menor id ou data mais antiga)
+                    $primeiro_procedimento = Procedimento::whereIn('id', $procedimentos)
+                        ->orderBy('data_aplicacao', 'asc')
+                        ->orderBy('id', 'asc')
+                        ->first();
+                        
+                    if($primeiro_procedimento) {
+                        $primeiro_procedimento->clinica_id_aplicacao = $user->clinica_id;
+                        $primeiro_procedimento->situacao = 'Fila de Aplicação';
+                        $primeiro_procedimento->data_aplicacao = date('Y-m-d');
+                        $primeiro_procedimento->dt_hr_chegada = date('Y-m-d H:i:s');
+                        
+                        if(!$primeiro_procedimento->st_biopedancia) $primeiro_procedimento->st_biopedancia = 'Não';
+                        if(!$primeiro_procedimento->st_coleta) $primeiro_procedimento->st_coleta = 'Não';
+                        if(!$primeiro_procedimento->st_retirada) $primeiro_procedimento->st_retirada = 'Não';
+                        
+                        $primeiro_procedimento->save();
+                    }
+                }
             }
 
             if($controle_request){
@@ -1563,6 +1584,11 @@ class ProcedimentoSistemaController extends Controller
     }
 
     public function insert_aplicacao(){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+
         $procedimento = Procedimento::where('id', $_GET['procedimento_id'])->first();
         $dados = [
             'procedimento_id' => $procedimento->id,
@@ -1570,7 +1596,8 @@ class ProcedimentoSistemaController extends Controller
             'quantidade' => $_GET['quantidade'],
             'valor' => valorFormDb($_GET['valor']),
             'total' => valorFormDb($_GET['total']),
-            'situacao' => 'Aberta',
+            'situacao' => 'Aplicada',
+            'user_id_aplicacao' => $user->id,
         ];
         $aplicacao = Aplicacao::create($dados);
 
@@ -1578,6 +1605,16 @@ class ProcedimentoSistemaController extends Controller
 
         if($procedimento->situacao == "Aplicado"){
             $procedimento->situacao = 'Aplicação Parcial';
+        }
+
+        // Se o procedimento estava aguardando e agora recebeu uma aplicação, ele está pelo menos parcial
+        if($procedimento->situacao == 'Fila de Aplicação' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Agendado'){
+            $procedimento->situacao = 'Aplicado';
+            $procedimento->data_aplicacao = date('Y-m-d');
+        }
+
+        if(empty($procedimento->user_id_aplicacao)){
+            $procedimento->user_id_aplicacao = $user->id;
         }
 
         $procedimento->flag_coordenacao = 0;

@@ -158,7 +158,9 @@ $template = "layout.".session()->get('layout');
                     </div>
                         <div class="row mt-3">
                             <div class="col-md-12 form-group">
+                                <input type="hidden" name="enviar_fila" id="enviar_fila" value="0">
                                 <button type="button" id='botao_salvar' class="btn btn-primary me-2">Salvar</button>
+                                <button type="button" id='botao_salvar_enviar' class="btn btn-success me-2">Salvar e Enviar para Fila de Atendimento</button>
                             </div>
                         </div>
                     </div>
@@ -168,7 +170,7 @@ $template = "layout.".session()->get('layout');
     </div>
 </div>
 <script>
-document.getElementById('botao_salvar').addEventListener('click', ()=>{
+function submit_formulario(enviar_fila = 0) {
     let modelo = document.getElementById('pagamento_modelo').value;
 
     if(modelo == ""){
@@ -271,7 +273,16 @@ document.getElementById('botao_salvar').addEventListener('click', ()=>{
         }
     }
 
+    document.getElementById('enviar_fila').value = enviar_fila;
     document.getElementById('formulario').submit();
+}
+
+document.getElementById('botao_salvar').addEventListener('click', ()=>{
+    submit_formulario(0);
+});
+
+document.getElementById('botao_salvar_enviar').addEventListener('click', ()=>{
+    submit_formulario(1);
 });
 
 document.getElementById('pagamento_modelo').addEventListener('change', (e)=>{

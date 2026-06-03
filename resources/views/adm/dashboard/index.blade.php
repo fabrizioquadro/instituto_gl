@@ -514,10 +514,23 @@
     </div>
 @endif
     <div class="row">
-        <div class="col-md-6 mt-3">
+        <div class="col-md-12 mt-3">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Consumo de Medicamentos (Quantidade)</h5>
+                    <h5 class="card-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <span>Consumo de Medicamentos (Quantidade)</span>
+                        <form action="{{ route('adm.dashboard') }}" method="get" class="d-flex align-items-center gap-2">
+                            @if(isset($controle))
+                                <input type="hidden" name="controle" value="{{ $controle }}">
+                            @endif
+                            <label class="mb-0 text-nowrap">Período:</label>
+                            <input type="date" name="dt_inc_consumo" class="form-control form-control-sm" value="{{ $dt_inc_consumo }}">
+                            <span class="text-nowrap">a</span>
+                            <input type="date" name="dt_fn_consumo" class="form-control form-control-sm" value="{{ $dt_fn_consumo }}">
+                            <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                            <a href="{{ route('adm.dashboard') }}" class="btn btn-outline-secondary btn-sm">Limpar</a>
+                        </form>
+                    </h5>
                     <div id="donutChart_consumo"></div>
                 </div>
             </div>
@@ -529,7 +542,7 @@
                     const donutChartEl = document.querySelector('#donutChart_consumo'),
                         donutChartConfig = {
                             chart: {
-                                height: 390,
+                                height: 600,
                                 fontFamily: 'Inter',
                                 type: 'donut'
                             },
@@ -543,9 +556,7 @@
                             dataLabels: {
                                 enabled: true,
                                 formatter: function (val, opt) {
-                                    // val is percentage calculated by ApexCharts, but we want to show quantity in tooltip if possible.
-                                    // Actually, let's keep the percentage for the dataLabels (inside the slice)
-                                    return parseInt(val, 10) + '%';
+                                    return opt.w.globals.seriesTotals[opt.seriesIndex];
                                 }
                             },
                             tooltip: {
@@ -557,7 +568,7 @@
                             },
                             legend: {
                                 show: true,
-                                position: 'bottom',
+                                position: 'right',
                                 markers: {
                                     size: 6
                                 },

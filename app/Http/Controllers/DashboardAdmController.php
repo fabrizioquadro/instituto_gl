@@ -217,11 +217,20 @@ class DashboardAdmController extends Controller
         $valores_medicamentos = substr($valores_medicamentos,1);
         $cores_medicamentos = substr($cores_medicamentos,1);
 
-        //consumo de medicamentos (quantidades aplicadas de todo o banco)
-        $consumos = Aplicacao::selectRaw('medicamento_id, sum(quantidade) as total_quantidade')
-                             ->where('situacao', 'Aplicada')
-                             ->groupBy('medicamento_id')
-                             ->get();
+        //consumo de medicamentos (quantidades aplicadas de todo o banco ou por data)
+        $dt_inc_consumo = isset($_GET['dt_inc_consumo']) ? $_GET['dt_inc_consumo'] : '';
+        $dt_fn_consumo = isset($_GET['dt_fn_consumo']) ? $_GET['dt_fn_consumo'] : '';
+
+        $query_consumo = Aplicacao::selectRaw('aplicacaos.medicamento_id, sum(aplicacaos.quantidade) as total_quantidade')
+                             ->join('procedimentos', 'procedimentos.id', '=', 'aplicacaos.procedimento_id')
+                             ->where('aplicacaos.situacao', 'Aplicada');
+                             
+        if($dt_inc_consumo && $dt_fn_consumo){
+            $query_consumo->where('procedimentos.data_aplicacao', '>=', $dt_inc_consumo)
+                          ->where('procedimentos.data_aplicacao', '<=', $dt_fn_consumo);
+        }
+
+        $consumos = $query_consumo->groupBy('aplicacaos.medicamento_id')->get();
         $array_consumo = array();
         foreach($consumos as $c){
             if($c->total_quantidade > 0){
@@ -256,7 +265,7 @@ class DashboardAdmController extends Controller
         'vl_faturamento','label_clinicas','valores_clinicas','cores_clinicas',
         'label_medicos','valores_medicos','cores_medicos','label_medicamentos',
         'valores_medicamentos','cores_medicamentos','administrador',
-        'label_consumo','valores_consumo','cores_consumo'));
+        'label_consumo','valores_consumo','cores_consumo', 'dt_inc_consumo', 'dt_fn_consumo'));
     }
 
     public function perfil(){
