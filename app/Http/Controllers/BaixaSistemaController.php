@@ -104,6 +104,7 @@ class BaixaSistemaController extends Controller
             }
             $dados = [
                 'clinica_id' => $user->clinica_id,
+                'user_id' => $user->id,
                 'motivo' => $request->motivo,
                 'data' => $request->data,
                 'valor' => '0.00',

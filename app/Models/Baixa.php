@@ -11,6 +11,7 @@ class Baixa extends Model
 
     protected $fillable = [
         'clinica_id',
+        'user_id',
         'motivo',
         'data',
         'valor',
@@ -18,5 +19,9 @@ class Baixa extends Model
 
     public function medicamentos(){
         return $this->hasMany(Estoque::class);
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class);
     }
 }

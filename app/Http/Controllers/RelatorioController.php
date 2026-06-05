@@ -746,7 +746,7 @@ class RelatorioController extends Controller
             $queryFechados->where('medicamento_id', $request->medicamento_id);
         }
         
-        $fechados = $queryFechados->with(['medicamento', 'clinica', 'baixa'])->get();
+        $fechados = $queryFechados->with(['medicamento', 'clinica', 'baixa.user'])->get();
 
         // 2. Baixas de Abertos (BaixaAberto)
         $queryAbertos = \App\Models\BaixaAberto::query();
@@ -778,7 +778,7 @@ class RelatorioController extends Controller
                 'quantidade' => $item->quantidade,
                 'tipo' => 'Fechado',
                 'motivo' => $item->baixa->motivo ?? 'N/A',
-                'usuario' => 'N/A'
+                'usuario' => $item->baixa->user->nome ?? 'N/A'
             ];
         }
 
@@ -820,7 +820,7 @@ class RelatorioController extends Controller
             $queryFechados->where('medicamento_id', $dados['medicamento_id']);
         }
         
-        $fechados = $queryFechados->with(['medicamento', 'clinica', 'baixa'])->get();
+        $fechados = $queryFechados->with(['medicamento', 'clinica', 'baixa.user'])->get();
 
         $queryAbertos = \App\Models\BaixaAberto::query();
         if(isset($dados['dt_inc'])){
@@ -851,7 +851,7 @@ class RelatorioController extends Controller
                 'quantidade' => $item->quantidade,
                 'tipo' => 'Fechado',
                 'motivo' => $item->baixa->motivo ?? 'N/A',
-                'usuario' => 'N/A'
+                'usuario' => $item->baixa->user->nome ?? 'N/A'
             ];
         }
 

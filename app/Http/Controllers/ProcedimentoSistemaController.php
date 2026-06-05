@@ -1526,6 +1526,8 @@ class ProcedimentoSistemaController extends Controller
         $procedimento->flag_qualidade = 0;
         $procedimento->save();
 
+        self::recalcular_situacao($procedimento->id);
+
         FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
 
         $dt_aplicacao = null;
@@ -1577,6 +1579,8 @@ class ProcedimentoSistemaController extends Controller
         $procedimento->save();
         $aplicacao->delete();
 
+        self::recalcular_situacao($procedimento->id);
+
         FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
 
         $retorno['controle'] = 'true';
@@ -1590,14 +1594,22 @@ class ProcedimentoSistemaController extends Controller
         }
 
         $procedimento = Procedimento::where('id', $_GET['procedimento_id'])->first();
+        $medicamento = Medicamento::where('id', $_GET['medicamento_id'])->first();
+        $situacao_inicial = 'Aberta';
+        $user_id_aplicacao = null;
+        if($medicamento && $medicamento->unidade == 'Procedimento') {
+            $situacao_inicial = 'Aplicada';
+            $user_id_aplicacao = $user->id;
+        }
+
         $dados = [
             'procedimento_id' => $procedimento->id,
             'medicamento_id' => $_GET['medicamento_id'],
             'quantidade' => $_GET['quantidade'],
             'valor' => valorFormDb($_GET['valor']),
             'total' => valorFormDb($_GET['total']),
-            'situacao' => 'Aplicada',
-            'user_id_aplicacao' => $user->id,
+            'situacao' => $situacao_inicial,
+            'user_id_aplicacao' => $user_id_aplicacao,
         ];
         $aplicacao = Aplicacao::create($dados);
 
@@ -1620,6 +1632,8 @@ class ProcedimentoSistemaController extends Controller
         $procedimento->flag_coordenacao = 0;
         $procedimento->flag_qualidade = 0;
         $procedimento->save();
+
+        self::recalcular_situacao($procedimento->id);
 
         FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
 
@@ -1694,6 +1708,8 @@ class ProcedimentoSistemaController extends Controller
                 $procedimento->flag_qualidade = 0;
                 $procedimento->save();
             }
+
+            self::recalcular_situacao($procedimento->id);
 
             FinanceiroSistemaController::atualiza_financeiro_procedimento($procedimento->codigo);
 
@@ -1805,6 +1821,8 @@ class ProcedimentoSistemaController extends Controller
                 $procedimento->flag_coordenacao = 0;
                 $procedimento->flag_qualidade = 0;
                 $procedimento->save();
+
+                self::recalcular_situacao($procedimento->id);
             }
 
             FinanceiroSistemaController::atualiza_financeiro_procedimento($request->codigo);
@@ -1922,5 +1940,34 @@ class ProcedimentoSistemaController extends Controller
             return response()->json(['success' => true]);
         }
         return response()->json(['success' => false, 'message' => 'Paciente não encontrado']);
+    }
+
+    public static function recalcular_situacao($procedimento_id){
+        $procedimento = Procedimento::find($procedimento_id);
+        if(!$procedimento) return;
+
+        $aplicacoes = Aplicacao::where('procedimento_id', $procedimento_id)->get();
+        if($aplicacoes->count() == 0) return;
+
+        $pendentes = 0;
+        foreach($aplicacoes as $app){
+            if(in_array($app->situacao, ['Aberta', 'Pendente'])){
+                $pendentes++;
+            }
+        }
+
+        if($pendentes == 0 && in_array($procedimento->situacao, ['Aplicação Parcial', 'Atendimento', 'Fila de Aplicação'])){
+            $procedimento->situacao = 'Aplicado';
+            if(!$procedimento->dt_hr_finalizacao){
+                $procedimento->dt_hr_finalizacao = date('Y-m-d H:i:s');
+            }
+            if(!$procedimento->data_aplicacao){
+                $procedimento->data_aplicacao = date('Y-m-d');
+            }
+            $procedimento->save();
+        } elseif($pendentes > 0 && $procedimento->situacao == 'Aplicado'){
+            $procedimento->situacao = 'Aplicação Parcial';
+            $procedimento->save();
+        }
     }
 }
