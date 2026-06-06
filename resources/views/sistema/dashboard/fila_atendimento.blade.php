@@ -23,10 +23,20 @@ $template = "layout.".session()->get('layout');
                         </thead>
                         @foreach($procedimentos_aguardando as $procedimento)
                             @php
+                            $qt_aplicacao = 0;
+                            foreach($procedimento->aplicacaos as $app){
+                                if($app->medicamento && $app->medicamento->aplicacao == 'Sim'){
+                                    $qt_aplicacao++;
+                                }
+                            }
+                            if($qt_aplicacao == 0 && $procedimento->st_biopedancia != 'Sim' && $procedimento->st_coleta != 'Sim'){
+                                continue;
+                            }
+
                             $var = explode(' ', $procedimento->updated_at);
                             $chegada = dataDbForm($var[0])." ".$var[1];
                             $ds_procedimentos = "";
-                            if($procedimento->aplicacaos->count() > 0){
+                            if($qt_aplicacao > 0){
                                 $ds_procedimentos .= ", Aplicação";
                             }
                             if($procedimento->st_biopedancia == 'Sim'){
@@ -73,10 +83,20 @@ $template = "layout.".session()->get('layout');
                         </thead>
                         @foreach($procedimentos_atendimento as $procedimento)
                             @php
+                            $qt_aplicacao = 0;
+                            foreach($procedimento->aplicacaos as $app){
+                                if($app->medicamento && $app->medicamento->aplicacao == 'Sim'){
+                                    $qt_aplicacao++;
+                                }
+                            }
+                            if($qt_aplicacao == 0 && $procedimento->st_biopedancia != 'Sim' && $procedimento->st_coleta != 'Sim'){
+                                continue;
+                            }
+
                             $var = explode(' ', $procedimento->updated_at);
                             $chegada = dataDbForm($var[0])." ".$var[1];
                             $ds_procedimentos = "";
-                            if($procedimento->aplicacaos->count() > 0){
+                            if($qt_aplicacao > 0){
                                 $ds_procedimentos .= ", Aplicação";
                             }
                             if($procedimento->st_biopedancia == 'Sim'){
@@ -123,10 +143,20 @@ $template = "layout.".session()->get('layout');
                         </thead>
                         @foreach($procedimentos_aplicadas as $procedimento)
                             @php
+                            $qt_aplicacao = 0;
+                            foreach($procedimento->aplicacaos as $app){
+                                if($app->medicamento && $app->medicamento->aplicacao == 'Sim'){
+                                    $qt_aplicacao++;
+                                }
+                            }
+                            if($qt_aplicacao == 0 && $procedimento->st_biopedancia != 'Sim' && $procedimento->st_coleta != 'Sim'){
+                                continue;
+                            }
+
                             $var = explode(' ', $procedimento->updated_at);
                             $chegada = dataDbForm($var[0])." ".$var[1];
                             $ds_procedimentos = "";
-                            if($procedimento->aplicacaos->count() > 0){
+                            if($qt_aplicacao > 0){
                                 $ds_procedimentos .= ", Aplicação";
                             }
                             if($procedimento->st_biopedancia == 'Sim'){
@@ -186,6 +216,16 @@ $template = "layout.".session()->get('layout');
                             continue;
                         }
 
+                        $qt_aplicacao = 0;
+                        foreach($proc->aplicacaos as $app){
+                            if($app->medicamento && $app->medicamento->aplicacao == 'Sim'){
+                                $qt_aplicacao++;
+                            }
+                        }
+                        if($qt_aplicacao == 0 && $proc->st_biopedancia != 'Sim' && $proc->st_coleta != 'Sim'){
+                            continue;
+                        }
+
                         $nome = $proc->aplicadora ? $proc->aplicadora->nome : 'Não Identificada';
                         if(!isset($resumo_enfermeiras[$nome])){
                             $resumo_enfermeiras[$nome] = [
@@ -198,7 +238,7 @@ $template = "layout.".session()->get('layout');
                         $resumo_enfermeiras[$nome]['pacientes']++;
                         $total_pacientes++;
 
-                        if($proc->aplicacaos->count() > 0){
+                        if($qt_aplicacao > 0){
                             $resumo_enfermeiras[$nome]['aplicacao']++;
                             $total_aplicacao++;
                         }
