@@ -311,6 +311,7 @@ class ProcedimentoSistemaController extends Controller
 
                         if($controle_sem_aplicacao){
                             $procedimento->situacao = 'Aplicado';
+                            $procedimento->user_id_aplicacao = $user->id;
                             $procedimento->save();
                         }
 
@@ -1964,6 +1965,17 @@ class ProcedimentoSistemaController extends Controller
             if(!$procedimento->data_aplicacao){
                 $procedimento->data_aplicacao = date('Y-m-d');
             }
+
+            $lastApp = Aplicacao::where('procedimento_id', $procedimento_id)->whereNotNull('user_id_aplicacao')->orderBy('id', 'desc')->first();
+            if($lastApp){
+                $procedimento->user_id_aplicacao = $lastApp->user_id_aplicacao;
+            } elseif(!$procedimento->user_id_aplicacao) {
+                $user = auth()->user() ?? session()->get('user');
+                if($user){
+                    $procedimento->user_id_aplicacao = $user->id;
+                }
+            }
+
             $procedimento->save();
         } elseif($pendentes > 0 && $procedimento->situacao == 'Aplicado'){
             $procedimento->situacao = 'Aplicação Parcial';
