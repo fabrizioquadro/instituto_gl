@@ -519,16 +519,23 @@
                 <div class="card-body">
                     <h5 class="card-title d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <span>Consumo de Medicamentos (Quantidade)</span>
-                        <form action="{{ route('adm.dashboard') }}" method="get" class="d-flex align-items-center gap-2">
+                        <form action="{{ route('adm.dashboard') }}" method="get" class="d-flex align-items-center flex-wrap gap-2">
                             @if(isset($controle))
                                 <input type="hidden" name="controle" value="{{ $controle }}">
                             @endif
-                            <label class="mb-0 text-nowrap">Período:</label>
-                            <input type="date" name="dt_inc_consumo" class="form-control form-control-sm" value="{{ $dt_inc_consumo }}">
+                            <label class="mb-0 text-nowrap">Clínica:</label>
+                            <select name="clinica_consumo" onchange="this.form.submit()" class="form-control form-control-sm" style="width: auto;">
+                                <option value="">Todas</option>
+                                @foreach($clinicas as $clinica)
+                                    <option value="{{ $clinica->id }}" @if($clinica_consumo == $clinica->id) selected @endif>{{ $clinica->nome }}</option>
+                                @endforeach
+                            </select>
+                            <label class="mb-0 text-nowrap ms-2">Período:</label>
+                            <input type="date" name="dt_inc_consumo" class="form-control form-control-sm" value="{{ $dt_inc_consumo }}" style="width: auto;">
                             <span class="text-nowrap">a</span>
-                            <input type="date" name="dt_fn_consumo" class="form-control form-control-sm" value="{{ $dt_fn_consumo }}">
-                            <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
-                            <a href="{{ route('adm.dashboard') }}" class="btn btn-outline-secondary btn-sm">Limpar</a>
+                            <input type="date" name="dt_fn_consumo" class="form-control form-control-sm" value="{{ $dt_fn_consumo }}" style="width: auto;">
+                            <button type="submit" class="btn btn-primary btn-sm flex-shrink-0">Filtrar</button>
+                            <a href="{{ route('adm.dashboard') }}" class="btn btn-outline-secondary btn-sm flex-shrink-0">Limpar</a>
                         </form>
                     </h5>
                     <div id="donutChart_consumo"></div>

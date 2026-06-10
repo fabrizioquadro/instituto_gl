@@ -112,6 +112,10 @@ class Procedimento extends Model
         return $this->hasMany(ProcedimentoLog::class);
     }
 
+    public function observacoes_procedimento(){
+        return $this->hasMany(ProcedimentoObservacao::class);
+    }
+
     public function clinica(){
         return $this->belongsTo(Clinica::class);
     }

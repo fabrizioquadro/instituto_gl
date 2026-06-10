@@ -15,6 +15,7 @@ class Transferencia extends Model
         'motivo',
         'data',
         'valor',
+        'user_id',
     ];
 
     public function origem(){
@@ -23,6 +24,10 @@ class Transferencia extends Model
 
     public function destino(){
         return $this->belongsTo(Clinica::class,'clinica_destino_id','id');
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class,'user_id','id');
     }
 
     public function medicamentos($clinica_id){

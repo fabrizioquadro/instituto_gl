@@ -22,6 +22,13 @@ $template = "layout.".session()->get('layout');
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
+        @if($imprimir = Session::get('imprimir_etiquetas'))
+            <script>
+                window.addEventListener('load', function() {
+                    window.open('/sistema/entradas/etiquetas_imprimir/' + '{!! $imprimir !!}', '_blank');
+                });
+            </script>
+        @endif
         <hr>
         <div class="table-responsive">
             <table class="tabela-index table" id="table-index">
@@ -29,6 +36,8 @@ $template = "layout.".session()->get('layout');
                     <tr>
                         <th></th>
                         <th>Data</th>
+                        <th>Usuário</th>
+                        <th>Código de Barras</th>
                         <th>Motivo</th>
                         <th>Origem</th>
                         <th>Destino</th>
@@ -51,6 +60,18 @@ $template = "layout.".session()->get('layout');
                             </div>
                         </td>
                         <td> <span style='display: none'>{{ strtotime($transferencia->data) }}</span> {{ dataDbForm($transferencia->data) }}</td>
+                        <td>{{ $transferencia->user ? $transferencia->user->nome : '-' }}</td>
+                        <td>
+                            @php
+                                $medicamentos = $transferencia->medicamentos($user->clinica_id);
+                                $codigos = [];
+                                foreach($medicamentos as $med) {
+                                    if($med->codigo_barras) $codigos[] = $med->codigo_barras;
+                                }
+                                $codigos_str = implode(', ', array_unique($codigos));
+                            @endphp
+                            {{ $codigos_str }}
+                        </td>
                         <td>{{ $transferencia->motivo }}</td>
                         <td>{{ $transferencia->origem->nome }}</td>
                         <td>{{ $transferencia->destino->nome }}</td>

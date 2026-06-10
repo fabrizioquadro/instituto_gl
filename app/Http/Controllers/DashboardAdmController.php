@@ -220,6 +220,7 @@ class DashboardAdmController extends Controller
         //consumo de medicamentos (quantidades aplicadas de todo o banco ou por data)
         $dt_inc_consumo = isset($_GET['dt_inc_consumo']) ? $_GET['dt_inc_consumo'] : '';
         $dt_fn_consumo = isset($_GET['dt_fn_consumo']) ? $_GET['dt_fn_consumo'] : '';
+        $clinica_consumo = isset($_GET['clinica_consumo']) ? $_GET['clinica_consumo'] : '';
 
         $query_consumo = Aplicacao::selectRaw('aplicacaos.medicamento_id, sum(aplicacaos.quantidade) as total_quantidade')
                              ->join('procedimentos', 'procedimentos.id', '=', 'aplicacaos.procedimento_id')
@@ -228,6 +229,9 @@ class DashboardAdmController extends Controller
         if($dt_inc_consumo && $dt_fn_consumo){
             $query_consumo->where('procedimentos.data_aplicacao', '>=', $dt_inc_consumo)
                           ->where('procedimentos.data_aplicacao', '<=', $dt_fn_consumo);
+        }
+        if($clinica_consumo){
+            $query_consumo->where('procedimentos.clinica_id_aplicacao', $clinica_consumo);
         }
 
         $consumos = $query_consumo->groupBy('aplicacaos.medicamento_id')->get();
@@ -265,7 +269,7 @@ class DashboardAdmController extends Controller
         'vl_faturamento','label_clinicas','valores_clinicas','cores_clinicas',
         'label_medicos','valores_medicos','cores_medicos','label_medicamentos',
         'valores_medicamentos','cores_medicamentos','administrador',
-        'label_consumo','valores_consumo','cores_consumo', 'dt_inc_consumo', 'dt_fn_consumo'));
+        'label_consumo','valores_consumo','cores_consumo', 'dt_inc_consumo', 'dt_fn_consumo', 'clinicas', 'clinica_consumo'));
     }
 
     public function perfil(){

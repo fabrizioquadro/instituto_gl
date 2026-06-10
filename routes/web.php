@@ -235,6 +235,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/procedimentos/adicionar_medicamentos/{codigo}', [ProcedimentoSistemaController::class, 'adicionar_medicamentos'])->name('sistema.procedimentos.adicionar_medicamentos');
         Route::post('/procedimentos/adicionar_medicamentos_insert', [ProcedimentoSistemaController::class, 'adicionar_medicamentos_insert'])->name('sistema.procedimentos.adicionar_medicamentos_insert');
         Route::post('/procedimentos/insert', [ProcedimentoSistemaController::class, 'insert'])->name('sistema.procedimentos.insert');
+        Route::post('/procedimentos/salvar_observacao', [ProcedimentoSistemaController::class, 'salvar_observacao'])->name('sistema.procedimentos.salvar_observacao');
         Route::post('/procedimentos/setar_pagamento', [ProcedimentoSistemaController::class, 'setar_pagamento'])->name('sistema.procedimentos.setar_pagamento');
         Route::get('/procedimentos/setar_pagamento_pendente/{id}', [ProcedimentoSistemaController::class, 'setar_pagamento_pendente'])->name('sistema.procedimentos.setar_pagamento_pendente');
         Route::post('/procedimentos/enviar_fila_aplicacao', [ProcedimentoSistemaController::class, 'enviar_fila_aplicacao'])->name('sistema.procedimentos.enviar_fila_aplicacao');

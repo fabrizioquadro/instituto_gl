@@ -8,12 +8,12 @@
     <td>{{ $aplicacao->quantidade }}</td>
     @if($aplicacao->situacao == "Aberta" || $aplicacao->situacao == 'Pendente')
         @if($aplicacao->medicamento->unidade == "Ampola")
-            <td><input {{ isset($visualizar) ? 'readonly' : 'required' }} onblur="busca_lote_por_codigo(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }}, {{ $aplicacao->quantidade }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
-            <td><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}"></td>
+            <td><input {{ isset($visualizar) ? 'readonly' : 'required' }} onblur="busca_lote_por_codigo(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }}, {{ $aplicacao->quantidade }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control" autocomplete="off"></td>
+            <td><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}" autocomplete="off"></td>
             <td></td>
         @elseif($aplicacao->medicamento->unidade == "Miligrama")
-            <td id="td_aplicacao_codigo_{{ $aplicacao->medicamento->id }}"><input {{ isset($visualizar) ? 'readonly' : 'required' }} onblur="busca_lote_por_codigo_frasco(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }}, {{ $aplicacao->quantidade }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control"></td>
-            <td id="td_aplicacao_lote_{{ $aplicacao->medicamento->id }}"><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}"></td>
+            <td id="td_aplicacao_codigo_{{ $aplicacao->medicamento->id }}"><input {{ isset($visualizar) ? 'readonly' : 'required' }} onblur="busca_lote_por_codigo_frasco(this,{{ $aplicacao->medicamento->id }}, {{ $user->clinica_id }}, {{ $aplicacao->quantidade }})" type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control" autocomplete="off"></td>
+            <td id="td_aplicacao_lote_{{ $aplicacao->medicamento->id }}"><input required readonly type="text" class="form-control" name="lote_{{ $aplicacao->medicamento->id }}" id="lote_{{ $aplicacao->medicamento->id }}" autocomplete="off"></td>
             <td>
                 @empty($visualizar)
                     <button title="Aplicação com 2 codigo" onclick="abre_modal_2_codigo({{ $aplicacao->medicamento->id }})" type="button" class="btn rounded-pill btn-icon btn-outline-secondary waves-effect">
@@ -23,7 +23,7 @@
             </td>
         @elseif($aplicacao->medicamento->unidade == "Procedimento")
             <td colspan='3'>
-                <input type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control">
+                <input type="text" name="codigo_barras_{{ $aplicacao->medicamento->id }}" id="codigo_barras_{{ $aplicacao->medicamento->id }}" class="form-control" autocomplete="off">
             </td>
         @endif
     @else

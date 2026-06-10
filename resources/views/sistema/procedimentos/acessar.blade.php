@@ -695,6 +695,53 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between">
+            <h4 class="card-title">Observações</h4>
+        </div>
+        
+        <form action="{{ route('sistema.procedimentos.salvar_observacao') }}" method="POST">
+            @csrf
+            <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
+            <div class="row">
+                <div class="col-md-10">
+                    <div class="form-floating form-floating-outline mb-3">
+                        <textarea required class="form-control" name="observacao" style="height: 60px" placeholder="Digite a observação..."></textarea>
+                        <label>Nova Observação</label>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-center">
+                    <button type="submit" class="btn btn-primary w-100 mb-3" style="height: 60px">Salvar</button>
+                </div>
+            </div>
+        </form>
+
+        @if($observacoes->count() > 0)
+        <div class="table-responsive mt-3">
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 15%">Data / Hora</th>
+                        <th style="width: 20%">Usuário</th>
+                        <th>Observação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($observacoes as $obs)
+                    <tr>
+                        <td>{{ $obs->created_at->format('d/m/Y H:i') }}</td>
+                        <td>{{ $obs->user ? $obs->user->nome : 'Sistema' }}</td>
+                        <td style="white-space: pre-wrap;">{{ $obs->observacao }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </div>
+</div>
+
+<div class="card card-border-shadow-primary mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
             <h4 class="card-title">Procedimentos Vinculados</h4>
         </div>
         <div class="table-responsive">

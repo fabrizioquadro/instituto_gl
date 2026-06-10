@@ -579,6 +579,9 @@ class DashboardSistemaController extends Controller
                         $codigo_barras = $request->$var;
 
                         if($aplicacao->medicamento->unidade == "Ampola"){
+                            if (empty($lote) || empty($codigo_barras)) {
+                                throw new \Exception('O campo Lote e Código de Barras são obrigatórios para a aplicação de ' . $aplicacao->medicamento->nome);
+                            }
                             //vamos setar a aplicaçao
                             $dados = [
                                 'aplicacao_id' => $aplicacao->id,
@@ -618,6 +621,9 @@ class DashboardSistemaController extends Controller
                         elseif($aplicacao->medicamento->unidade == "Miligrama"){
                             $var = "controle_med_".$aplicacao->medicamento->id;
                             $controle = $request->$var;
+                            if($controle != "2_codigo" && (empty($lote) || empty($codigo_barras))){
+                                throw new \Exception('O campo Lote e Código de Barras são obrigatórios para a aplicação de ' . $aplicacao->medicamento->nome);
+                            }
                             if($lote && $codigo_barras && $controle != "2_codigo"){
                                 $aberto = EstoqueAberto::where('codigo_barras', $codigo_barras)
                                 ->where('clinica_id', $user->clinica_id)
@@ -649,16 +655,25 @@ class DashboardSistemaController extends Controller
                             elseif($controle == '2_codigo'){
                                 //vamos inserir o 1º estoque aberto
                                 $var = "cod_med_1_".$aplicacao->medicamento->id;
-                                $codigo_b = $request->$var;
+                                $codigo_b1 = $request->$var;
                                 $var = "quant_med_1_".$aplicacao->medicamento->id;
-                                $quantidade = $request->$var;
+                                $quantidade1 = $request->$var;
 
-                                $aberto = EstoqueAberto::where('codigo_barras', $codigo_b)
-                                ->where('medicamento_id', $aplicacao->medicamento->id)
+                                //vamos inserir o 2º estoque aberto
+                                $var = "cod_med_2_".$aplicacao->medicamento->id;
+                                $codigo_b2 = $request->$var;
+                                $var = "quant_med_2_".$aplicacao->medicamento->id;
+                                $quantidade2 = $request->$var;
+
+                                if (empty($codigo_b1) || empty($codigo_b2)) {
+                                    throw new \Exception('O Código de Barras dos dois frascos são obrigatórios para a aplicação de ' . $aplicacao->medicamento->nome);
+                                }
+
+                                $aberto = EstoqueAberto::where('codigo_barras', $codigo_b1)
                                 ->where('clinica_id', $user->clinica_id)
                                 ->first();
-                                $aberto->qt_utilizado += $quantidade;
-                                $aberto->qt_restante -= $quantidade;
+                                $aberto->qt_utilizado += $quantidade1;
+                                $aberto->qt_restante -= $quantidade1;
                                 if($aberto->qt_restante <= 0){
                                     $aberto->situacao = 'Finalizado';
                                 }
@@ -666,25 +681,18 @@ class DashboardSistemaController extends Controller
 
                                 $dados = [
                                     'aplicacao_id' => $aplicacao->id,
-                                    'quantidade' => $quantidade,
+                                    'quantidade' => $quantidade1,
                                     'lote' => $aberto->lote,
                                     'codigo_barras' => $aberto->codigo_barras,
                                     'estoque_aberto_id' => $aberto->id,
                                 ];
                                 AplicacaoLote::create($dados);
 
-                                //vamos inserir o 2º estoque aberto
-                                $var = "cod_med_2_".$aplicacao->medicamento->id;
-                                $codigo_b = $request->$var;
-                                $var = "quant_med_2_".$aplicacao->medicamento->id;
-                                $quantidade = $request->$var;
-
-                                $aberto = EstoqueAberto::where('codigo_barras', $codigo_b)
-                                ->where('medicamento_id', $aplicacao->medicamento->id)
+                                $aberto = EstoqueAberto::where('codigo_barras', $codigo_b2)
                                 ->where('clinica_id', $user->clinica_id)
                                 ->first();
-                                $aberto->qt_utilizado += $quantidade;
-                                $aberto->qt_restante -= $quantidade;
+                                $aberto->qt_utilizado += $quantidade2;
+                                $aberto->qt_restante -= $quantidade2;
                                 if($aberto->qt_restante <= 0){
                                     $aberto->situacao = 'Finalizado';
                                 }
@@ -692,7 +700,7 @@ class DashboardSistemaController extends Controller
 
                                 $dados = [
                                     'aplicacao_id' => $aplicacao->id,
-                                    'quantidade' => $quantidade,
+                                    'quantidade' => $quantidade2,
                                     'lote' => $aberto->lote,
                                     'codigo_barras' => $aberto->codigo_barras,
                                     'estoque_aberto_id' => $aberto->id,

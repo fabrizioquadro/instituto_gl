@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use App\Models\Procedimento;
 use App\Models\ProcedimentoAnexo;
+use App\Models\ProcedimentoObservacao;
 use App\Models\Aplicacao;
 use App\Models\AplicacaoLote;
 use App\Models\Medicamento;
@@ -412,8 +413,27 @@ class ProcedimentoSistemaController extends Controller
         $financeiro = Financeiro::where('id', $fin_proc->financeiro_id)->first();
 
         $logs = $procedimento->logs()->orderBy('created_at','desc')->get();
+        $observacoes = $procedimento->observacoes_procedimento()->orderBy('created_at','desc')->get();
 
-        return view('sistema/procedimentos/acessar', compact('procedimento','retorno','procedimentos_vinculados','controle_aviso_coleta','financeiro','logs'));
+        return view('sistema/procedimentos/acessar', compact('procedimento','retorno','procedimentos_vinculados','controle_aviso_coleta','financeiro','logs', 'observacoes'));
+    }
+
+    public function salvar_observacao(Request $request){
+        try {
+            $user = auth()->user() ?? session()->get('user');
+            
+            ProcedimentoObservacao::create([
+                'procedimento_id' => $request->procedimento_id,
+                'user_id' => $user->id ?? null,
+                'observacao' => $request->observacao
+            ]);
+
+            ProcedimentoLog::registrar($request->procedimento_id, 'Procedimento', 'Observação adicionada');
+
+            return redirect()->back()->with('mensagem', 'Observação salva com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('mensagem_erro', 'Erro ao salvar observação: '.$e->getMessage());
+        }
     }
 
     public function setar_pagamento(Request $request){

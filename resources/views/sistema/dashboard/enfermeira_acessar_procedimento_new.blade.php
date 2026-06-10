@@ -293,6 +293,37 @@ $template = "layout.".session()->get('layout');
     </div>
 </form>
 
+@php
+$observacoes = $procedimento->observacoes_procedimento()->orderBy('created_at','desc')->get();
+@endphp
+@if($observacoes->count() > 0)
+    <div class="card card-border-shadow-primary mb-4">
+        <div class="card-body">
+            <h4 class="card-title">Observações Avulsas</h4>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered mt-3">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 15%">Data / Hora</th>
+                            <th style="width: 20%">Usuário</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($observacoes as $obs)
+                        <tr>
+                            <td>{{ $obs->created_at->format('d/m/Y H:i') }}</td>
+                            <td>{{ $obs->user ? $obs->user->nome : 'Sistema' }}</td>
+                            <td style="white-space: pre-wrap;">{{ $obs->observacao }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+@endif
+
 @if($procedimentos_vinculados->count() > 0)
     <div class="card card-border-shadow-primary mb-4">
         <div class="card-body">
@@ -581,24 +612,24 @@ function abre_modal_2_codigo(id){
                         <tbody>
                             <tr>
                                 <td>
-                                    <input type="text" id='modal2Codigo_quantidade_1' class="form-control">
+                                    <input type="text" id='modal2Codigo_quantidade_1' class="form-control" autocomplete="off">
                                 </td>
                                 <td>
-                                    <input onblur="busca_lote_por_codigo_frasco_2codigo(1)" type="text" id='modal2Codigo_codigo_1' class="form-control">
+                                    <input onblur="busca_lote_por_codigo_frasco_2codigo(1)" type="text" id='modal2Codigo_codigo_1' class="form-control" autocomplete="off">
                                 </td>
                                 <td>
-                                    <input readonly type="text" id='modal2Codigo_lote_1' class="form-control">
+                                    <input readonly type="text" id='modal2Codigo_lote_1' class="form-control" autocomplete="off">
                                 </td>
                             </tr>
                             <tr>
                                 <td>
-                                    <input type="text" id='modal2Codigo_quantidade_2' class="form-control">
+                                    <input type="text" id='modal2Codigo_quantidade_2' class="form-control" autocomplete="off">
                                 </td>
                                 <td>
-                                    <input onblur="busca_lote_por_codigo_frasco_2codigo(2)" type="text" id='modal2Codigo_codigo_2' class="form-control">
+                                    <input onblur="busca_lote_por_codigo_frasco_2codigo(2)" type="text" id='modal2Codigo_codigo_2' class="form-control" autocomplete="off">
                                 </td>
                                 <td>
-                                    <input readonly type="text" id='modal2Codigo_lote_2' class="form-control">
+                                    <input readonly type="text" id='modal2Codigo_lote_2' class="form-control" autocomplete="off">
                                 </td>
                             </tr>
                         </tbody>

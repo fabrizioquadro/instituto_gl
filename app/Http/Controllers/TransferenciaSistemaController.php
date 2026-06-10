@@ -43,11 +43,13 @@ class TransferenciaSistemaController extends Controller
                 'motivo' => $request->motivo,
                 'data' => $request->data,
                 'valor' => '0.00',
+                'user_id' => $user->id,
             ];
             $transferencia = Transferencia::create($dados);
 
             //vamos inserir os medicamentos baixados
             $total_transferencia = 0;
+            $estoque_ids = [];
             for($i=1 ; $i<=$request->contador_medicamentos ; $i++){
                 $var = 'medicamento_id_'.$i;
                 $medicamento_id = $request->$var;
@@ -99,14 +101,17 @@ class TransferenciaSistemaController extends Controller
                         'codigo_barras' => $codigo_barras,
                         'dt_vencimento' => $estoque->dt_vencimento,
                     ];
-                    Estoque::create($dados);
+                    $estoque_entrada = Estoque::create($dados);
+                    $estoque_ids[] = $estoque_entrada->id;
                 }
             }
 
             $transferencia->valor = $total_transferencia;
             $transferencia->save();
 
-            return redirect()->route('sistema.transferencias')->with('mensagem', 'Transferencia Cadastrada!');
+            return redirect()->route('sistema.transferencias')
+                ->with('mensagem', 'Transferencia Cadastrada!')
+                ->with('imprimir_etiquetas', json_encode($estoque_ids));
         } catch (\Exception $e) {
             return redirect()->route('sistema.transferencias')->with('mensagem_erro', $e->getMessage());
         }
