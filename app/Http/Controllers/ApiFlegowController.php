@@ -242,7 +242,11 @@ class ApiFlegowController extends Controller
         }
         curl_close($ch);
 
-        return $retorno['content']['nascimento'];
+        if (isset($retorno['content']['nascimento'])) {
+            return $retorno['content']['nascimento'];
+        }
+
+        return "";
 
     }
 
