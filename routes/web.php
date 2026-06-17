@@ -216,6 +216,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/transferencias/adicionar', [TransferenciaSistemaController::class, 'adicionar'])->name('sistema.transferencias.adicionar');
         Route::get('/transferencias/excluir/{id}', [TransferenciaSistemaController::class, 'excluir'])->name('sistema.transferencias.excluir');
         Route::get('/transferencias/visualizar/{id}', [TransferenciaSistemaController::class, 'visualizar'])->name('sistema.transferencias.visualizar');
+        Route::get('/transferencias/gerar_pdf/{id}', [TransferenciaSistemaController::class, 'gerar_pdf'])->name('sistema.transferencias.gerar_pdf');
         Route::post('/transferencias/insert', [TransferenciaSistemaController::class, 'insert'])->name('sistema.transferencias.insert');
         Route::post('/transferencias/delete', [TransferenciaSistemaController::class, 'delete'])->name('sistema.transferencias.delete');
         Route::get('/transferencias/get_codigos_barras', [TransferenciaSistemaController::class, 'get_codigos_barras'])->name('sistema.transferencias.get_codigos_barras');

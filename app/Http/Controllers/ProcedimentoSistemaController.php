@@ -157,6 +157,10 @@ class ProcedimentoSistemaController extends Controller
 
     public function insert(Request $request){
         try {
+            if(!$request->hasFile('anexos')) {
+                return redirect()->back()->with('mensagem_erro', 'É obrigatório inserir o anexo (prescrição médica) para finalizar o cadastro.');
+            }
+
             $array_procedimentos = array();
             $controle_update = false;
 

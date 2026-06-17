@@ -684,7 +684,7 @@ class RelatorioController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         $cabecalho = [
-            'Data', 'Origem', 'Destino', 'Medicamento', 'Quantidade'
+            'Data', 'Origem', 'Destino', 'Usuário', 'Medicamento', 'Lote', 'C. Barras', 'Quantidade'
         ];
 
         $sheet->fromArray($cabecalho, null, 'A1');
@@ -701,7 +701,10 @@ class RelatorioController extends Controller
                     dataDbForm($transferencia->data),
                     $transferencia->origem->nome,
                     $transferencia->destino->nome,
+                    $transferencia->user ? $transferencia->user->name : '',
                     $estoque->medicamento->nome,
+                    $estoque->lote,
+                    $estoque->codigo_barras,
                     $estoque->quantidade
                 ];
                 $sheet->fromArray($array_excel, null, 'A' . $linhaTotal);

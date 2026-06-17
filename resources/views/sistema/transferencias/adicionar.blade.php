@@ -14,7 +14,18 @@ $template = "layout.".session()->get('layout');
             @csrf
             <input type="hidden" name="contador_medicamentos" id="contador_medicamentos" value="1">
             <div class="row mt-2 gy-4 align-items-end">
-                <div class="col-md-6">
+                <div class="col-md-4">
+                    <div class="form-floating form-floating-outline">
+                        <select required id="clinica_origem_id" name='clinica_origem_id' class="select2 form-select" onchange="limpar_tabela_medicamentos()">
+                            <option value="">Opções</option>
+                            @foreach($todas_clinicas as $clinica)
+                                <option value="{{ $clinica->id }}" {{ $user->clinica_id == $clinica->id ? 'selected' : '' }}>{{ $clinica->nome }}</option>
+                            @endforeach
+                        </select>
+                        <label for="clinica_origem_id">Clinica Origem:</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
                     <div class="form-floating form-floating-outline">
                         <select required id="clinica_destino_id" name='clinica_destino_id' class="select2 form-select">
                             <option value="">Opções</option>
@@ -25,7 +36,7 @@ $template = "layout.".session()->get('layout');
                         <label for="clinica_destino_id">Clinica Destino:</label>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-floating form-floating-outline">
                         <input required class="form-control" type="date" id="data" name="data" max="{{ date('Y-m-d') }}"/>
                         <label for="data">Data:</label>
@@ -129,11 +140,13 @@ document.getElementById('botao_adicionar_medicamento').addEventListener('click',
 
 function get_codigos_barras_transferencia(linha){
     medicamento_id = document.getElementById('medicamento_id_' + linha).value;
-    if(medicamento_id){
+    clinica_id = document.getElementById('clinica_origem_id').value;
+    if(medicamento_id && clinica_id){
         $.getJSON(
             "{{ route('sistema.transferencias.get_codigos_barras') }}",
             {
-                medicamento_id : medicamento_id
+                medicamento_id : medicamento_id,
+                clinica_id : clinica_id
             },
             function(json){
                 document.getElementById('codigo_barras_' + linha).innerHTML = json.codigos;
@@ -152,12 +165,14 @@ function get_codigos_barras_transferencia(linha){
 function get_lotes_medicamento_por_codigo(linha){
     medicamento_id = document.getElementById('medicamento_id_' + linha).value;
     codigo_barras = document.getElementById('codigo_barras_' + linha).value;
-    if(medicamento_id && codigo_barras){
+    clinica_id = document.getElementById('clinica_origem_id').value;
+    if(medicamento_id && codigo_barras && clinica_id){
         $.getJSON(
             "{{ route('sistema.transferencias.get_lotes_por_codigo_barras') }}",
             {
                 medicamento_id : medicamento_id,
-                codigo_barras : codigo_barras
+                codigo_barras : codigo_barras,
+                clinica_id : clinica_id
             },
             function(json){
                 document.getElementById('lote_' + linha).innerHTML = json.lotes;
@@ -182,6 +197,36 @@ function excluir_linha_medicamento(linha){
         document.getElementById('linha_adicionar_' + linha).remove();
         calcula_total_entrada();
     }
+}
+
+function limpar_tabela_medicamentos(){
+    // Se a clínica de origem for alterada, os estoques dos medicamentos mudam,
+    // por isso precisamos limpar e recomeçar os medicamentos
+    document.getElementById('tabela_medicamentos').innerHTML = `
+        <tr id="linha_adicionar_1">
+            <td>
+                <select onchange="get_codigos_barras_transferencia(1)" required name="medicamento_id_1" id="medicamento_id_1" class="form-control">
+                    <option value="">Opções</option>
+                    @foreach($medicamentos as $medicamento)
+                        <option value="{{ $medicamento->id }}">{{ $medicamento->nome." - ".$medicamento->fabricante }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <select onchange="get_lotes_medicamento_por_codigo(1)" required name="codigo_barras_1" id="codigo_barras_1" class="form-control">
+                    <option>Opções</option>
+                </select>
+            </td>
+            <td>
+                <select onchange="seta_quantidade_estoque(1)" required name="lote_1" id="lote_1" class="form-control">
+                    <option>Opções</option>
+                </select>
+            </td>
+            <td><input name="quantidade_1" id="quantidade_1" required type="number" step="any" class="form-control"></td>
+            <td></td>
+        </tr>
+    `;
+    document.getElementById('contador_medicamentos').value = 1;
 }
 
 </script>

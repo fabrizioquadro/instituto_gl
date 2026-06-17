@@ -121,7 +121,7 @@ $template = "layout.".session()->get('layout');
                     </div>
                     <div class="col-md-4">
                         <div class="form-floating form-floating-outline">
-                            <input class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
+                            <input required class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
                             <label for="anexos">Anexos:</label>
                         </div>
                     </div>

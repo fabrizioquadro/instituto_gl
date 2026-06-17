@@ -39,6 +39,9 @@
                     if($linha['estoque_minimo'] > $linha['quantidade']){
                         $color = "red";
                     }
+                    elseif(isset($linha['Estoque Central']) && $linha['Estoque Central'] <= $linha['estoque_minimo']){
+                        $color = "#d4ac0d"; // Amarelo escuro/Dourado para melhor leitura
+                    }
                     else{
                         $color = '';
                     }

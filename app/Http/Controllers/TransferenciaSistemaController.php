@@ -26,9 +26,10 @@ class TransferenciaSistemaController extends Controller
         if(!$user){
             $user = session()->get('user');
         }
+        $todas_clinicas = Clinica::orderBy('nome')->get();
         $clinicas = Clinica::where('id','<>',$user->clinica_id)->orderBy('nome')->get();
         $medicamentos = Medicamento::all()->sortBy('nome');
-        return view('sistema/transferencias/adicionar', compact('clinicas','medicamentos'));
+        return view('sistema/transferencias/adicionar', compact('clinicas','todas_clinicas','medicamentos','user'));
     }
 
     public function insert(Request $request){
@@ -38,7 +39,7 @@ class TransferenciaSistemaController extends Controller
                 $user = session()->get('user');
             }
             $dados = [
-                'clinica_id' => $user->clinica_id,
+                'clinica_id' => $request->clinica_origem_id,
                 'clinica_destino_id' => $request->clinica_destino_id,
                 'motivo' => $request->motivo,
                 'data' => $request->data,
@@ -142,12 +143,30 @@ class TransferenciaSistemaController extends Controller
         $transferencia = Transferencia::where('id', $id)->first();
         return view('sistema/transferencias/visualizar', compact('transferencia','user'));
     }
+
+    public function gerar_pdf($id){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+        $transferencia = Transferencia::where('id', $id)->first();
+        
+        $pdf = new \App\Helpers\GerarPdf('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->setPrintHeader(false);
+        $pdf->SetMargins(10, 10, -1, true);
+        $pdf->AddPage();
+        
+        $html = view('sistema/transferencias/pdf', compact('transferencia','user'))->render();
+        $pdf->writeHTML($html, true, false, false, false, '');
+        $pdf->Output('Transferencia_'.$id.'.pdf', 'I');
+    }
     public function get_codigos_barras(){
         $user = auth()->user();
         if(!$user){
             $user = session()->get('user');
         }
-        $estoques = \App\Models\Estoque::get_codigos_barras_transferencia($_GET['medicamento_id'], $user->clinica_id);
+        $clinica_id = isset($_GET['clinica_id']) && $_GET['clinica_id'] != '' ? $_GET['clinica_id'] : $user->clinica_id;
+        $estoques = \App\Models\Estoque::get_codigos_barras_transferencia($_GET['medicamento_id'], $clinica_id);
         $html = "<option value=''>Opções</option>";
         foreach($estoques as $estoque){
             $html .= "<option value='".$estoque['codigo_barras']."'>".$estoque['codigo_barras']."</option>";
@@ -161,7 +180,8 @@ class TransferenciaSistemaController extends Controller
         if(!$user){
             $user = session()->get('user');
         }
-        $estoques = \App\Models\Estoque::get_lotes_por_codigo_barras_transferencia($_GET['medicamento_id'], $_GET['codigo_barras'], $user->clinica_id);
+        $clinica_id = isset($_GET['clinica_id']) && $_GET['clinica_id'] != '' ? $_GET['clinica_id'] : $user->clinica_id;
+        $estoques = \App\Models\Estoque::get_lotes_por_codigo_barras_transferencia($_GET['medicamento_id'], $_GET['codigo_barras'], $clinica_id);
         $html = "<option value=''>Opções</option>";
         foreach($estoques as $estoque){
             $html .= "<option value='".$estoque['lote']."' data-quantidade='".$estoque['estoque']."'>".$estoque['lote']."</option>";

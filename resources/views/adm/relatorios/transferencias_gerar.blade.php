@@ -15,7 +15,10 @@
                         <th>Data</th>
                         <th>Origem</th>
                         <th>Destino</th>
+                        <th>Usuário</th>
                         <th>Medicamento</th>
+                        <th>Lote</th>
+                        <th>C. Barras</th>
                         <th>Quantidade</th>
                     </tr>
                 </thead>
@@ -32,7 +35,10 @@
                                 <td>{{ dataDbForm($transferencia->data) }}</td>
                                 <td>{{ $transferencia->origem->nome }}</td>
                                 <td>{{ $transferencia->destino->nome }}</td>
+                                <td>{{ $transferencia->user->name ?? '' }}</td>
                                 <td>{{ $estoque->medicamento->nome }}</td>
+                                <td>{{ $estoque->lote }}</td>
+                                <td>{{ $estoque->codigo_barras }}</td>
                                 <td>{{ $estoque->quantidade }}</td>
                             </tr>
                         @endforeach
