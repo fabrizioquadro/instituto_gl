@@ -177,7 +177,11 @@ class DashboardSistemaController extends Controller
             die();
         }
 
-        if($procedimento->situacao != "Fila de Aplicação" && $procedimento->user_id_aplicacao != $user->id){
+        if($procedimento->situacao == "Aplicado" || $procedimento->situacao == "Finalizado"){
+            return redirect()->route('sistema.dashboard.enfermagem_visualizar_procedimento', $id);
+        }
+
+        if($procedimento->situacao != "Fila de Aplicação" && $procedimento->situacao != "Aplicação Parcial" && $procedimento->user_id_aplicacao != $user->id){
             return redirect()->route('sistema.dashboard')->with('mensagem_erro', 'Este Paciente já esta sendo atendido!');
         }
         $procedimento->situacao = "Atendimento";
