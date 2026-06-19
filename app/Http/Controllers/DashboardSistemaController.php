@@ -749,6 +749,8 @@ class DashboardSistemaController extends Controller
 
             $procedimento->save();
 
+            \App\Http\Controllers\ProcedimentoSistemaController::recalcular_situacao($procedimento->id);
+
             $api = new ApiFlegowController();
 
             if($api_aplicacao){
