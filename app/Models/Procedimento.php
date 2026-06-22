@@ -289,29 +289,29 @@ class Procedimento extends Model
 
     public static function gerar_relatorio_enfermagem($filtro){
         $array = array();
-        $sql = "SELECT id FROM procedimentos WHERE 1=1";
+        $sql = "SELECT DISTINCT p.id FROM procedimentos p 
+                JOIN aplicacaos a ON a.procedimento_id = p.id 
+                WHERE a.situacao = 'Aplicada'";
 
         if($filtro['clinica_id']){
-            $sql .= " AND clinica_id_aplicacao=?";
+            $sql .= " AND p.clinica_id_aplicacao=?";
             $array[] = $filtro['clinica_id'];
         }
 
         if($filtro['paciente_id']){
-            $sql .= " AND paciente_id=?";
+            $sql .= " AND p.paciente_id=?";
             $array[] = $filtro['paciente_id'];
         }
 
         if($filtro['dt_inc']){
-            $sql .= " AND data_aplicacao>=?";
-            $array[] = $filtro['dt_inc'];
+            $sql .= " AND a.updated_at>=?";
+            $array[] = $filtro['dt_inc'] . " 00:00:00";
         }
 
         if($filtro['dt_fn']){
-            $sql .= " AND data_aplicacao<=?";
-            $array[] = $filtro['dt_fn'];
+            $sql .= " AND a.updated_at<=?";
+            $array[] = $filtro['dt_fn'] . " 23:59:59";
         }
-
-        $sql .= " AND situacao IN ('Aplicado','Aplicação Parcial') ORDER BY data_aplicacao";
 
         $res = \DB::select($sql, $array);
 

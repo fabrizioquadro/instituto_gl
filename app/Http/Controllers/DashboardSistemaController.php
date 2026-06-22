@@ -575,6 +575,8 @@ class DashboardSistemaController extends Controller
                     else{
                         $api_aplicacao = true;
                         $array_aplicacao[] = $aplicacao->id;
+                        $aplicacao->dt_hr_chegada = $procedimento->dt_hr_chegada;
+                        $aplicacao->dt_hr_atendimento = $procedimento->dt_hr_atendimento;
 
                         $var = 'lote_'.$aplicacao->medicamento->id;
                         $lote = $request->$var;

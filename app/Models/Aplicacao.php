@@ -19,6 +19,8 @@ class Aplicacao extends Model
         'situacao',
         'obs',
         'is_soro',
+        'dt_hr_chegada',
+        'dt_hr_atendimento',
     ];
 
     public function medicamento(){

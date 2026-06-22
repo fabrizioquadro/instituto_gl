@@ -324,12 +324,12 @@ class RelatorioController extends Controller
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-
         $array_dados = [
             'Chegada',
             'Atendimento',
             'Tipo',
             'Finalização',
+            'Aplicação',
             'Paciente',
             'Enfermeira',
             'Médico',
@@ -376,34 +376,61 @@ class RelatorioController extends Controller
 
             foreach($procedimento->aplicacaos as $aplicacao){
                 if($aplicacao->situacao == 'Aplicada'){
-                    $linhaAtual++;
-
                     $var = explode(' ', $aplicacao->updated_at);
-                    $data = dataDbForm($var[0]);
+                    $data_aplicada = $var[0];
+                    $data = dataDbForm($data_aplicada);
                     $hora = $var[1];
 
-                    $array_dados = [
-                        $chegada,
-                        $atendimento,
-                        $procedimento->tipo_atendimento,
-                        $finalizacao,
-                        $procedimento->paciente->nm_paciente,
-                        $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '',
-                        $procedimento->medico,
-                        $aplicacao->medicamento->nome,
-                        $aplicacao->quantidade,
-                        'R$ '.valorDbForm($aplicacao->valor),
-                        'R$ '.valorDbForm($aplicacao->total),
-                        $aplicacao->lotes(),
-                        $aplicacao->codigos(),
-                        $aplicacao->vencimentos(),
-                        $aplicacao->obs,
-                        $procedimento->codigo.'/'.$procedimento->nr_procedimento,
-                        $procedimento->st_pagamento,
-                        $procedimento->flag_coordenacao == 1 ? 'Sim' : 'Não',
-                        $procedimento->flag_qualidade == 1 ? 'Sim' : 'Não'
-                    ];
-                    $sheet->fromArray($array_dados, null, 'A' . $linhaAtual);
+                    // Filtrar por intervalo de datas se estiver definido nos dados de busca
+                    $exibir = true;
+                    if(isset($dados['dt_inc']) && $dados['dt_inc'] && $data_aplicada < $dados['dt_inc']){
+                        $exibir = false;
+                    }
+                    if(isset($dados['dt_fn']) && $dados['dt_fn'] && $data_aplicada > $dados['dt_fn']){
+                        $exibir = false;
+                    }
+
+                    if($exibir){
+                        // Horários de Chegada/Atendimento com fallback para a data/hora da própria aplicação
+                        $app_chegada = $aplicacao->dt_hr_chegada ?? $aplicacao->updated_at;
+                        $chegada_val = "";
+                        if($app_chegada){
+                            $var_c = explode(' ', $app_chegada);
+                            $chegada_val = dataDbForm($var_c[0])." ".($var_c[1] ?? '00:00:00');
+                        }
+
+                        $app_atendimento = $aplicacao->dt_hr_atendimento ?? $aplicacao->updated_at;
+                        $atendimento_val = "";
+                        if($app_atendimento){
+                            $var_a = explode(' ', $app_atendimento);
+                            $atendimento_val = dataDbForm($var_a[0])." ".($var_a[1] ?? '00:00:00');
+                        }
+
+                        $linhaAtual++;
+                        $array_dados = [
+                            $chegada_val,
+                            $atendimento_val,
+                            $procedimento->tipo_atendimento,
+                            $finalizacao,
+                            $data . " " . $hora,
+                            $procedimento->paciente->nm_paciente,
+                            $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '',
+                            $procedimento->medico,
+                            $aplicacao->medicamento->nome,
+                            $aplicacao->quantidade,
+                            'R$ '.valorDbForm($aplicacao->valor),
+                            'R$ '.valorDbForm($aplicacao->total),
+                            $aplicacao->lotes(),
+                            $aplicacao->codigos(),
+                            $aplicacao->vencimentos(),
+                            $aplicacao->obs,
+                            $procedimento->codigo.'/'+procedimento->nr_procedimento,
+                            $procedimento->st_pagamento,
+                            $procedimento->flag_coordenacao == 1 ? 'Sim' : 'Não',
+                            $procedimento->flag_qualidade == 1 ? 'Sim' : 'Não'
+                        ];
+                        $sheet->fromArray($array_dados, null, 'A' . $linhaAtual);
+                    }
                 }
             }
         }
