@@ -391,15 +391,36 @@ class RelatorioController extends Controller
                     }
 
                     if($exibir){
-                        // Horários de Chegada/Atendimento com fallback para a data/hora da própria aplicação
-                        $app_chegada = $aplicacao->dt_hr_chegada ?? $aplicacao->updated_at;
+                        // Obter a data do procedimento e a data da aplicação
+                        $data_aplicada_date = date('Y-m-d', strtotime($aplicacao->updated_at));
+                        $procedimento_date = $procedimento->data_aplicacao;
+
+                        if ($aplicacao->dt_hr_chegada) {
+                            $app_chegada = $aplicacao->dt_hr_chegada;
+                        } else {
+                            if ($data_aplicada_date === $procedimento_date) {
+                                $app_chegada = $procedimento->dt_hr_chegada ?? $aplicacao->updated_at;
+                            } else {
+                                $app_chegada = $aplicacao->updated_at;
+                            }
+                        }
+
+                        if ($aplicacao->dt_hr_atendimento) {
+                            $app_atendimento = $aplicacao->dt_hr_atendimento;
+                        } else {
+                            if ($data_aplicada_date === $procedimento_date) {
+                                $app_atendimento = $procedimento->dt_hr_atendimento ?? $aplicacao->updated_at;
+                            } else {
+                                $app_atendimento = $aplicacao->updated_at;
+                            }
+                        }
+
                         $chegada_val = "";
                         if($app_chegada){
                             $var_c = explode(' ', $app_chegada);
                             $chegada_val = dataDbForm($var_c[0])." ".($var_c[1] ?? '00:00:00');
                         }
 
-                        $app_atendimento = $aplicacao->dt_hr_atendimento ?? $aplicacao->updated_at;
                         $atendimento_val = "";
                         if($app_atendimento){
                             $var_a = explode(' ', $app_atendimento);
