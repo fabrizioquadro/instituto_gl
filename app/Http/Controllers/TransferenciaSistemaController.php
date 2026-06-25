@@ -38,6 +38,7 @@ class TransferenciaSistemaController extends Controller
             if(!$user){
                 $user = session()->get('user');
             }
+            $administrador = session()->get('administrador');
             $dados = [
                 'clinica_id' => $request->clinica_origem_id,
                 'clinica_destino_id' => $request->clinica_destino_id,
@@ -45,6 +46,7 @@ class TransferenciaSistemaController extends Controller
                 'data' => $request->data,
                 'valor' => '0.00',
                 'user_id' => $user->id,
+                'administrador_id' => $administrador ? $administrador->id : null,
             ];
             $transferencia = Transferencia::create($dados);
 

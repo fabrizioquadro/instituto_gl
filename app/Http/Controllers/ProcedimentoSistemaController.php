@@ -157,8 +157,27 @@ class ProcedimentoSistemaController extends Controller
 
     public function insert(Request $request){
         try {
-            if(!$request->hasFile('anexos')) {
-                return redirect()->back()->with('mensagem_erro', 'É obrigatório inserir o anexo (prescrição médica) para finalizar o cadastro.');
+            $precisa_anexo = false;
+            for($i=1 ; $i<= $request->contador_procedimentos ; $i++){
+                $var_contador = "contador_medicamentos_".$i;
+                $contador = $request->$var_contador;
+                if($contador){
+                    for($j=1 ; $j<=$contador ; $j++){
+                        $var_med = "medicamento_id_".$i."_".$j;
+                        $medicamento_id = $request->$var_med;
+                        if($medicamento_id){
+                            $medicamento = Medicamento::find($medicamento_id);
+                            if($medicamento && in_array($medicamento->unidade, ['Ampola', 'Miligrama'])){
+                                $precisa_anexo = true;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if($precisa_anexo && !$request->hasFile('anexos')) {
+                return redirect()->back()->with('mensagem_erro', 'É obrigatório inserir o anexo (prescrição médica) pois o procedimento contém medicamentos em Ampola ou Miligrama.');
             }
 
             $array_procedimentos = array();

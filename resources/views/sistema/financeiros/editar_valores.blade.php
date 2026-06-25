@@ -7,7 +7,7 @@ $template = "layout.".session()->get('layout');
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between">
-            <h5 class="card-title">Editar Valores (Desconto / Adicional)</h5>
+            <h5 class="card-title">Editar Financeiro (Desconto / Adicional / Observação)</h5>
         </div>
         @if($mensagem = Session::get('mensagem'))
             <div class="alert alert-success alert-dismissible mt-3" role="alert">
@@ -33,6 +33,12 @@ $template = "layout.".session()->get('layout');
                 <div class="col-md-6 form-group mb-3">
                     <label for="vl_adicional">Valor Adicional:</label>
                     <input required class="form-control" type="text" id="vl_adicional" name="vl_adicional" onkeypress="return(MascaraMoeda(this,'.',',',event))" value="{{ valorDbForm($financeiro->vl_adicional) }}"/>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 form-group mb-3">
+                    <label for="obs_pagamento">Observação:</label>
+                    <input class="form-control" type="text" id="obs_pagamento" name="obs_pagamento" value="{{ $financeiro->obs_pagamento }}"/>
                 </div>
             </div>
             <div class="row mt-2">

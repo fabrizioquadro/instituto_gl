@@ -746,10 +746,10 @@ class RelatorioController extends Controller
 
             foreach($medicamentos as $estoque){
                 $array_excel = [
-                    dataDbForm($transferencia->data),
+                    $transferencia->created_at->format('d/m/Y H:i'),
                     $transferencia->origem->nome,
                     $transferencia->destino->nome,
-                    $transferencia->user ? $transferencia->user->name : '',
+                    $transferencia->administrador ? $transferencia->administrador->nome : ($transferencia->user ? $transferencia->user->nome : ''),
                     $estoque->medicamento->nome,
                     $estoque->lote,
                     $estoque->codigo_barras,

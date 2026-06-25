@@ -32,10 +32,16 @@
                         @endphp
                         @foreach($medicamentos as $estoque)
                             <tr>
-                                <td>{{ dataDbForm($transferencia->data) }}</td>
+                                <td>{{ $transferencia->created_at->format('d/m/Y H:i') }}</td>
                                 <td>{{ $transferencia->origem->nome }}</td>
                                 <td>{{ $transferencia->destino->nome }}</td>
-                                <td>{{ $transferencia->user->name ?? '' }}</td>
+                                <td>
+                                    @if($transferencia->administrador)
+                                        {{ $transferencia->administrador->nome }}
+                                    @elseif($transferencia->user)
+                                        {{ $transferencia->user->nome }}
+                                    @endif
+                                </td>
                                 <td>{{ $estoque->medicamento->nome }}</td>
                                 <td>{{ $estoque->lote }}</td>
                                 <td>{{ $estoque->codigo_barras }}</td>

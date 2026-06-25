@@ -48,7 +48,15 @@
         </tr>
         <tr>
             <td><b>Data:</b> {{ dataDbForm($transferencia->data) }}</td>
-            <td><b>Usuário Responsável:</b> {{ $transferencia->user->name ?? 'Não identificado' }}</td>
+            <td><b>Usuário Responsável:</b> 
+                @if($transferencia->administrador)
+                    {{ $transferencia->administrador->nome }} ({{ $transferencia->administrador->email }})
+                @elseif($transferencia->user)
+                    {{ $transferencia->user->nome }} ({{ $transferencia->user->email }})
+                @else
+                    Não identificado
+                @endif
+            </td>
         </tr>
         <tr>
             <td colspan="2"><b>Motivo:</b> {{ $transferencia->motivo }}</td>

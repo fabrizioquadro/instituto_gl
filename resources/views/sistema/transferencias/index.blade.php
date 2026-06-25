@@ -60,17 +60,28 @@ $template = "layout.".session()->get('layout');
                             </div>
                         </td>
                         <td> <span style='display: none'>{{ strtotime($transferencia->data) }}</span> {{ dataDbForm($transferencia->data) }}</td>
-                        <td>{{ $transferencia->user ? $transferencia->user->nome : '-' }}</td>
+                        <td>
+                            @if($transferencia->administrador)
+                                {{ $transferencia->administrador->nome }}<br><small class="text-muted">{{ $transferencia->administrador->email }}</small>
+                            @elseif($transferencia->user)
+                                {{ $transferencia->user->nome }}<br><small class="text-muted">{{ $transferencia->user->email }}</small>
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td>
                             @php
                                 $medicamentos = $transferencia->medicamentos($user->clinica_id);
                                 $codigos = [];
                                 foreach($medicamentos as $med) {
-                                    if($med->codigo_barras) $codigos[] = $med->codigo_barras;
+                                    if($med->codigo_barras) {
+                                        $nomeMed = $med->medicamento ? $med->medicamento->nome : 'Medicamento';
+                                        $codigos[] = $nomeMed . ' (' . $med->codigo_barras . ')';
+                                    }
                                 }
-                                $codigos_str = implode(', ', array_unique($codigos));
+                                $codigos_str = implode('<br>', array_unique($codigos));
                             @endphp
-                            {{ $codigos_str }}
+                            {!! $codigos_str !!}
                         </td>
                         <td>{{ $transferencia->motivo }}</td>
                         <td>{{ $transferencia->origem->nome }}</td>

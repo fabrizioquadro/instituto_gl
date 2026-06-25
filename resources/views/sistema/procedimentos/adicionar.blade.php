@@ -34,7 +34,7 @@ $template = "layout.".session()->get('layout');
                 <div class="row mt-2 gy-4 align-items-end mb-3">
                     <div class="col-md-4">
                          <div class="form-floating form-floating-outline">
-                            <input required class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
+                            <input class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
                             <label for="anexos">Anexos:</label>
                         </div>
                     </div>
@@ -121,7 +121,7 @@ $template = "layout.".session()->get('layout');
                     </div>
                     <div class="col-md-4">
                         <div class="form-floating form-floating-outline">
-                            <input required class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
+                            <input class="form-control" type="file" multiple id="anexos" name="anexos[]"/>
                             <label for="anexos">Anexos:</label>
                         </div>
                     </div>

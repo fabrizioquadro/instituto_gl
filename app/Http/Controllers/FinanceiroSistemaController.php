@@ -481,10 +481,13 @@ class FinanceiroSistemaController extends Controller
             $financeiro = Financeiro::where('id', $request->id)->first();
             $financeiro->vl_desconto = valorFormDb($request->vl_desconto);
             $financeiro->vl_adicional = valorFormDb($request->vl_adicional);
+            if($request->has('obs_pagamento')){
+                $financeiro->obs_pagamento = $request->obs_pagamento;
+            }
             $financeiro->save();
 
             foreach($financeiro->procedimentos() as $p){
-                ProcedimentoLog::registrar($p->id, 'Financeiro', "Valores alterados: Desconto R$ $request->vl_desconto | Adicional R$ $request->vl_adicional.");
+                ProcedimentoLog::registrar($p->id, 'Financeiro', "Valores/Obs alterados: Desconto R$ $request->vl_desconto | Adicional R$ $request->vl_adicional.");
             }
 
             $this->atualiza_financeiro_procedimento($financeiro->procedimentos()->first()->codigo);

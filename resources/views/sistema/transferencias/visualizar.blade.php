@@ -26,7 +26,15 @@ $template = "layout.".session()->get('layout');
             </div>
             <div class="col-md-3 form-group">
                 <label for="usuario">Usuário:</label><br>
-                <b>{{ $transferencia->user->name ?? 'Não identificado' }}</b>
+                <b>
+                    @if($transferencia->administrador)
+                        {{ $transferencia->administrador->nome }} ({{ $transferencia->administrador->email }})
+                    @elseif($transferencia->user)
+                        {{ $transferencia->user->nome }} ({{ $transferencia->user->email }})
+                    @else
+                        Não identificado
+                    @endif
+                </b>
             </div>
             <div class="col-md-12 form-group">
                 <label for="motivo">Motivo:</label><br>

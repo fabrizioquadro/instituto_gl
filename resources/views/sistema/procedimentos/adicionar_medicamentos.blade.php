@@ -79,6 +79,20 @@ $template = "layout.".session()->get('layout');
                     </div>
                 </div>
             </div>
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="alert alert-warning mb-2">
+                        <h6 class="alert-heading fw-bold mb-1"><i class="mdi mdi-alert-circle-outline me-1"></i>Atenção: Adição de Valores!</h6>
+                        <span>A inclusão de novas medicações acarretará na geração de valores adicionais no financeiro. O paciente deverá realizar o pagamento para que as aplicações sejam liberadas na fila de atendimento.</span>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="aceite_cliente" id="aceite_cliente" required>
+                        <label class="form-check-label fw-bold text-danger" for="aceite_cliente">
+                            Confirmo que informei o paciente sobre o custo adicional destas medicações.
+                        </label>
+                    </div>
+                </div>
+            </div>
             <div class="d-flex justify-content-end mt-3">
                 <button type="submit" class="btn btn-primary me-2">Salvar</button>
             </div>

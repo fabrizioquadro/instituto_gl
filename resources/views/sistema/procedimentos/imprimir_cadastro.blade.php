@@ -130,7 +130,7 @@ $vl_aplicado = 0;
                     <b>{{ dataDbForm($procedimento->data_aplicacao) }}</b>
                 </div>
                 <div class="col-md-12 form-group">
-                    <label for="">Observação</label><br>
+                    <label for="">ANOTAÇÕES DE ENFERMAGEM</label><br>
                     <b>{{ $obs }}</b>
                 </div>
             </div>

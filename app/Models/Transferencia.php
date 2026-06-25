@@ -16,6 +16,7 @@ class Transferencia extends Model
         'data',
         'valor',
         'user_id',
+        'administrador_id',
     ];
 
     public function origem(){
@@ -30,8 +31,13 @@ class Transferencia extends Model
         return $this->belongsTo(User::class,'user_id','id');
     }
 
+    public function administrador(){
+        return $this->belongsTo(Administrador::class,'administrador_id','id');
+    }
+
     public function medicamentos($clinica_id){
-        return Estoque::where('transferencia_id', $this->id)
+        return Estoque::with('medicamento')
+        ->where('transferencia_id', $this->id)
         ->where('clinica_id', $clinica_id)
         ->get();
     }

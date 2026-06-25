@@ -31,12 +31,18 @@ $template = "layout.".session()->get('layout');
         <div class="card-body">
             <div class="d-flex justify-content-between">
                 <h4 class="card-title">Procedimento New</h4>
-                @empty($visualizar)
-                    <button type="button" id="botao_abrir_frasco" class="btn btn-label-primary waves-effect">
-                        <span class="tf-icons mdi mdi-medication-outline me-1"></span>
-                        Abrir Frasco
-                    </button>
-                @endempty
+                <div>
+                    <a href="{{ route('sistema.procedimentos.imprimir_cadastro', $procedimento->codigo) }}" target="_blank" class="btn btn-label-info waves-effect me-2">
+                        <span class="tf-icons mdi mdi-folder-open me-1"></span>
+                        Visualizar Prontuário Completo
+                    </a>
+                    @empty($visualizar)
+                        <button type="button" id="botao_abrir_frasco" class="btn btn-label-primary waves-effect">
+                            <span class="tf-icons mdi mdi-medication-outline me-1"></span>
+                            Abrir Frasco
+                        </button>
+                    @endempty
+                </div>
             </div>
             <div class="row mt-2 gy-4">
                 <div class="col-md-3 form-group">
