@@ -1131,7 +1131,30 @@ function adicionar_medicamentos_combo_semana(linha, medicamento_obj){
 
     document.getElementById('medicamento_id_' + linha + '_' + contador).value = medicamento_obj.medicamento_id;
     document.getElementById('quantidade_' + linha + '_' + contador).value = medicamento_obj.quantidade;
-    set_valor_medicamento(linha, contador);
+    
+    document.getElementById('valor_' + linha + '_' + contador).value = medicamento_obj.valor;
+    document.getElementById('total_' + linha + '_' + contador).value = medicamento_obj.total;
+
+    let select = document.getElementById("medicamento_id_" + linha + '_' + contador);
+    let selectedOption = select.options[select.selectedIndex];
+    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
+
+    $.getJSON(
+        '{{ route("adm.medicamentos.buscar") }}',
+        {medicamento_id:select.value},
+        function(json){
+            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
+                document.getElementById("valor_" + linha + '_' + contador).removeAttribute('readonly');
+                document.getElementById("valor_" + linha + '_' + contador).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
+            }
+            else{
+                document.getElementById("valor_" + linha + '_' + contador).setAttribute('readonly','readonly');
+                document.getElementById("valor_" + linha + '_' + contador).removeAttribute('onkeypress');
+            }
+        }
+    );
+
+    calcula_total_procedimento(linha);
 }
 
 </script>
