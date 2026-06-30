@@ -1534,8 +1534,10 @@ class ProcedimentoSistemaController extends Controller
 
         $financeiro = null;
         if($procedimento->st_pagamento == 'Sim'){
-            $financeiro_id = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first()->financeiro_id;
-            $financeiro = Financeiro::where('id', $financeiro_id)->first();
+            $fin_proc = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first();
+            if($fin_proc){
+                $financeiro = Financeiro::where('id', $fin_proc->financeiro_id)->first();
+            }
         }
         $medicamentos = Medicamento::all()->sortBy('nome');
         $combos = Combo::all()->sortBy('nome');

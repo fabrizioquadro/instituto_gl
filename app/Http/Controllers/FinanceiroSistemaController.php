@@ -195,6 +195,17 @@ class FinanceiroSistemaController extends Controller
         }
         else{
             $financeiro = Financeiro::where('id', $financeiro_id)->first();
+            if($financeiro){
+                foreach($procedimentos as $proc){
+                    $exists = FinanceiroProcedimento::where('procedimento_id', $proc->id)->first();
+                    if(!$exists){
+                        FinanceiroProcedimento::create([
+                            'financeiro_id' => $financeiro->id,
+                            'procedimento_id' => $proc->id,
+                        ]);
+                    }
+                }
+            }
         }
 
         //vamos recalcular tudo
