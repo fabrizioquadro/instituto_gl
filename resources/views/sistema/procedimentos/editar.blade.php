@@ -593,12 +593,7 @@ function editar_aplicacao(aplicacao_id){
                 '{{ route("adm.medicamentos.buscar") }}',
                 {medicamento_id:json.medicamento_id},
                 function(med){
-                    if(med.unidade == "Procedimento" || med.nome.toLowerCase().startsWith('pellet')){
-                        document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
-                    }
-                    else{
-                        document.getElementById("modal_editar_aplicacao_valor").setAttribute('readonly','readonly');
-                    }
+                    document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
                 }
             );
 
@@ -615,20 +610,7 @@ function set_valor_medicamento(){
     valor = valor.toFixed(2);
     document.getElementById("modal_editar_aplicacao_valor").value = valor.replace('.',',');
 
-    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
-
-    $.getJSON(
-        '{{ route("adm.medicamentos.buscar") }}',
-        {medicamento_id:select.value},
-        function(json){
-            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
-                document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
-            }
-            else{
-                document.getElementById("modal_editar_aplicacao_valor").setAttribute('readonly','readonly');
-            }
-        }
-    );
+    document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
 
     modal_editar_aplicacao_calcula_total_medicamento();
 }
@@ -640,20 +622,7 @@ function set_valor_medicamento_adicionar(){
     valor = valor.toFixed(2);
     document.getElementById("modal_adicionar_aplicacao_valor").value = valor.replace('.',',');
 
-    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
-
-    $.getJSON(
-        '{{ route("adm.medicamentos.buscar") }}',
-        {medicamento_id:select.value},
-        function(json){
-            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
-                document.getElementById("modal_adicionar_aplicacao_valor").removeAttribute('readonly');
-            }
-            else{
-                document.getElementById("modal_adicionar_aplicacao_valor").setAttribute('readonly','readonly');
-            }
-        }
-    );
+    document.getElementById("modal_adicionar_aplicacao_valor").removeAttribute('readonly');
 
     modal_adicionar_aplicacao_calcula_total_medicamento();
 }
@@ -667,6 +636,18 @@ function modal_editar_aplicacao_calcula_total_medicamento(){
             medicamento_id : medicamento_id
         },
         function(json){
+            let valorInput = document.getElementById("modal_editar_aplicacao_valor");
+            let valorDigitado = valorInput.value;
+            if(valorDigitado){
+                valorDigitado = valorDigitado.replace(/\./g,'').replace(',','.');
+                valorDigitado = parseFloat(valorDigitado);
+                let valorTabela = parseFloat(json.vl_venda);
+                if(valorDigitado < valorTabela){
+                    alert('O valor do medicamento não pode ser menor do que o preço de tabela (R$ ' + json.vl_venda.replace('.', ',') + ').');
+                    valorInput.value = json.vl_venda.replace('.', ',');
+                }
+            }
+
             if(json.unidade == 'Ampola'){
                 quantidade = Math.ceil(parseFloat(document.getElementById("modal_editar_aplicacao_quantidade").value));
             }
@@ -676,7 +657,7 @@ function modal_editar_aplicacao_calcula_total_medicamento(){
 
             valor = document.getElementById("modal_editar_aplicacao_valor").value;
             if(quantidade && valor){
-                valor = valor.replace('.','');
+                valor = valor.replace(/\./g,'');
                 valor = parseFloat(valor.replace(',','.'));
                 total = quantidade * valor;
                 total = total.toFixed(2);
@@ -695,6 +676,18 @@ function modal_adicionar_aplicacao_calcula_total_medicamento(){
             medicamento_id : medicamento_id
         },
         function(json){
+            let valorInput = document.getElementById("modal_adicionar_aplicacao_valor");
+            let valorDigitado = valorInput.value;
+            if(valorDigitado){
+                valorDigitado = valorDigitado.replace(/\./g,'').replace(',','.');
+                valorDigitado = parseFloat(valorDigitado);
+                let valorTabela = parseFloat(json.vl_venda);
+                if(valorDigitado < valorTabela){
+                    alert('O valor do medicamento não pode ser menor do que o preço de tabela (R$ ' + json.vl_venda.replace('.', ',') + ').');
+                    valorInput.value = json.vl_venda.replace('.', ',');
+                }
+            }
+
             if(json.unidade == 'Ampola'){
                 quantidade = Math.ceil(parseFloat(document.getElementById("modal_adicionar_aplicacao_quantidade").value));
             }
@@ -704,7 +697,7 @@ function modal_adicionar_aplicacao_calcula_total_medicamento(){
 
             valor = document.getElementById("modal_adicionar_aplicacao_valor").value;
             if(quantidade && valor){
-                valor = valor.replace('.','');
+                valor = valor.replace(/\./g,'');
                 valor = parseFloat(valor.replace(',','.'));
                 total = quantidade * valor;
                 total = total.toFixed(2);

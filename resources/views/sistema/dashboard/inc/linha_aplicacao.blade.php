@@ -1,7 +1,7 @@
 <tr>
     <td>
         @if($aplicacao->situacao == "Aberta" || $aplicacao->situacao == 'Pendente')
-            <input {{ isset($visualizar) ? 'disabled' : '' }} class="form-check-input" data-medicamento="{{ $aplicacao->medicamento->unidade }}" type="checkbox" value="Sim" onclick="controle_pendente({{ $aplicacao->medicamento->id }}, this)" name="controle_pendente_{{ $aplicacao->medicamento->id }}" id="controle_pendente_{{ $aplicacao->medicamento->id }}"></td>
+            <input {{ isset($visualizar) ? 'disabled' : '' }} class="form-check-input" data-medicamento="{{ $aplicacao->medicamento->unidade }}" data-nome-medicamento="{{ $aplicacao->medicamento->nome }}" type="checkbox" value="Sim" onclick="controle_pendente({{ $aplicacao->medicamento->id }}, this)" name="controle_pendente_{{ $aplicacao->medicamento->id }}" id="controle_pendente_{{ $aplicacao->medicamento->id }}"></td>
         @endif
     <td>{{ $aplicacao->medicamento->nome }} {!! $aplicacao->is_soro ? '<span class="text-primary font-weight-bold">(Soro)</span>' : '' !!}</td>
     <td>{{ $aplicacao->medicamento->unidade }}</td>

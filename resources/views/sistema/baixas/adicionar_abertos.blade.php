@@ -32,10 +32,33 @@ $template = "layout.".session()->get('layout');
                 </div>
             </div>
             <div class="row mt-2 gy-4 align-items-end">
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-floating form-floating-outline mb-4">
-                        <textarea class="form-control h-px-100" id="motivo" name='motivo' required></textarea>
-                        <label for="motivo">Motivo:</label>
+                        <select class="form-select" id="motivo_baixa" name="motivo_baixa" required>
+                            <option value="">Selecione um motivo</option>
+                            <option value="Abastecimento Lidocaína">Abastecimento Lidocaína</option>
+                            <option value="Abastecimento Mounjaro Núcleo">Abastecimento Mounjaro Núcleo</option>
+                            <option value="Abastecimento Unidade Núcleo">Abastecimento Unidade Núcleo</option>
+                            <option value="Avaria">Avaria</option>
+                            <option value="Baixa Inventário Instituto Moema">Baixa Inventário Instituto Moema</option>
+                            <option value="Baixa Inventário Instituto Tatuapé">Baixa Inventário Instituto Tatuapé</option>
+                            <option value="Baixa Inventário Núcleo">Baixa Inventário Núcleo</option>
+                            <option value="Baixa Lidocaína">Baixa Lidocaína</option>
+                            <option value="Devolução">Devolução</option>
+                            <option value="Empréstimo">Empréstimo</option>
+                            <option value="Erro de Aspiração">Erro de Aspiração</option>
+                            <option value="Fim de Plantão">Fim de Plantão</option>
+                            <option value="Lotes Bloqueados">Lotes Bloqueados</option>
+                            <option value="Quebra">Quebra</option>
+                            <option value="Vencido">Vencido</option>
+                        </select>
+                        <label for="motivo_baixa">Motivo de baixa:</label>
+                    </div>
+                </div>
+                <div class="col-md-12 mt-4">
+                    <div class="form-floating form-floating-outline mb-4">
+                        <textarea class="form-control h-px-100" id="observacao" name='observacao'></textarea>
+                        <label for="observacao">Observação:</label>
                     </div>
                 </div>
             </div>

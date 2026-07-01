@@ -16,7 +16,7 @@ $template = "layout.".session()->get('layout');
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 @endif
-<form action="{{ route('sistema.dashboard.set_aplicacao') }}" method="post">
+<form action="{{ route('sistema.dashboard.set_aplicacao') }}" method="post" id="formulario_aplicacao">
     <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
     @csrf
     @isset($visualizar)
@@ -291,7 +291,7 @@ $template = "layout.".session()->get('layout');
     <div class="row mt-4 mb-4">
         <div class="col-md-6 form-group">
             @empty($visualizar)
-                <button type="submit" class="btn btn-primary me-2">Registrar Aplicação</button>
+                <button type="button" id="btn_registrar_aplicacao" class="btn btn-primary me-2">Registrar Aplicação</button>
             @else
                 <a href="{{ route('sistema.dashboard') }}" class="btn btn-secondary me-2">Voltar</a>
             @endempty
@@ -782,7 +782,73 @@ function marcarAvaliadoGoogle(pacienteId) {
                 alert('Erro na comunicação com o servidor.');
             }
         });
-    }
 }
+
+// Interceptar clique em Registrar Aplicação
+@empty($visualizar)
+$('#btn_registrar_aplicacao').on('click', function(e) {
+    // Encontrar todos os medicamentos que serão aplicados (checkbox não marcado)
+    let medicamentosAplicados = [];
+    $('input[name^="controle_pendente_"]').each(function() {
+        if (!this.checked) {
+            let nome = $(this).attr('data-nome-medicamento');
+            if (nome) {
+                medicamentosAplicados.push(nome);
+            }
+        }
+    });
+
+    let texto = "";
+    if (medicamentosAplicados.length > 0) {
+        texto = "Você confirma a aplicação de " + medicamentosAplicados.join(', ') + " conforme prescrição médica?";
+    } else {
+        texto = "Nenhum medicamento selecionado para aplicação nesta semana. Você confirma as demais anotações/exames conforme prescrição médica?";
+    }
+
+    $('#texto_confirmacao_medicamentos').text(texto);
+
+    let modalConfirmar = new bootstrap.Modal(document.getElementById('modal_confirmar_aplicacao'));
+    modalConfirmar.show();
+});
+
+$('#btn_confirmar_submissao').on('click', function() {
+    $('#formulario_aplicacao').submit();
+});
+@endempty
 </script>
+
+<!-- Modal de Confirmação da Aplicação -->
+<div class="modal fade" id="modal_confirmar_aplicacao" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Aplicação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="texto_confirmacao_medicamentos" style="font-size: 1.1rem; font-weight: 500; color: #2b303a;"></p>
+                
+                <hr>
+                
+                <h6 class="mb-2"><i class="mdi mdi-paperclip me-1"></i> Receita / Anexos do Procedimento</h6>
+                <div class="list-group">
+                    @if($arquivos->count() == 0)
+                        <div class="list-group-item text-muted">Nenhum anexo encontrado.</div>
+                    @else
+                        @foreach($arquivos as $arquivo)
+                            <a target="_blank" href="/public/procedimentos/{{ $arquivo->procedimento_id }}/anexos/{{ $arquivo->anexo }}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2">
+                                <span>{{ $arquivo->nm_anexo }}</span>
+                                <span class="badge bg-label-primary"><i class="mdi mdi-eye"></i> Visualizar</span>
+                            </a>
+                        @endforeach
+                    @endif
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btn_confirmar_submissao">Confirmar e Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

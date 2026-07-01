@@ -5,6 +5,19 @@ $template = "layout.".session()->get('layout');
 
 @section('conteudo')
 
+@php
+$vl_nao_aplicado_topo = $vl_pagamentos;
+$vl_aplicado_topo = 0;
+foreach($procedimentos as $procedimento){
+    foreach($procedimento->aplicacaos as $aplicacao){
+        if($aplicacao->situacao == 'Aplicada'){
+            $vl_nao_aplicado_topo -= $aplicacao->total;
+            $vl_aplicado_topo += $aplicacao->total;
+        }
+    }
+}
+@endphp
+
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -95,15 +108,27 @@ $template = "layout.".session()->get('layout');
             </table>
         </div>
         <div class="row">
-            <div class="col-md-3 form-group">
+            <div class="col-md-2 form-group mb-2">
                 <label for="">Valor Total:</label><br>
                 <b>R$ {{ valorDbForm($vl_procedimentos) }}</b>
             </div>
-            <div class="col-md-3 form-group">
+            <div class="col-md-2 form-group mb-2">
                 <label for="">Valor Pago:</label><br>
                 <b>R$ {{ valorDbForm($vl_pagamentos) }}</b>
             </div>
-            <div class="col-md-6 form-group">
+            <div class="col-md-2 form-group mb-2">
+                <label for="">Valor Pendente:</label><br>
+                <b>R$ {{ valorDbForm($vl_procedimentos - $vl_pagamentos) }}</b>
+            </div>
+            <div class="col-md-2 form-group mb-2">
+                <label for="">Valor Aplicado:</label><br>
+                <b>R$ {{ valorDbForm($vl_aplicado_topo) }}</b>
+            </div>
+            <div class="col-md-2 form-group mb-2">
+                <label for="">Valor em Haver:</label><br>
+                <b>R$ {{ valorDbForm($vl_nao_aplicado_topo) }}</b>
+            </div>
+            <div class="col-md-2 form-group mb-2">
                 <label for="">Observação Pagamento:</label><br>
                 <b>{{ $obs_pagamento }}</b>
             </div>
@@ -297,28 +322,8 @@ $vl_aplicado = 0;
         </div>
     </div>
 @endforeach
-<div class="card card-border-shadow-primary mb-4">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-3 form-group">
-                <label for="">Valor Pago:</label><br>
-                <b>R$ {{ valorDbForm($vl_pagamentos) }}</b>
-            </div>
-            <div class="col-md-3 form-group">
-                <label for="">Valor Pendente:</label><br>
-                <b>R$ {{ valorDbForm($vl_procedimentos - $vl_pagamentos) }}</b>
-            </div>
-            <div class="col-md-3 form-group">
-                <label for="">Valor Aplicado:</label><br>
-                <b>R$ {{ valorDbForm($vl_aplicado) }}</b>
-            </div>
-            <div class="col-md-3 form-group">
-                <label for="">Valor em Haver:</label><br>
-                <b>R$ {{ valorDbForm($vl_nao_aplicado) }}</b>
-            </div>
-        </div>
-    </div>
-</div>
+
+
 
 <script>
 window.addEventListener('load', function() {

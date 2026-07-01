@@ -309,6 +309,11 @@ class ProcedimentoSistemaController extends Controller
                                 $total = $request->$var;
 
                                 $medicamento = Medicamento::where('id', $medicamento_id)->first();
+                                $valor_inserido = valorFormDb($valor);
+                                if ($valor_inserido < $medicamento->vl_venda) {
+                                    throw new \Exception('O valor do medicamento ' . $medicamento->nome . ' não pode ser menor do que o preço de tabela (R$ ' . number_format($medicamento->vl_venda, 2, ',', '.') . ').');
+                                }
+
                                 if($medicamento->aplicacao == 'Sim'){
                                     $dados_situacao = 'Aberta';
                                     $controle_sem_aplicacao = false;
@@ -324,7 +329,7 @@ class ProcedimentoSistemaController extends Controller
                                     'procedimento_id' => $procedimento->id,
                                     'medicamento_id' => $medicamento_id,
                                     'quantidade' => $quantidade,
-                                    'valor' => valorFormDb($valor),
+                                    'valor' => $valor_inserido,
                                     'total' => valorFormDb($total),
                                     'situacao' => $dados_situacao,
                                     'is_soro' => $is_soro,
@@ -1561,9 +1566,15 @@ class ProcedimentoSistemaController extends Controller
         $procedimento->valor -= $aplicacao->total;
 
 
+        $medicamento = Medicamento::where('id', $_GET['medicamento_id'])->first();
+        $valor_inserido = valorFormDb($_GET['valor']);
+        if ($valor_inserido < $medicamento->vl_venda) {
+            throw new \Exception('O valor do medicamento ' . $medicamento->nome . ' não pode ser menor do que o preço de tabela (R$ ' . number_format($medicamento->vl_venda, 2, ',', '.') . ').');
+        }
+
         $aplicacao->medicamento_id = $_GET['medicamento_id'];
         $aplicacao->quantidade = $_GET['quantidade'];
-        $aplicacao->valor = valorFormDb($_GET['valor']);
+        $aplicacao->valor = $valor_inserido;
         $aplicacao->total = valorFormDb($_GET['total']);
         $aplicacao->save();
 
@@ -1641,6 +1652,12 @@ class ProcedimentoSistemaController extends Controller
 
         $procedimento = Procedimento::where('id', $_GET['procedimento_id'])->first();
         $medicamento = Medicamento::where('id', $_GET['medicamento_id'])->first();
+
+        $valor_inserido = valorFormDb($_GET['valor']);
+        if ($valor_inserido < $medicamento->vl_venda) {
+            throw new \Exception('O valor do medicamento ' . $medicamento->nome . ' não pode ser menor do que o preço de tabela (R$ ' . number_format($medicamento->vl_venda, 2, ',', '.') . ').');
+        }
+
         $situacao_inicial = 'Aberta';
         $user_id_aplicacao = null;
         if($medicamento && $medicamento->unidade == 'Procedimento') {
@@ -1652,7 +1669,7 @@ class ProcedimentoSistemaController extends Controller
             'procedimento_id' => $procedimento->id,
             'medicamento_id' => $_GET['medicamento_id'],
             'quantidade' => $_GET['quantidade'],
-            'valor' => valorFormDb($_GET['valor']),
+            'valor' => $valor_inserido,
             'total' => valorFormDb($_GET['total']),
             'situacao' => $situacao_inicial,
             'user_id_aplicacao' => $user_id_aplicacao,
@@ -1842,6 +1859,12 @@ class ProcedimentoSistemaController extends Controller
                     $total = $request->$var;
 
                     if($medicamento_id != ""){
+                        $medicamento = Medicamento::where('id', $medicamento_id)->first();
+                        $valor_inserido = valorFormDb($valor);
+                        if ($valor_inserido < $medicamento->vl_venda) {
+                            throw new \Exception('O valor do medicamento ' . $medicamento->nome . ' não pode ser menor do que o preço de tabela (R$ ' . number_format($medicamento->vl_venda, 2, ',', '.') . ').');
+                        }
+
                         $var = "is_soro_".$i;
                         $is_soro = $request->$var ?? 0;
 
@@ -1850,7 +1873,7 @@ class ProcedimentoSistemaController extends Controller
                             'procedimento_id' => $procedimento->id,
                             'medicamento_id' => $medicamento_id,
                             'quantidade' => $quantidade,
-                            'valor' => valorFormDb($valor),
+                            'valor' => $valor_inserido,
                             'total' => valorFormDb($total),
                             'situacao' => 'Aberta',
                             'is_soro' => $is_soro,

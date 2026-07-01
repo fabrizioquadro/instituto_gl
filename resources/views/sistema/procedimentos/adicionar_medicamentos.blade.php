@@ -136,22 +136,11 @@ function adicionar_medicamento(linha){
 function set_valor_medicamento(medicamento){
     select = document.getElementById("medicamento_id_" + medicamento);
     selectedOption = select.options[select.selectedIndex];
-    valor = parseInt(selectedOption.dataset.valor);
+    valor = parseFloat(selectedOption.dataset.valor);
     valor = valor.toFixed(2);
     document.getElementById("valor_" + medicamento).value = valor.replace('.',',');
 
-    $.getJSON(
-        '{{ route("adm.medicamentos.buscar") }}',
-        {medicamento_id:select.value},
-        function(json){
-            if(json.unidade == "Procedimento" || json.nome.toLowerCase().startsWith('pellet')){
-                document.getElementById("valor_" + medicamento).removeAttribute('readonly');
-            }
-            else{
-                document.getElementById("valor_" + medicamento).setAttribute('readonly','readonly');
-            }
-        }
-    );
+    document.getElementById("valor_" + medicamento).removeAttribute('readonly');
 
     calcula_total_medicamento(medicamento)
 }
@@ -163,6 +152,18 @@ function calcula_total_medicamento(medicamento){
         '{{ route("adm.medicamentos.buscar") }}',
         {medicamento_id:medicamento_id},
         function(json){
+            let valorInput = document.getElementById("valor_" + medicamento);
+            let valorDigitado = valorInput.value;
+            if(valorDigitado){
+                valorDigitado = valorDigitado.replace(/\./g,'').replace(',','.');
+                valorDigitado = parseFloat(valorDigitado);
+                let valorTabela = parseFloat(json.vl_venda);
+                if(valorDigitado < valorTabela){
+                    alert('O valor do medicamento não pode ser menor do que o preço de tabela (R$ ' + json.vl_venda.replace('.', ',') + ').');
+                    valorInput.value = json.vl_venda.replace('.', ',');
+                }
+            }
+
             if(json.unidade == "Ampola"){
                 quantidade = Math.ceil(parseFloat(document.getElementById("quantidade_" + medicamento).value));
             }
@@ -172,7 +173,7 @@ function calcula_total_medicamento(medicamento){
 
             valor = document.getElementById("valor_" + medicamento).value;
             if(quantidade && valor){
-                valor = valor.replace('.','');
+                valor = valor.replace(/\./g,'');
                 valor = parseFloat(valor.replace(',','.'));
                 total = quantidade * valor;
                 total = total.toFixed(2);

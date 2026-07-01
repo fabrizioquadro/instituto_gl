@@ -200,7 +200,7 @@ $template = "layout.".session()->get('layout');
                                             </select>
                                         </td>
                                         <td><input onblur="calcula_total_medicamento(1,1)" name="quantidade_1_1" id="quantidade_1_1" required type="text" class="form-control"></td>
-                                        <td><input onblur="calcula_total_medicamento(1,1)" name="valor_1_1" id="valor_1_1" required type="text" class="form-control" readonly></td>
+                                        <td><input onblur="calcula_total_medicamento(1,1)" name="valor_1_1" id="valor_1_1" required type="text" class="form-control"></td>
                                         <td><input onblur="calcula_total_medicamento(1,1)" name="total_1_1" id="total_1_1" required type="text" class="form-control total_1" readonly></td>
                                         <td>
                                             <button type="button" title='Excluir linha' onclick='excluir_linha_medicamento(1,1)' class="btn btn-sm rounded-pill btn-icon btn-label-danger btn-fab demo waves-effect">
@@ -382,23 +382,8 @@ function set_valor_medicamento(linha, medicamento){
     valor = valor.toFixed(2);
     document.getElementById("valor_" + linha + '_' + medicamento).value = valor.replace('.',',');
 
-    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
-
-    //se for procedimento ou começar com Pellet pode editar o valor
-    $.getJSON(
-        '{{ route("adm.medicamentos.buscar") }}',
-        {medicamento_id:select.value},
-        function(json){
-            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
-                document.getElementById("valor_" + linha + '_' + medicamento).removeAttribute('readonly');
-                document.getElementById("valor_" + linha + '_' + medicamento).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
-            }
-            else{
-                document.getElementById("valor_" + linha + '_' + medicamento).setAttribute('readonly','readonly');
-                document.getElementById("valor_" + linha + '_' + medicamento).removeAttribute('onkeypress');
-            }
-        }
-    );
+    document.getElementById("valor_" + linha + '_' + medicamento).removeAttribute('readonly');
+    document.getElementById("valor_" + linha + '_' + medicamento).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
 
     calcula_total_medicamento(linha,medicamento)
 }
@@ -410,6 +395,18 @@ function calcula_total_medicamento(linha,medicamento){
         '{{ route("adm.medicamentos.buscar") }}',
         {medicamento_id:medicamento_id},
         function(json){
+            let valorInput = document.getElementById("valor_" + linha + '_' + medicamento);
+            let valorDigitado = valorInput.value;
+            if(valorDigitado){
+                valorDigitado = valorDigitado.replace(/\./g,'').replace(',','.');
+                valorDigitado = parseFloat(valorDigitado);
+                let valorTabela = parseFloat(json.vl_venda);
+                if(valorDigitado < valorTabela){
+                    alert('O valor do medicamento não pode ser menor do que o preço de tabela (R$ ' + json.vl_venda.replace('.', ',') + ').');
+                    valorInput.value = json.vl_venda.replace('.', ',');
+                }
+            }
+
             if(json.unidade == "Ampola"){
                 quantidade = Math.ceil(parseFloat(document.getElementById("quantidade_" + linha + '_' + medicamento).value));
             }
@@ -419,7 +416,7 @@ function calcula_total_medicamento(linha,medicamento){
 
             valor = document.getElementById("valor_" + linha + '_' + medicamento).value;
             if(quantidade && valor){
-                valor = valor.replace('.','');
+                valor = valor.replace(/\./g,'');
                 valor = parseFloat(valor.replace(',','.'));
                 total = quantidade * valor;
                 total = total.toFixed(2);
@@ -558,7 +555,7 @@ function adicionar_medicamento(linha){
         </select>
     </td>
     <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="quantidade_${variavel}" id="quantidade_${variavel}" required type="text" class="form-control"></td>
-    <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="valor_${variavel}" id="valor_${variavel}" required type="text" class="form-control" readonly></td>
+    <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="valor_${variavel}" id="valor_${variavel}" required type="text" class="form-control"></td>
     <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="total_${variavel}" id="total_${variavel}" required type="text" class="form-control total_${linha}" readonly></td>
     <td>
         <button type="button" title='Excluir linha' onclick='excluir_linha_medicamento(${linha},${contador})' class="btn btn-sm rounded-pill btn-icon btn-label-danger btn-fab demo waves-effect">
@@ -755,7 +752,7 @@ function excluir_procedimento(nr_procedimento){
                                     <input type="hidden" name="gerador_is_soro_1" id="gerador_is_soro_1" value="0">
                                 </td>
                                 <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_quantidade_1" id="gerador_quantidade_1" required type="text" class="form-control"></td>
-                                <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control" readonly></td>
+                                <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control"></td>
                                 <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_total_1" id="gerador_total_1" required type="text" class="form-control" readonly></td>
                                 <td></td>
                             </tr>
@@ -791,7 +788,7 @@ document.getElementById('botao_gerador').addEventListener('click', ()=>{
             <input type="hidden" name="gerador_is_soro_1" id="gerador_is_soro_1" value="0">
         </td>
         <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_quantidade_1" id="gerador_quantidade_1" required type="text" class="form-control"></td>
-        <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control" readonly></td>
+        <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control"></td>
         <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_total_1" id="gerador_total_1" required type="text" class="form-control" readonly></td>
         <td></td>
     </tr>
@@ -807,23 +804,8 @@ function gerador_set_valor_medicamento(linha){
     valor = valor.toFixed(2);
     document.getElementById("gerador_valor_" + linha).value = valor.replace('.',',');
 
-    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
-
-    //se for procedimento ou começar com Pellet pode editar o valor
-    $.getJSON(
-        '{{ route("adm.medicamentos.buscar") }}',
-        {medicamento_id:select.value},
-        function(json){
-            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
-                document.getElementById("gerador_valor_" + linha).removeAttribute('readonly');
-                document.getElementById("gerador_valor_" + linha).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
-            }
-            else{
-                document.getElementById("gerador_valor_" + linha).setAttribute('readonly','readonly');
-                document.getElementById("gerador_valor_" + linha).removeAttribute('onkeypress');
-            }
-        }
-    );
+    document.getElementById("gerador_valor_" + linha).removeAttribute('readonly');
+    document.getElementById("gerador_valor_" + linha).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
 
     gerador_calcula_total_medicamento(linha);
 }
@@ -836,6 +818,18 @@ function gerador_calcula_total_medicamento(linha){
             medicamento_id : medicamento_id
         },
         function(json){
+            let valorInput = document.getElementById("gerador_valor_" + linha);
+            let valorDigitado = valorInput.value;
+            if(valorDigitado){
+                valorDigitado = valorDigitado.replace(/\./g,'').replace(',','.');
+                valorDigitado = parseFloat(valorDigitado);
+                let valorTabela = parseFloat(json.vl_venda);
+                if(valorDigitado < valorTabela){
+                    alert('O valor do medicamento não pode ser menor do que o preço de tabela (R$ ' + json.vl_venda.replace('.', ',') + ').');
+                    valorInput.value = json.vl_venda.replace('.', ',');
+                }
+            }
+
             if(json.unidade == 'Ampola'){
                 quantidade = Math.ceil(parseFloat(document.getElementById("gerador_quantidade_" + linha).value));
             }
@@ -845,7 +839,7 @@ function gerador_calcula_total_medicamento(linha){
 
             valor = document.getElementById("gerador_valor_" + linha).value;
             if(quantidade && valor){
-                valor = valor.replace('.','');
+                valor = valor.replace(/\./g,'');
                 valor = parseFloat(valor.replace(',','.'));
                 total = quantidade * valor;
                 total = total.toFixed(2);
@@ -853,9 +847,6 @@ function gerador_calcula_total_medicamento(linha){
             }
         }
     );
-
-
-
 }
 
 function gerador_adicionar_medicamento(){
@@ -877,7 +868,7 @@ function gerador_adicionar_medicamento(){
         <input type="hidden" name="gerador_is_soro_${contador}" id="gerador_is_soro_${contador}" value="0">
     </td>
     <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_quantidade_${contador}" id="gerador_quantidade_${contador}" required type="text" class="form-control"></td>
-    <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control" readonly></td>
+    <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control"></td>
     <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_total_${contador}" id="gerador_total_${contador}" required type="text" class="form-control" readonly></td>
     <td></td>
     `;
@@ -909,7 +900,7 @@ function gerador_adicionar_medicamentos_combo(medicamento){
             <input type="hidden" name="gerador_is_soro_${contador}" id="gerador_is_soro_${contador}" value="0">
         </td>
         <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_quantidade_${contador}" id="gerador_quantidade_${contador}" required type="text" class="form-control"></td>
-        <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control" readonly></td>
+        <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control"></td>
         <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_total_${contador}" id="gerador_total_${contador}" required type="text" class="form-control" readonly></td>
         <td></td>
         `;

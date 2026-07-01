@@ -69,12 +69,17 @@ class BaixaSistemaController extends Controller
 
             $estoque = EstoqueAberto::where('id', $request->estoque_aberto_id)->first();
 
+            $motivo = $request->motivo_baixa;
+            if($request->observacao){
+                $motivo .= " - " . $request->observacao;
+            }
+
             $dados = [
                 'user_id' => $user->id,
                 'clinica_id' => $estoque->clinica_id,
                 'estoque_aberto_id' => $estoque->id,
                 'quantidade' => $request->quantidade,
-                'motivo' => $request->motivo,
+                'motivo' => $motivo,
             ];
 
             BaixaAberto::create($dados);
@@ -102,10 +107,15 @@ class BaixaSistemaController extends Controller
             if(!$user){
                 $user = session()->get('user');
             }
+            $motivo = $request->motivo_baixa;
+            if($request->observacao){
+                $motivo .= " - " . $request->observacao;
+            }
+
             $dados = [
                 'clinica_id' => $user->clinica_id,
                 'user_id' => $user->id,
-                'motivo' => $request->motivo,
+                'motivo' => $motivo,
                 'data' => $request->data,
                 'valor' => '0.00',
             ];
@@ -215,6 +225,20 @@ class BaixaSistemaController extends Controller
         return view('sistema/baixas/visualizar', compact('baixa'));
     }
 
-
-
+    public function gerar_pdf($id){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+        $baixa = Baixa::where('id', $id)->first();
+        
+        $pdf = new \App\Helpers\GerarPdf('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->setPrintHeader(false);
+        $pdf->SetMargins(10, 10, -1, true);
+        $pdf->AddPage();
+        
+        $html = view('sistema/baixas/pdf', compact('baixa','user'))->render();
+        $pdf->writeHTML($html, true, false, false, false, '');
+        $pdf->Output('Baixa_'.$id.'.pdf', 'I');
+    }
 }

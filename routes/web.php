@@ -196,6 +196,8 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/entradas/insert', [EntradaSistemaController::class, 'insert'])->name('sistema.entradas.insert');
         Route::post('/entradas/update', [EntradaSistemaController::class, 'update'])->name('sistema.entradas.update');
         Route::post('/entradas/delete', [EntradaSistemaController::class, 'delete'])->name('sistema.entradas.delete');
+        Route::get('/entradas/gerar_pdf/{id}', [EntradaSistemaController::class, 'gerar_pdf'])->name('sistema.entradas.gerar_pdf');
+
 
         Route::get('/baixas', [BaixaSistemaController::class, 'index'])->name('sistema.baixas');
         Route::get('/baixas/adicionar', [BaixaSistemaController::class, 'adicionar'])->name('sistema.baixas.adicionar');
@@ -206,6 +208,8 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/baixas/insert', [BaixaSistemaController::class, 'insert'])->name('sistema.baixas.insert');
         Route::post('/baixas/update', [BaixaSistemaController::class, 'update'])->name('sistema.baixas.update');
         Route::post('/baixas/delete', [BaixaSistemaController::class, 'delete'])->name('sistema.baixas.delete');
+        Route::get('/baixas/gerar_pdf/{id}', [BaixaSistemaController::class, 'gerar_pdf'])->name('sistema.baixas.gerar_pdf');
+
         Route::get('/baixas_abertos', [BaixaSistemaController::class, 'index_abertos'])->name('sistema.baixas_abertos');
         Route::get('/baixas_abertos/adicionar', [BaixaSistemaController::class, 'adicionar_abertos'])->name('sistema.baixas.adicionar_abertos');
         Route::get('/baixas_abertos/excluir/{id}', [BaixaSistemaController::class, 'excluir_abertos'])->name('sistema.baixas.excluir_abertos');
@@ -263,9 +267,11 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/procedimentos/editar_medico_set', [ProcedimentoSistemaController::class, 'editar_medico_set'])->name('sistema.procedimentos.editar_medico_set');
 
         Route::get('/pacientes', [PacienteSistemaController::class, 'index'])->name('sistema.pacientes');
+        Route::get('/pacientes/index_pesq', [PacienteSistemaController::class, 'index_pesq'])->name('sistema.pacientes.index_pesq');
         Route::get('/pacientes/atualizar_integracao', [PacienteSistemaController::class, 'atualizar_integracao'])->name('sistema.pacientes.atualizar_integracao');
         Route::get('/pacientes/listar_pacientes_ajax', [PacienteSistemaController::class, 'listar_pacientes_ajax'])->name('sistema.pacientes.listar_pacientes_ajax');
         Route::get('/pacientes/get_paciente_ajax', [PacienteSistemaController::class, 'get_paciente_ajax'])->name('sistema.pacientes.get_paciente_ajax');
+        Route::post('/pacientes/salvar_obs_ajax', [PacienteSistemaController::class, 'salvar_obs_ajax'])->name('sistema.pacientes.salvar_obs_ajax');
         Route::get('/pacientes/procedimentos/{id}', [PacienteSistemaController::class, 'procedimentos'])->name('sistema.pacientes.procedimentos');
 
         Route::get('/financeiros', [FinanceiroSistemaController::class, 'index'])->name('sistema.financeiros');

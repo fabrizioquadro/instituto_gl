@@ -209,6 +209,23 @@ class EntradaSistemaController extends Controller
         return view('sistema/entradas/visualizar', compact('entrada'));
     }
 
+    public function gerar_pdf($id){
+        $user = auth()->user();
+        if(!$user){
+            $user = session()->get('user');
+        }
+        $entrada = Entrada::where('id', $id)->first();
+        
+        $pdf = new \App\Helpers\GerarPdf('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->setPrintHeader(false);
+        $pdf->SetMargins(10, 10, -1, true);
+        $pdf->AddPage();
+        
+        $html = view('sistema/entradas/pdf', compact('entrada','user'))->render();
+        $pdf->writeHTML($html, true, false, false, false, '');
+        $pdf->Output('Entrada_'.$id.'.pdf', 'I');
+    }
+
     public function gerar_codigo_barras(){
         $controle = CodigoBarraMedicamento::where('medicamento_id', $_GET['medicamento_id'])->first();
         if(!$controle){
