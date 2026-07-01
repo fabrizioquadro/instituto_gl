@@ -805,8 +805,14 @@ $('#btn_registrar_aplicacao').on('click', function(e) {
         texto = "Nenhum medicamento selecionado para aplicação nesta semana. Você confirma as demais anotações/exames conforme prescrição médica?";
     }
 
+    if (!$('#formulario_aplicacao')[0].checkValidity()) {
+        $('#formulario_aplicacao')[0].reportValidity();
+        return;
+    }
+
     $('#texto_confirmacao_medicamentos').text(texto);
 
+    $('#modal_confirmar_aplicacao').appendTo('body');
     let modalConfirmar = new bootstrap.Modal(document.getElementById('modal_confirmar_aplicacao'));
     modalConfirmar.show();
 });

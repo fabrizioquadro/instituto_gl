@@ -887,10 +887,16 @@ function marcarAvaliadoGoogle(pacienteId) {
             texto = "Nenhum medicamento selecionado para aplicação nesta semana. Você confirma as demais anotações/exames conforme prescrição médica?";
         }
 
-        $('#texto_confirmacao_medicamentos').text(texto);
+        if (!$('#formulario_aplicacao')[0].checkValidity()) {
+        $('#formulario_aplicacao')[0].reportValidity();
+        return;
+    }
 
-        let modalConfirmar = new bootstrap.Modal(document.getElementById('modal_confirmar_aplicacao'));
-        modalConfirmar.show();
+    $('#texto_confirmacao_medicamentos').text(texto);
+
+    $('#modal_confirmar_aplicacao').appendTo('body');
+    let modalConfirmar = new bootstrap.Modal(document.getElementById('modal_confirmar_aplicacao'));
+    modalConfirmar.show();
     });
 
     $('#btn_confirmar_submissao').on('click', function() {
