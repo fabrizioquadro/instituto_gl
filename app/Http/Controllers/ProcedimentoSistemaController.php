@@ -1959,7 +1959,11 @@ class ProcedimentoSistemaController extends Controller
     }
 
     public function recalcular_semanas_grupo($codigo){
-        $procedimentos = Procedimento::where('codigo', $codigo)->orderBy('id')->get();
+        $procedimentos = Procedimento::where('codigo', $codigo)
+            ->orderByRaw("CASE WHEN situacao IN ('Aplicado', 'Aplicação Parcial', 'Pendente', 'Atendimento') THEN 0 ELSE 1 END")
+            ->orderBy('data_aplicacao', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
         $i=0;
         foreach($procedimentos as $procedimento){
             $i++;
