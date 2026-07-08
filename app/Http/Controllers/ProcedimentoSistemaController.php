@@ -903,15 +903,37 @@ class ProcedimentoSistemaController extends Controller
 
     public function excluir($id){
         $procedimento = Procedimento::where('id', $id)->first();
+        if (!$procedimento) {
+            return redirect()->route('sistema.procedimentos')->with('mensagem_erro', 'Procedimento não encontrado.');
+        }
+
+        if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem_erro', 'Não é possível excluir um procedimento/semana que já foi aplicado ou está em atendimento.');
+        }
+
         return view('sistema/procedimentos/excluir', compact('procedimento'));
     }
 
     public function excluir_grupo($codigo){
+        $procedimentos = Procedimento::where('codigo', $codigo)->get();
+        foreach ($procedimentos as $procedimento) {
+            if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
+                return redirect()->route('sistema.procedimentos.acessar_grupo', $codigo)->with('mensagem_erro', 'Não é possível excluir este grupo de procedimentos pois existem semanas que já foram aplicadas ou estão em atendimento.');
+            }
+        }
+
         return view('sistema/procedimentos/excluir_grupo', compact('codigo'));
     }
 
     public function delete(Request $request){
         $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
+        if (!$procedimento) {
+            return redirect()->route('sistema.procedimentos')->with('mensagem_erro', 'Procedimento não encontrado.');
+        }
+
+        if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem_erro', 'Não é possível excluir um procedimento/semana que já foi aplicado ou está em atendimento.');
+        }
 
         $this->delete_procedimento($request->procedimento_id);
 
@@ -919,11 +941,17 @@ class ProcedimentoSistemaController extends Controller
 
         $this->recalcular_semanas_grupo($procedimento->codigo);
 
-        return redirect()->route('sistema.procedimentos')->with('mensagem','Procedimento Excluído!');
+        return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem','Procedimento Excluído!');
     }
 
     public function delete_grupo(Request $request){
         $procedimentos = Procedimento::where('codigo', $request->codigo)->get();
+        foreach ($procedimentos as $procedimento) {
+            if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
+                return redirect()->route('sistema.procedimentos.acessar_grupo', $request->codigo)->with('mensagem_erro', 'Não é possível excluir este grupo de procedimentos pois existem semanas que já foram aplicadas ou estão em atendimento.');
+            }
+        }
+
         $procedimento = Procedimento::where('codigo', $request->codigo)->first();
         $financeiro = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first();
 
@@ -1931,7 +1959,7 @@ class ProcedimentoSistemaController extends Controller
     }
 
     public function recalcular_semanas_grupo($codigo){
-        $procedimentos = Procedimento::where('codigo', $codigo)->orderBy('data_aplicacao')->get();
+        $procedimentos = Procedimento::where('codigo', $codigo)->orderBy('id')->get();
         $i=0;
         foreach($procedimentos as $procedimento){
             $i++;
