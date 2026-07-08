@@ -313,8 +313,24 @@ foreach ($deleted_ids as $id) {
             echo "  ✘ ERRO ao restaurar procedimento $id: " . $e->getMessage() . "\n";
         }
     }
-    echo "\n";
 }
+
+// Re-align all nr_procedimento values for the entire group to original sequence
+echo "---------------------------------------------------------\n";
+echo "Realinhando os números de procedimento (Semanas) do Grupo\n";
+echo "---------------------------------------------------------\n";
+
+$group_procedures = DB::table('procedimentos')->where('codigo', $codigo)->get();
+foreach ($group_procedures as $gp) {
+    $original_nr = $gp->id - 37520 + 1;
+    if ($gp->nr_procedimento != $original_nr) {
+        echo "  [Alinhamento] Procedimento ID {$gp->id}: Semana {$gp->nr_procedimento} -> Semana $original_nr\n";
+        if ($is_execute) {
+            DB::table('procedimentos')->where('id', $gp->id)->update(['nr_procedimento' => $original_nr]);
+        }
+    }
+}
+echo "\n";
 
 if ($is_execute) {
     echo "=========================================================\n";
