@@ -63,7 +63,22 @@ foreach ($deleted_ids as $id) {
     
     echo "Número da Semana Reconstruída: Semana $nr_procedimento\n";
     
+    // Find the exclusion log to identify when the procedure was deleted
+    $exclusao_log = null;
     foreach ($proc_logs as $log) {
+        if ($log->acao == 'Exclusão') {
+            $exclusao_log = $log;
+            break;
+        }
+    }
+    $exclusao_time = $exclusao_log ? $exclusao_log->created_at : null;
+    
+    foreach ($proc_logs as $log) {
+        // If this log happened during the deletion cascade of the week itself, we ignore it.
+        if ($exclusao_time && abs(strtotime($log->created_at) - strtotime($exclusao_time)) <= 2) {
+            continue;
+        }
+        
         $dados_novos = json_decode($log->dados_novos, true);
         $dados_antigos = json_decode($log->dados_antigos, true);
         
@@ -154,10 +169,10 @@ foreach ($deleted_ids as $id) {
         'user_id_aplicacao' => $template->user_id_aplicacao,
         'data_cad' => $original_date_cad,
         'situacao' => ($nr_procedimento == 1) ? 'Aplicado' : 'Agendado',
-        'data_aplicacao' => ($nr_procedimento == 1) ? '2026-07-03' : null,
-        'dt_hr_chegada' => ($nr_procedimento == 1) ? '2026-07-03 14:45:50' : null,
-        'dt_hr_atendimento' => ($nr_procedimento == 1) ? '2026-07-03 14:45:50' : null,
-        'dt_hr_finalizacao' => ($nr_procedimento == 1) ? '2026-07-03 14:45:50' : null,
+        'data_aplicacao' => ($nr_procedimento == 1) ? '2026-07-03' : $template->data_aplicacao,
+        'dt_hr_chegada' => ($nr_procedimento == 1) ? '2026-07-03 14:45:50' : $template->dt_hr_chegada,
+        'dt_hr_atendimento' => ($nr_procedimento == 1) ? '2026-07-03 14:45:50' : $template->dt_hr_atendimento,
+        'dt_hr_finalizacao' => ($nr_procedimento == 1) ? '2026-07-03 14:45:50' : $template->dt_hr_finalizacao,
         'medico' => $template->medico,
         'st_pagamento' => $template->st_pagamento,
         'tipo_pagamento' => $template->tipo_pagamento,
@@ -199,7 +214,11 @@ foreach ($deleted_ids as $id) {
                     throw new \Exception("Medicamento não encontrado no banco: " . $app_data['medicamento_nome']);
                 }
                 
+                $max_app_id = DB::table('aplicacaos')->max('id') ?? 0;
+                $new_app_id = $max_app_id + 1;
+                
                 $app_insert = [
+                    'id' => $new_app_id,
                     'procedimento_id' => $id,
                     'medicamento_id' => $med->id,
                     'quantidade' => $app_data['quantidade'],
@@ -214,7 +233,7 @@ foreach ($deleted_ids as $id) {
                     'updated_at' => date('Y-m-d H:i:s'),
                 ];
                 
-                $new_app_id = DB::table('aplicacaos')->insertGetId($app_insert);
+                DB::table('aplicacaos')->insert($app_insert);
                 
                 // If it is week 1 and it was applied, we also need to reconstruct the AplicacaoLote record!
                 // We will try to find if there is a log description mentioning the lote for this medication,
@@ -233,7 +252,10 @@ foreach ($deleted_ids as $id) {
                     $lote_nome = $ultimo_lote_usado ? $ultimo_lote_usado->lote : 'RESTORED';
                     $codigo_barras = $ultimo_lote_usado ? $ultimo_lote_usado->codigo_barras : 'RESTORED';
                     
+                    $max_lote_id = DB::table('aplicacao_lotes')->max('id') ?? 0;
+                    
                     DB::table('aplicacao_lotes')->insert([
+                        'id' => $max_lote_id + 1,
                         'aplicacao_id' => $new_app_id,
                         'quantidade' => $app_data['quantidade'],
                         'lote' => $lote_nome,
@@ -242,8 +264,11 @@ foreach ($deleted_ids as $id) {
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
                     
+                    $max_estoque_id = DB::table('estoques')->max('id') ?? 0;
+                    
                     // Create corresponding Estoque record to balance stock
                     DB::table('estoques')->insert([
+                        'id' => $max_estoque_id + 1,
                         'clinica_id' => $template->clinica_id_aplicacao ?? $template->clinica_id,
                         'procedimento_id' => $id,
                         'medicamento_id' => $med->id,
@@ -263,15 +288,22 @@ foreach ($deleted_ids as $id) {
             
             // Reassociate with finance if exists
             $financeiro_proc = DB::table('financeiro_procedimentos')
-                ->join('financeiros', 'financeiro_procedimentos.financeiro_id', '=', 'financeiros.id')
-                ->where('financeiros.codigo', $codigo)
+                ->where('procedimento_id', $template->id)
                 ->first();
                 
             if ($financeiro_proc) {
-                DB::table('financeiro_procedimentos')->insert([
-                    'financeiro_id' => $financeiro_proc->financeiro_id,
-                    'procedimento_id' => $id,
-                ]);
+                $link_exists = DB::table('financeiro_procedimentos')
+                    ->where('financeiro_id', $financeiro_proc->financeiro_id)
+                    ->where('procedimento_id', $id)
+                    ->exists();
+                if (!$link_exists) {
+                    $max_fin_proc_id = DB::table('financeiro_procedimentos')->max('id') ?? 0;
+                    DB::table('financeiro_procedimentos')->insert([
+                        'id' => $max_fin_proc_id + 1,
+                        'financeiro_id' => $financeiro_proc->financeiro_id,
+                        'procedimento_id' => $id,
+                    ]);
+                }
             }
             
             DB::commit();
