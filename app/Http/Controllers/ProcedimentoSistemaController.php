@@ -242,7 +242,9 @@ class ProcedimentoSistemaController extends Controller
                             'agendamento' => $request->agendamento,
                             'tipo_atendimento' => $request->tipo_atendimento,
                         ];
-                        $procedimento = Procedimento::create($dados);
+                        $procedimento = new Procedimento($dados);
+                        $procedimento->id = (\Illuminate\Support\Facades\DB::table($procedimento->getTable())->max('id') ?? 0) + 1;
+                        $procedimento->save();
 
                         if($request->hasFile('anexos')){
                             foreach($request->file('anexos') as $arquivo){
@@ -258,7 +260,9 @@ class ProcedimentoSistemaController extends Controller
                                         'anexo' => $arquivo_link,
                                     ];
 
-                                    ProcedimentoAnexo::create($dados_arq);
+                                    $proc_anexo = new ProcedimentoAnexo($dados_arq);
+                                    $proc_anexo->id = (\Illuminate\Support\Facades\DB::table($proc_anexo->getTable())->max('id') ?? 0) + 1;
+                                    $proc_anexo->save();
                                 }
                             }
                         }
@@ -286,7 +290,9 @@ class ProcedimentoSistemaController extends Controller
                             'agendamento' => $request->agendamento,
                             'tipo_atendimento' => $request->tipo_atendimento,
                         ];
-                        $procedimento = Procedimento::create($dados);
+                        $procedimento = new Procedimento($dados);
+                        $procedimento->id = (\Illuminate\Support\Facades\DB::table($procedimento->getTable())->max('id') ?? 0) + 1;
+                        $procedimento->save();
 
                         $array_procedimentos[] = $procedimento;
 
@@ -334,7 +340,9 @@ class ProcedimentoSistemaController extends Controller
                                     'situacao' => $dados_situacao,
                                     'is_soro' => $is_soro,
                                 ];
-                                Aplicacao::create($dados);
+                                $aplicacao = new Aplicacao($dados);
+                                $aplicacao->id = (\Illuminate\Support\Facades\DB::table($aplicacao->getTable())->max('id') ?? 0) + 1;
+                                $aplicacao->save();
                             }
                         }
 
@@ -358,7 +366,9 @@ class ProcedimentoSistemaController extends Controller
                                         'anexo' => $arquivo_link,
                                     ];
 
-                                    ProcedimentoAnexo::create($dados_arq);
+                                    $proc_anexo = new ProcedimentoAnexo($dados_arq);
+                                    $proc_anexo->id = (\Illuminate\Support\Facades\DB::table($proc_anexo->getTable())->max('id') ?? 0) + 1;
+                                    $proc_anexo->save();
                                 }
                             }
                         }
