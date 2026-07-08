@@ -24,7 +24,7 @@ $template = "layout.".session()->get('layout');
             </button>
         </div>
         <hr>
-        <form action="{{ route('sistema.procedimentos.insert') }}" method="post" enctype="multipart/form-data">
+        <form id="form_cadastro_procedimento" action="{{ route('sistema.procedimentos.insert') }}" method="post" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="inicio_cadastro" value="{{ now() }}">
             <input type="hidden" name="contador_procedimentos" id="contador_procedimentos" value="1">
@@ -278,7 +278,27 @@ $template = "layout.".session()->get('layout');
 </form>
 
 <script>
+const medicamentosMap = {
+    @foreach($medicamentos as $medicamento)
+        "{{ $medicamento->id }}": {
+            unidade: "{{ $medicamento->unidade }}",
+            vl_venda: {{ $medicamento->vl_venda ?? 0 }}
+        },
+    @endforeach
+};
+
+let isConfirmed = false;
+
 window.addEventListener('load',()=>{
+    const formObj = document.getElementById('form_cadastro_procedimento');
+    if (formObj) {
+        formObj.addEventListener('submit', function(e) {
+            if (!isConfirmed) {
+                e.preventDefault();
+                valida_e_confirma_procedimento();
+            }
+        });
+    }
     $('.combobox').combobox();
 
     $('#paciente_id').select2({
@@ -1148,5 +1168,225 @@ function adicionar_medicamentos_combo_semana(linha, medicamento_obj){
     calcula_total_procedimento(linha);
 }
 
+function valida_e_confirma_procedimento() {
+    let erros = [];
+    
+    // 1. Basic fields validation
+    const pacienteSelect = document.getElementById('paciente_id');
+    if (pacienteSelect && pacienteSelect.value === '') {
+        erros.push('Por favor, escolha o Paciente.');
+    }
+    
+    const medicoSelect = document.getElementById('medico');
+    if (medicoSelect && medicoSelect.value === '') {
+        erros.push('Por favor, escolha o Médico.');
+    }
+    
+    const agendamentoInput = document.getElementById('agendamento');
+    if (agendamentoInput && agendamentoInput.value.trim() === '') {
+        erros.push('Por favor, preencha a data ou descrição do Agendamento.');
+    }
+    
+    const tipoAtendimentoSelect = document.getElementById('tipo_atendimento');
+    if (tipoAtendimentoSelect && tipoAtendimentoSelect.value === '') {
+        erros.push('Por favor, selecione o Tipo de Atendimento.');
+    }
+    
+    // 2. Loop through weeks
+    const numProcedimentos = parseInt(document.getElementById('contador_procedimentos').value);
+    let temMedicamentoControlado = false;
+    let totalGeral = 0;
+    let resumoSemanasHtml = '';
+    let semanasValidas = 0;
+    
+    for (let i = 1; i <= numProcedimentos; i++) {
+        const card = document.getElementById('card_' + i);
+        if (!card) continue;
+        
+        semanasValidas++;
+        const dataInput = document.getElementById('data_aplicacao_' + i);
+        if (!dataInput || dataInput.value === '') {
+            erros.push(`Semana ${i}: Por favor, informe a Data Prevista.`);
+        }
+        
+        const semAplicacaoCheckbox = document.querySelector(`input[name="semana_sem_aplicacao_${i}"]:checked`);
+        const semAplicacao = semAplicacaoCheckbox !== null;
+        
+        if (semAplicacao) {
+            resumoSemanasHtml += `
+            <tr>
+                <td><strong>Semana ${i}</strong></td>
+                <td>${dataInput ? formata_data_pt(dataInput.value) : ''}</td>
+                <td class="text-muted"><span class="mdi mdi-minus-circle-outline me-1"></span>Semana sem Aplicação</td>
+                <td class="text-end font-monospace">R$ 0,00</td>
+            </tr>
+            `;
+            continue;
+        }
+        
+        const tabelaMeds = document.getElementById('tabela_medicamentos_' + i);
+        const rows = tabelaMeds ? tabelaMeds.querySelectorAll('tr[id^="linha_medicamento_"]') : [];
+        
+        if (rows.length === 0) {
+            erros.push(`Semana ${i}: Adicione pelo menos um medicamento ou marque a opção "Semana sem Aplicação".`);
+            continue;
+        }
+        
+        let medListText = '';
+        let totalSemana = 0;
+        
+        for (let r = 0; r < rows.length; r++) {
+            const row = rows[r];
+            const rowIdParts = row.id.split('_');
+            const j = rowIdParts[rowIdParts.length - 1]; // get medication index
+            
+            const medSelect = document.getElementById(`medicamento_id_${i}_${j}`);
+            if (!medSelect || medSelect.value === '') {
+                erros.push(`Semana ${i}, Linha ${r + 1}: Escolha um medicamento.`);
+                continue;
+            }
+            
+            const medNome = medSelect.options[medSelect.selectedIndex].text;
+            const medId = medSelect.value;
+            const medInfo = medicamentosMap[medId];
+            
+            if (medInfo && (medInfo.unidade === 'Ampola' || medInfo.unidade === 'Miligrama')) {
+                temMedicamentoControlado = true;
+            }
+            
+            const qtdInput = document.getElementById(`quantidade_${i}_${j}`);
+            const qtdVal = qtdInput ? qtdInput.value.trim() : '';
+            const qtd = parseFloat(qtdVal.replace(',', '.'));
+            if (qtdVal === '' || isNaN(qtd) || qtd <= 0) {
+                erros.push(`Semana ${i}, Medicamento "${medNome}": Informe uma quantidade válida (maior que 0).`);
+            }
+            
+            const valorInput = document.getElementById(`valor_${i}_${j}`);
+            const valorVal = valorInput ? valorInput.value.trim() : '';
+            const valor = parseFloat(valorVal.replaceAll('.', '').replace(',', '.'));
+            if (valorVal === '' || isNaN(valor) || valor <= 0) {
+                erros.push(`Semana ${i}, Medicamento "${medNome}": Informe um valor unitário válido.`);
+            }
+            
+            const totalInput = document.getElementById(`total_${i}_${j}`);
+            const total = parseFloat(totalInput && totalInput.value ? totalInput.value.replaceAll('.', '').replace(',', '.') : 0);
+            
+            totalSemana += total;
+            medListText += `<div class="mb-1"><span class="mdi mdi-pill me-1 text-secondary"></span>${medNome} (Qtd: ${qtdInput ? qtdInput.value : qtd}) - R$ ${valorInput ? valorInput.value : valor}</div>`;
+        }
+        
+        totalGeral += totalSemana;
+        resumoSemanasHtml += `
+        <tr>
+            <td><strong>Semana ${i}</strong></td>
+            <td>${dataInput ? formata_data_pt(dataInput.value) : ''}</td>
+            <td>${medListText}</td>
+            <td class="text-end font-monospace fw-semibold">R$ ${totalSemana.toFixed(2).replace('.', ',')}</td>
+        </tr>
+        `;
+    }
+    
+    if (semanasValidas === 0) {
+        erros.push('Por favor, adicione pelo menos uma semana/procedimento.');
+    }
+    
+    // 3. File attachments check (required if temMedicamentoControlado is true)
+    const anexosInput = document.getElementById('anexos');
+    if (temMedicamentoControlado && (!anexosInput || anexosInput.files.length === 0)) {
+        erros.push('É obrigatório inserir o anexo (prescrição médica) pois o procedimento contém medicamentos em Ampola ou Miligrama.');
+    }
+    
+    // 4. Action
+    if (erros.length > 0) {
+        let listaHtml = '';
+        erros.forEach(err => {
+            listaHtml += `<li class="mb-2"><span class="mdi mdi-circle-small me-1 text-danger"></span>${err}</li>`;
+        });
+        document.getElementById('lista_erros_validacao').innerHTML = listaHtml;
+        const modalErros = new bootstrap.Modal(document.getElementById('modal_erros_validacao'));
+        modalErros.show();
+    } else {
+        document.getElementById('tabela_confirmacao_resumo').innerHTML = resumoSemanasHtml;
+        document.getElementById('confirmacao_total_geral').innerText = 'R$ ' + totalGeral.toFixed(2).replace('.', ',');
+        const modalConfirmacao = new bootstrap.Modal(document.getElementById('modal_confirmacao_procedimento'));
+        modalConfirmacao.show();
+        
+        document.getElementById('confirmar_e_salvar_botao').onclick = function() {
+            isConfirmed = true;
+            modalConfirmacao.hide();
+            document.getElementById('form_cadastro_procedimento').submit();
+        };
+    }
+}
+
+function formata_data_pt(dataStr) {
+    if (!dataStr) return '';
+    const parts = dataStr.split('-');
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
 </script>
+
+<!-- Modal de Erros de Validação -->
+<div class="modal fade" id="modal_erros_validacao" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger d-flex align-items-center">
+                    <span class="mdi mdi-alert-circle-outline mdi-24px me-2"></span>Inconsistências no Cadastro
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-semibold mb-3">Por favor, corrija os seguintes itens antes de salvar:</p>
+                <ul id="lista_erros_validacao" class="list-unstyled text-danger ps-2"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="modal_confirmacao_procedimento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary d-flex align-items-center">
+                    <span class="mdi mdi-checkbox-marked-circle-outline mdi-24px me-2"></span>Confirmar Cadastro de Procedimentos
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-semibold mb-3">Revise o resumo das semanas abaixo antes de confirmar o cadastro:</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Semana</th>
+                                <th>Data Prevista</th>
+                                <th>Medicamentos / Situação</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela_confirmacao_resumo">
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="3" class="text-end fw-bold">Total Geral:</th>
+                                <th id="confirmacao_total_geral" class="text-end fw-bold font-monospace">R$ 0,00</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Corrigir Dados</button>
+                <button type="button" id="confirmar_e_salvar_botao" class="btn btn-primary">Confirmar e Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
