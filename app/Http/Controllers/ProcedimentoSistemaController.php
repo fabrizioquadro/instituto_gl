@@ -907,6 +907,10 @@ class ProcedimentoSistemaController extends Controller
             return redirect()->route('sistema.procedimentos')->with('mensagem_erro', 'Procedimento não encontrado.');
         }
 
+        if (!session()->has('administrador')) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem_erro', 'Apenas administradores podem excluir procedimentos.');
+        }
+
         if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
             return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem_erro', 'Não é possível excluir um procedimento/semana que já foi aplicado ou está em atendimento.');
         }
@@ -916,6 +920,10 @@ class ProcedimentoSistemaController extends Controller
 
     public function excluir_grupo($codigo){
         $procedimentos = Procedimento::where('codigo', $codigo)->get();
+        if (!session()->has('administrador')) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $codigo)->with('mensagem_erro', 'Apenas administradores podem excluir grupos de procedimentos.');
+        }
+
         foreach ($procedimentos as $procedimento) {
             if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
                 return redirect()->route('sistema.procedimentos.acessar_grupo', $codigo)->with('mensagem_erro', 'Não é possível excluir este grupo de procedimentos pois existem semanas que já foram aplicadas ou estão em atendimento.');
@@ -929,6 +937,10 @@ class ProcedimentoSistemaController extends Controller
         $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
         if (!$procedimento) {
             return redirect()->route('sistema.procedimentos')->with('mensagem_erro', 'Procedimento não encontrado.');
+        }
+
+        if (!session()->has('administrador')) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem_erro', 'Apenas administradores podem excluir procedimentos.');
         }
 
         if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
@@ -946,6 +958,10 @@ class ProcedimentoSistemaController extends Controller
 
     public function delete_grupo(Request $request){
         $procedimentos = Procedimento::where('codigo', $request->codigo)->get();
+        if (!session()->has('administrador')) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $request->codigo)->with('mensagem_erro', 'Apenas administradores podem excluir grupos de procedimentos.');
+        }
+
         foreach ($procedimentos as $procedimento) {
             if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
                 return redirect()->route('sistema.procedimentos.acessar_grupo', $request->codigo)->with('mensagem_erro', 'Não é possível excluir este grupo de procedimentos pois existem semanas que já foram aplicadas ou estão em atendimento.');
@@ -1631,9 +1647,11 @@ class ProcedimentoSistemaController extends Controller
                         <i class="mdi mdi-dots-vertical"></i>
                     </button>
                     <div class="dropdown-menu" data-popper-placement="bottom-end">
-                        <button onclick="editar_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>
-                        <button onclick="excluir_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>
-                    </div>
+                        <button onclick="editar_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>';
+                if(session()->has('administrador')) {
+                    $html .= '<button onclick="excluir_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>';
+                }
+                $html .= '</div>
                 </div>';
             }
         $html .= '
@@ -1656,7 +1674,28 @@ class ProcedimentoSistemaController extends Controller
     }
 
     public function delete_aplicacao(){
+        if (!session()->has('administrador')) {
+            $retorno['controle'] = 'false';
+            $retorno['erro'] = 'Apenas administradores podem excluir medicamentos.';
+            echo json_encode($retorno);
+            return;
+        }
+
         $aplicacao = Aplicacao::where('id', $_GET['aplicacao_id'])->first();
+        if (!$aplicacao) {
+            $retorno['controle'] = 'false';
+            $retorno['erro'] = 'Aplicação não encontrada.';
+            echo json_encode($retorno);
+            return;
+        }
+
+        if ($aplicacao->situacao == 'Aplicada') {
+            $retorno['controle'] = 'false';
+            $retorno['erro'] = 'Não é possível excluir um medicamento que já foi aplicado.';
+            echo json_encode($retorno);
+            return;
+        }
+
         $procedimento = Procedimento::where('id', $aplicacao->procedimento_id)->first();
         $procedimento->valor -= $aplicacao->total;
         $procedimento->flag_coordenacao = 0;
@@ -1744,9 +1783,11 @@ class ProcedimentoSistemaController extends Controller
                         <i class="mdi mdi-dots-vertical"></i>
                     </button>
                     <div class="dropdown-menu" data-popper-placement="bottom-end">
-                        <button onclick="editar_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>
-                        <button onclick="excluir_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>
-                    </div>
+                        <button onclick="editar_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>';
+                if(session()->has('administrador')) {
+                    $html .= '<button onclick="excluir_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>';
+                }
+                $html .= '</div>
                 </div>';
             }
         $html .= '

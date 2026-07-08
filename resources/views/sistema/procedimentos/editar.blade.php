@@ -570,6 +570,8 @@ function excluir_aplicacao(aplicacao_id){
             function(json){
                 if(json.controle == 'true'){
                     document.getElementById('tabela_aplicacao_aplicacao_linha_' + aplicacao_id).remove();
+                } else {
+                    alert(json.erro || 'Erro ao excluir a aplicação.');
                 }
             }
         );
