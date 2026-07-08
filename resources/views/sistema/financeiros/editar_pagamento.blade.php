@@ -47,6 +47,7 @@ $template = "layout.".session()->get('layout');
                                             <option {{ $forma->forma_pagamento == 'Débito' ? 'selected' : '' }} value="Débito">Débito</option>
                                             <option {{ $forma->forma_pagamento == 'Crédito' ? 'selected' : '' }} value="Crédito">Crédito</option>
                                             <option {{ $forma->forma_pagamento == 'Pix' ? 'selected' : '' }} value="Pix">Pix</option>
+                                            <option {{ $forma->forma_pagamento == 'Link de Pagamento' ? 'selected' : '' }} value="Link de Pagamento">Link de Pagamento</option>
                                         </select>
                                     </td>
                                     <td>
