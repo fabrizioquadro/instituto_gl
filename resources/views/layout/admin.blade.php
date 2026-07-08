@@ -494,5 +494,9 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
             }
         })
         </script>
+        <!-- Faixa de Ambiente de Teste -->
+        <div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #de3545; color: white; text-align: center; padding: 8px 0; font-weight: bold; font-size: 14px; z-index: 999999; letter-spacing: 1px; box-shadow: 0 -2px 10px rgba(0,0,0,0.15); text-transform: uppercase; pointer-events: none;">
+            ⚠️ Ambiente de Teste ⚠️
+        </div>
     </body>
 </html>
