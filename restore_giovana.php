@@ -6,6 +6,9 @@ use App\Models\Aplicacao;
 use App\Models\Medicamento;
 use App\Models\ProcedimentoLog;
 
+// Set execution time limit to 600 seconds (10 minutes)
+set_time_limit(600);
+
 // Bootstrap Laravel
 require __DIR__.'/vendor/autoload.php';
 $app = require_once __DIR__.'/bootstrap/app.php';
