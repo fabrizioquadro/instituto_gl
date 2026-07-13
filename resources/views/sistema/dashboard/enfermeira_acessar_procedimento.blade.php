@@ -27,6 +27,7 @@ $template = "layout.".session()->get('layout');
             </div>
         </div>
     @endisset
+    {{--
     <div class="card card-border-shadow-primary mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between">
@@ -64,6 +65,7 @@ $template = "layout.".session()->get('layout');
         </div>
     </div>
     <hr>
+    --}}
     <div class="card card-border-shadow-primary mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between">
