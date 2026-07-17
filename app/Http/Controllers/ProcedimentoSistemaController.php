@@ -1178,21 +1178,18 @@ class ProcedimentoSistemaController extends Controller
                 $pfxPath = public_path("img/usuarios/certificados_digitais/$enfermeira->imagem_carimbo");
                 $pfxPass = $enfermeira->senha_certificado;
 
-                $pfxContents = file_get_contents($pfxPath);
-                if ($pfxContents === false) {
-                    throw new \Exception("Não conseguiu ler o arquivo PFX em: $pfxPath");
-                }
+                $pfxContents = @file_get_contents($pfxPath);
                 $certs = [];
 
-                if (!openssl_pkcs12_read($pfxContents, $certs, $pfxPass)) {
-                    // fallback: informe ao usuário ou converta com openssl CLI
-                    throw new \Exception("Falha ao ler o PFX com openssl_pkcs12_read(). Tente converter para PEM via 'openssl pkcs12 -in certificado.pfx -out cert.pem -nodes' e use o PEM.");
+                if ($pfxContents !== false && openssl_pkcs12_read($pfxContents, $certs, $pfxPass)) {
+                    $certPem = $certs['cert'];
+                    $pkeyPem = $certs['pkey'];
+
+                    $pdf->setSignature($certPem, $pkeyPem, '', '', 2);
+                } else {
+                    // Log the failure if needed, but don't block the report generation
+                    \Log::warning("Falha ao ler o PFX com openssl_pkcs12_read() para: $enfermeira->nome");
                 }
-
-                $certPem = $certs['cert'];
-                $pkeyPem = $certs['pkey'];
-
-                $pdf->setSignature($certPem, $pkeyPem, '', '', 2);
 
                 $x = $pdf->GetX();
                 $y = $pdf->GetY();
