@@ -303,7 +303,7 @@ class ApiFlegowController extends Controller
 
         $response = json_decode($response);
 
-        if($response->success){
+        if(isset($response->success) && $response->success){
             $agendamento_id = $response->content->agendamento_id;
 
             $parametros = [
