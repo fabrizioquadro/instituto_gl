@@ -8,6 +8,7 @@ $template = "layout.".session()->get('layout');
     <div class="card-body">
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Visualizar Entrada</h4>
+            <a href="{{ route('sistema.entradas.gerar_pdf', $entrada->id) }}" target="_blank" class="btn btn-sm btn-danger"><i class="mdi mdi-file-pdf-box"></i> Gerar PDF</a>
         </div>
         <hr>
         <div class="row mt-2 gy-4 align-items-end">

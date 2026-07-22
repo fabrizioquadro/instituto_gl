@@ -285,6 +285,15 @@ class DashboardSistemaController extends Controller
         ->first();
 
         if($estoque){
+            // Verificar se o lote está vencido
+            if($estoque->dt_vencimento && $estoque->dt_vencimento < date('Y-m-d')){
+                $retorno['controle'] = 'vencido';
+                $retorno['lote'] = $estoque->lote;
+                $retorno['mensagem'] = 'Este medicamento está VENCIDO desde ' . dataDbForm($estoque->dt_vencimento) . '. Não é possível aplicar.';
+                echo json_encode($retorno);
+                return;
+            }
+
             //vamos verificar se este medicamento possui saldo
             $saldo = Estoque::get_saldo_med_cb_clinica($_GET['codigo'], $_GET['clinica_id']);
             if($_GET['quantidade'] > $saldo){
@@ -332,6 +341,21 @@ class DashboardSistemaController extends Controller
         }
 
         if($estoque){
+            // Verificar se o lote está vencido (buscar dt_vencimento no Estoque)
+            $estoque_original = Estoque::where('codigo_barras', $_GET['codigo'])
+            ->where('medicamento_id', $_GET['medicamento_id'])
+            ->where('clinica_id', $user->clinica_id)
+            ->where('lote', $estoque->lote)
+            ->first();
+
+            if($estoque_original && $estoque_original->dt_vencimento && $estoque_original->dt_vencimento < date('Y-m-d')){
+                $retorno['controle'] = 'vencido';
+                $retorno['lote'] = $estoque->lote;
+                $retorno['mensagem'] = 'Este medicamento está VENCIDO desde ' . dataDbForm($estoque_original->dt_vencimento) . '. Não é possível aplicar.';
+                echo json_encode($retorno);
+                return;
+            }
+
             if($estoque->qt_restante < $_GET['quantidade']){
                 $retorno['controle'] = 'false';
                 $retorno['mensagem'] = 'Este frasco não possui o quantidade necessária para esta aplicação, faço o cadastro atraves da aplicação com 2 códigos.';
@@ -356,7 +380,20 @@ class DashboardSistemaController extends Controller
         }
 
         $medicamento = Medicamento::where('id', $request->medicamento_id)->first();
-        $estoque = Estoque::where('medicamento_id', $medicamento->id)->where('codigo_barras', $request->codigo_barras)->first();
+        $estoque = Estoque::where('medicamento_id', $request->medicamento_id)
+        ->where('lote', $request->lote)
+        ->where('codigo_barras', $request->codigo_barras)
+        ->where('clinica_id', $user->clinica_id)
+        ->first();
+
+        if (!$estoque) {
+            return redirect()->back()->with('mensagem_erro', 'Estoque não encontrado para o medicamento ' . ($medicamento->nome ?? '') . ' com o lote e código de barras informados.');
+        }
+
+        if ($estoque->dt_vencimento && $estoque->dt_vencimento < date('Y-m-d')) {
+            return redirect()->back()->with('mensagem_erro', 'O lote ' . $request->lote . ' do medicamento ' . $medicamento->nome . ' está vencido desde ' . dataDbForm($estoque->dt_vencimento) . ' e não pode ser aberto.');
+        }
+
         $clinica = Clinica::where('id', $user->clinica_id)->first();
 
         $dados = [
@@ -586,8 +623,19 @@ class DashboardSistemaController extends Controller
 
                         if($aplicacao->medicamento->unidade == "Ampola"){
                             if (empty($lote) || empty($codigo_barras)) {
-                                throw new \Exception('O campo Lote e Código de Barras são obrigatórios para a aplicação de ' . $aplicacao->medicamento->nome);
+                                  throw new \Exception('O campo Lote e Código de Barras são obrigatórios para a aplicação de ' . $aplicacao->medicamento->nome);
                             }
+
+                            $estoque = Estoque::where('medicamento_id', $aplicacao->medicamento->id)
+                            ->where('lote', $lote)
+                            ->where('codigo_barras', $codigo_barras)
+                            ->where('clinica_id', $user->clinica_id)
+                            ->first();
+
+                            if ($estoque && $estoque->dt_vencimento && $estoque->dt_vencimento < date('Y-m-d')) {
+                                throw new \Exception('O lote ' . $lote . ' do medicamento ' . $aplicacao->medicamento->nome . ' está vencido desde ' . dataDbForm($estoque->dt_vencimento) . '.');
+                            }
+
                             //vamos setar a aplicaçao
                             $dados = [
                                 'aplicacao_id' => $aplicacao->id,
@@ -603,12 +651,6 @@ class DashboardSistemaController extends Controller
                             $aplicacao->save();
 
                             //vamos dar baixa no estoque
-                            $estoque = Estoque::where('medicamento_id', $aplicacao->medicamento->id)
-                            ->where('lote', $lote)
-                            ->where('codigo_barras', $codigo_barras)
-                            ->where('clinica_id', $user->clinica_id)
-                            ->first();
-
                             $dados = [
                                 'clinica_id' => $user->clinica_id,
                                 'procedimento_id' => $procedimento->id,
@@ -634,6 +676,17 @@ class DashboardSistemaController extends Controller
                                 $aberto = EstoqueAberto::where('codigo_barras', $codigo_barras)
                                 ->where('clinica_id', $user->clinica_id)
                                 ->first();
+
+                                if ($aberto) {
+                                    $estoque_lote = Estoque::where('medicamento_id', $aberto->medicamento_id)
+                                        ->where('lote', $aberto->lote)
+                                        ->where('codigo_barras', $aberto->codigo_barras)
+                                        ->where('clinica_id', $aberto->clinica_id)
+                                        ->first();
+                                    if ($estoque_lote && $estoque_lote->dt_vencimento && $estoque_lote->dt_vencimento < date('Y-m-d')) {
+                                        throw new \Exception('O lote ' . $aberto->lote . ' do medicamento ' . $aplicacao->medicamento->nome . ' está vencido desde ' . dataDbForm($estoque_lote->dt_vencimento) . '.');
+                                    }
+                                }
 
                                 $aberto->qt_utilizado += $aplicacao->quantidade;
                                 $aberto->qt_restante -= $aplicacao->quantidade;
@@ -678,6 +731,31 @@ class DashboardSistemaController extends Controller
                                 $aberto = EstoqueAberto::where('codigo_barras', $codigo_b1)
                                 ->where('clinica_id', $user->clinica_id)
                                 ->first();
+                                if ($aberto) {
+                                    $estoque_lote1 = Estoque::where('medicamento_id', $aberto->medicamento_id)
+                                        ->where('lote', $aberto->lote)
+                                        ->where('codigo_barras', $aberto->codigo_barras)
+                                        ->where('clinica_id', $aberto->clinica_id)
+                                        ->first();
+                                    if ($estoque_lote1 && $estoque_lote1->dt_vencimento && $estoque_lote1->dt_vencimento < date('Y-m-d')) {
+                                        throw new \Exception('O lote ' . $aberto->lote . ' do primeiro frasco de ' . $aplicacao->medicamento->nome . ' está vencido desde ' . dataDbForm($estoque_lote1->dt_vencimento) . '.');
+                                    }
+                                }
+
+                                $aberto2_check = EstoqueAberto::where('codigo_barras', $codigo_b2)
+                                ->where('clinica_id', $user->clinica_id)
+                                ->first();
+                                if ($aberto2_check) {
+                                    $estoque_lote2 = Estoque::where('medicamento_id', $aberto2_check->medicamento_id)
+                                        ->where('lote', $aberto2_check->lote)
+                                        ->where('codigo_barras', $aberto2_check->codigo_barras)
+                                        ->where('clinica_id', $aberto2_check->clinica_id)
+                                        ->first();
+                                    if ($estoque_lote2 && $estoque_lote2->dt_vencimento && $estoque_lote2->dt_vencimento < date('Y-m-d')) {
+                                        throw new \Exception('O lote ' . $aberto2_check->lote . ' do segundo frasco de ' . $aplicacao->medicamento->nome . ' está vencido desde ' . dataDbForm($estoque_lote2->dt_vencimento) . '.');
+                                    }
+                                }
+
                                 $aberto->qt_utilizado += $quantidade1;
                                 $aberto->qt_restante -= $quantidade1;
                                 if($aberto->qt_restante <= 0){
@@ -843,7 +921,7 @@ class DashboardSistemaController extends Controller
         $estoques = Estoque::get_lotes_medicamento_mg($_GET['medicamento_id'],$user->clinica_id);
         $html = "<option value=''>Opções</option>";
         foreach($estoques as $estoque){
-            $html .= "<option value='".$estoque['codigo_barras']."' data-quantidade='".$estoque['estoque']."'>".$estoque['codigo_barras']."</option>";
+            $html .= "<option value='".$estoque['codigo_barras']."' data-lote='".$estoque['lote']."' data-quantidade='".$estoque['estoque']."'>".$estoque['codigo_barras']." - Lote: ".$estoque['lote']." (Saldo: ".$estoque['estoque'].")</option>";
         }
         $retorno['codigos'] = $html;
         echo json_encode($retorno);

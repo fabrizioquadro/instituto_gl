@@ -113,7 +113,7 @@ $template = "layout.".session()->get('layout');
                                     </div>
                                 </td>
                                 <td> <span style='display: none'>{{ $procedimento->updated_at }}</span> {{ $chegada }}</td>
-                                <td>{{ $procedimento->paciente->nm_paciente }}</td>
+                                <td>{{ $procedimento->paciente->nm_paciente }} <a href="#" onclick="abrir_obs_leitura({{ $procedimento->paciente->id }});return false;" title="Ver Observações do Paciente" style="text-decoration:none;"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a></td>
                                 <td>{{ $ds_procedimentos }}</td>
                                 <td>{{ $procedimento->medico }}</td>
                                 <td>{!! $situacao !!}</td>
@@ -180,7 +180,7 @@ $template = "layout.".session()->get('layout');
                                     </div>
                                 </td>
                                 <td> <span style='display: none'>{{ $procedimento->updated_at }}</span> {{ $chegada }}</td>
-                                <td>{{ $procedimento->paciente->nm_paciente }}</td>
+                                <td>{{ $procedimento->paciente->nm_paciente }} <a href="#" onclick="abrir_obs_leitura({{ $procedimento->paciente->id }});return false;" title="Ver Observações do Paciente" style="text-decoration:none;"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a></td>
                                 <td>{{ $ds_procedimentos }}</td>
                                 <td>{{ $procedimento->medico }}</td>
                                 <td>{!! $situacao !!}</td>
@@ -249,7 +249,7 @@ $template = "layout.".session()->get('layout');
                                     </div>
                                 </td>
                                 <td> <span style='display: none'>{{ $procedimento->updated_at }}</span> {{ $chegada }}</td>
-                                <td>{{ $procedimento->paciente->nm_paciente }}</td>
+                                <td>{{ $procedimento->paciente->nm_paciente }} <a href="#" onclick="abrir_obs_leitura({{ $procedimento->paciente->id }});return false;" title="Ver Observações do Paciente" style="text-decoration:none;"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a></td>
                                 <td>{{ $ds_procedimentos }}</td>
                                 <td>{{ $procedimento->medico }}</td>
                                 <td>{!! $situacao !!}</td>
@@ -261,6 +261,29 @@ $template = "layout.".session()->get('layout');
         </div>
     </div>
 </div>
+
+<!-- Modal Observações do Paciente -->
+<div class="modal fade" id="modal_observacoes_leitura" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal_observacoes_leitura_titulo">Observações do Paciente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col mb-3">
+                        <textarea id="modal_observacoes_leitura_texto" class="form-control" rows="8" readonly style="resize: none; background-color: #f8f9fa;"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 window.addEventListener('load',()=>{
     // Inicialização do DataTable
@@ -299,6 +322,22 @@ window.addEventListener('load',()=>{
         console.error("Erro na lógica de alarme sonoro:", e);
     }
 });
+
+var modalObservacoesLeitura;
+
+function abrir_obs_leitura(paciente_id){
+    $.getJSON(
+        "{{ route('sistema.pacientes.get_paciente_ajax') }}",
+        { paciente_id : paciente_id },
+        function(json){
+            document.getElementById('modal_observacoes_leitura_titulo').innerText = 'Observações: ' + json.nm_paciente;
+            let obs = json.obs ? json.obs : 'Nenhuma observação registrada para este paciente.';
+            document.getElementById('modal_observacoes_leitura_texto').value = obs;
+            modalObservacoesLeitura = new bootstrap.Modal(document.getElementById('modal_observacoes_leitura'));
+            modalObservacoesLeitura.show();
+        }
+    );
+}
 
 function playAlertSound() {
     try {

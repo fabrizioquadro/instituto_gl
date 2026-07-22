@@ -81,7 +81,8 @@ class ProcedimentoSistemaController extends Controller
                 <div class='dropdown-menu' data-popper-placement='bottom-end'>
                     <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)."'><i class='mdi mdi-eye me-1'></i> Acessar</a>
                     <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_paciente', $procedimento->codigo)."'><i class='mdi mdi-cloud-print me-1'></i> Imprimir Prontuário</a>
-                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_cadastro', $procedimento->codigo)."'><i class='mdi mdi-folder-open me-1'></i> Imprimir Cadastro</a>";
+                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_cadastro', $procedimento->codigo)."'><i class='mdi mdi-folder-open me-1'></i> Imprimir Cadastro</a>
+                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_detalhes', $procedimento->id)."' target='_blank'><i class='mdi mdi-printer me-1'></i> Imprimir Detalhes</a>";
                     if($st_procedimento != "Finalizado" && $st_procedimento != "Cancelado"){
                         $botao .= "<a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.cancelar', $procedimento->codigo)."'><i class='mdi mdi-cancel me-1'></i> Cancelar</a>";
                     }
@@ -213,6 +214,11 @@ class ProcedimentoSistemaController extends Controller
                 //vamos cadastrar o procedimento
                 $var = 'data_aplicacao_'.$i;
                 $data_aplicacao = $request->$var;
+
+                // Validar se a data não é retroativa
+                if($data_aplicacao && $data_aplicacao < date('Y-m-d')){
+                    throw new \Exception("Semana {$i}: A Data Prevista ({$data_aplicacao}) está no passado. Não é permitido cadastrar procedimentos com data retroativa.");
+                }
                 if($data_aplicacao){
                     $nr_procedimento++;
 
@@ -308,7 +314,15 @@ class ProcedimentoSistemaController extends Controller
                                 $var = "total_".$i."_".$j;
                                 $total = $request->$var;
 
+                                $var_combo = "is_combo_".$i."_".$j;
+                                $is_combo = $request->$var_combo ?? 0;
+                                
                                 $medicamento = Medicamento::where('id', $medicamento_id)->first();
+                                $valor_inserido = valorFormDb($valor);
+                                if ($valor_inserido < $medicamento->vl_venda && !$is_combo) {
+                                    throw new \Exception('O valor do medicamento ' . $medicamento->nome . ' não pode ser menor do que o preço de tabela (R$ ' . number_format($medicamento->vl_venda, 2, ',', '.') . ').');
+                                }
+
                                 if($medicamento->aplicacao == 'Sim'){
                                     $dados_situacao = 'Aberta';
                                     $controle_sem_aplicacao = false;
@@ -324,7 +338,7 @@ class ProcedimentoSistemaController extends Controller
                                     'procedimento_id' => $procedimento->id,
                                     'medicamento_id' => $medicamento_id,
                                     'quantidade' => $quantidade,
-                                    'valor' => valorFormDb($valor),
+                                    'valor' => $valor_inserido,
                                     'total' => valorFormDb($total),
                                     'situacao' => $dados_situacao,
                                     'is_soro' => $is_soro,
@@ -439,6 +453,13 @@ class ProcedimentoSistemaController extends Controller
         $observacoes = $procedimento->observacoes_procedimento()->orderBy('created_at','desc')->get();
 
         return view('sistema/procedimentos/acessar', compact('procedimento','retorno','procedimentos_vinculados','controle_aviso_coleta','financeiro','logs', 'observacoes'));
+    }
+
+    public function imprimir_detalhes($id){
+        $procedimento = Procedimento::where('id', $id)->first();
+        $logs = $procedimento->logs()->orderBy('created_at','desc')->get();
+
+        return view('sistema/procedimentos/imprimir_detalhes', compact('procedimento', 'logs'));
     }
 
     public function salvar_observacao(Request $request){
@@ -898,15 +919,49 @@ class ProcedimentoSistemaController extends Controller
 
     public function excluir($id){
         $procedimento = Procedimento::where('id', $id)->first();
+        if (!$procedimento) {
+            return redirect()->route('sistema.procedimentos')->with('mensagem_erro', 'Procedimento não encontrado.');
+        }
+
+        if (!session()->has('administrador')) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem_erro', 'Apenas administradores podem excluir procedimentos.');
+        }
+
+        if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem_erro', 'Não é possível excluir um procedimento/semana que já foi aplicado ou está em atendimento.');
+        }
+
         return view('sistema/procedimentos/excluir', compact('procedimento'));
     }
 
     public function excluir_grupo($codigo){
+        $procedimentos = Procedimento::where('codigo', $codigo)->get();
+        if (!session()->has('administrador')) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $codigo)->with('mensagem_erro', 'Apenas administradores podem excluir grupos de procedimentos.');
+        }
+
+        foreach ($procedimentos as $procedimento) {
+            if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
+                return redirect()->route('sistema.procedimentos.acessar_grupo', $codigo)->with('mensagem_erro', 'Não é possível excluir este grupo de procedimentos pois existem semanas que já foram aplicadas ou estão em atendimento.');
+            }
+        }
+
         return view('sistema/procedimentos/excluir_grupo', compact('codigo'));
     }
 
     public function delete(Request $request){
         $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
+        if (!$procedimento) {
+            return redirect()->route('sistema.procedimentos')->with('mensagem_erro', 'Procedimento não encontrado.');
+        }
+
+        if (!session()->has('administrador')) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem_erro', 'Apenas administradores podem excluir procedimentos.');
+        }
+
+        if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem_erro', 'Não é possível excluir um procedimento/semana que já foi aplicado ou está em atendimento.');
+        }
 
         $this->delete_procedimento($request->procedimento_id);
 
@@ -914,11 +969,21 @@ class ProcedimentoSistemaController extends Controller
 
         $this->recalcular_semanas_grupo($procedimento->codigo);
 
-        return redirect()->route('sistema.procedimentos')->with('mensagem','Procedimento Excluído!');
+        return redirect()->route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)->with('mensagem','Procedimento Excluído!');
     }
 
     public function delete_grupo(Request $request){
         $procedimentos = Procedimento::where('codigo', $request->codigo)->get();
+        if (!session()->has('administrador')) {
+            return redirect()->route('sistema.procedimentos.acessar_grupo', $request->codigo)->with('mensagem_erro', 'Apenas administradores podem excluir grupos de procedimentos.');
+        }
+
+        foreach ($procedimentos as $procedimento) {
+            if ($procedimento->situacao == 'Aplicado' || $procedimento->situacao == 'Aplicação Parcial' || $procedimento->situacao == 'Pendente' || $procedimento->situacao == 'Atendimento' || $procedimento->aplicacaos()->where('situacao', 'Aplicada')->exists()) {
+                return redirect()->route('sistema.procedimentos.acessar_grupo', $request->codigo)->with('mensagem_erro', 'Não é possível excluir este grupo de procedimentos pois existem semanas que já foram aplicadas ou estão em atendimento.');
+            }
+        }
+
         $procedimento = Procedimento::where('codigo', $request->codigo)->first();
         $financeiro = FinanceiroProcedimento::where('procedimento_id', $procedimento->id)->first();
 
@@ -947,6 +1012,7 @@ class ProcedimentoSistemaController extends Controller
                         AplicacaoLote::where('aplicacao_id', $aplicacao->id)->delete();
 
                         Estoque::where('origem', 'Procedimento')
+                        ->where('tipo', 'Saida')
                         ->where('procedimento_id', $procedimento->id)
                         ->where('medicamento_id', $aplicacao->medicamento->id)
                         ->delete();
@@ -1558,9 +1624,15 @@ class ProcedimentoSistemaController extends Controller
         $procedimento->valor -= $aplicacao->total;
 
 
+        $medicamento = Medicamento::where('id', $_GET['medicamento_id'])->first();
+        $valor_inserido = valorFormDb($_GET['valor']);
+        if ($valor_inserido < $medicamento->vl_venda) {
+            throw new \Exception('O valor do medicamento ' . $medicamento->nome . ' não pode ser menor do que o preço de tabela (R$ ' . number_format($medicamento->vl_venda, 2, ',', '.') . ').');
+        }
+
         $aplicacao->medicamento_id = $_GET['medicamento_id'];
         $aplicacao->quantidade = $_GET['quantidade'];
-        $aplicacao->valor = valorFormDb($_GET['valor']);
+        $aplicacao->valor = $valor_inserido;
         $aplicacao->total = valorFormDb($_GET['total']);
         $aplicacao->save();
 
@@ -1589,9 +1661,11 @@ class ProcedimentoSistemaController extends Controller
                         <i class="mdi mdi-dots-vertical"></i>
                     </button>
                     <div class="dropdown-menu" data-popper-placement="bottom-end">
-                        <button onclick="editar_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>
-                        <button onclick="excluir_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>
-                    </div>
+                        <button onclick="editar_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>';
+                if(session()->has('administrador')) {
+                    $html .= '<button onclick="excluir_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>';
+                }
+                $html .= '</div>
                 </div>';
             }
         $html .= '
@@ -1614,7 +1688,28 @@ class ProcedimentoSistemaController extends Controller
     }
 
     public function delete_aplicacao(){
+        if (!session()->has('administrador')) {
+            $retorno['controle'] = 'false';
+            $retorno['erro'] = 'Apenas administradores podem excluir medicamentos.';
+            echo json_encode($retorno);
+            return;
+        }
+
         $aplicacao = Aplicacao::where('id', $_GET['aplicacao_id'])->first();
+        if (!$aplicacao) {
+            $retorno['controle'] = 'false';
+            $retorno['erro'] = 'Aplicação não encontrada.';
+            echo json_encode($retorno);
+            return;
+        }
+
+        if ($aplicacao->situacao == 'Aplicada') {
+            $retorno['controle'] = 'false';
+            $retorno['erro'] = 'Não é possível excluir um medicamento que já foi aplicado.';
+            echo json_encode($retorno);
+            return;
+        }
+
         $procedimento = Procedimento::where('id', $aplicacao->procedimento_id)->first();
         $procedimento->valor -= $aplicacao->total;
         $procedimento->flag_coordenacao = 0;
@@ -1638,6 +1733,12 @@ class ProcedimentoSistemaController extends Controller
 
         $procedimento = Procedimento::where('id', $_GET['procedimento_id'])->first();
         $medicamento = Medicamento::where('id', $_GET['medicamento_id'])->first();
+
+        $valor_inserido = valorFormDb($_GET['valor']);
+        if ($valor_inserido < $medicamento->vl_venda) {
+            throw new \Exception('O valor do medicamento ' . $medicamento->nome . ' não pode ser menor do que o preço de tabela (R$ ' . number_format($medicamento->vl_venda, 2, ',', '.') . ').');
+        }
+
         $situacao_inicial = 'Aberta';
         $user_id_aplicacao = null;
         if($medicamento && $medicamento->unidade == 'Procedimento') {
@@ -1649,7 +1750,7 @@ class ProcedimentoSistemaController extends Controller
             'procedimento_id' => $procedimento->id,
             'medicamento_id' => $_GET['medicamento_id'],
             'quantidade' => $_GET['quantidade'],
-            'valor' => valorFormDb($_GET['valor']),
+            'valor' => $valor_inserido,
             'total' => valorFormDb($_GET['total']),
             'situacao' => $situacao_inicial,
             'user_id_aplicacao' => $user_id_aplicacao,
@@ -1696,9 +1797,11 @@ class ProcedimentoSistemaController extends Controller
                         <i class="mdi mdi-dots-vertical"></i>
                     </button>
                     <div class="dropdown-menu" data-popper-placement="bottom-end">
-                        <button onclick="editar_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>
-                        <button onclick="excluir_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>
-                    </div>
+                        <button onclick="editar_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>';
+                if(session()->has('administrador')) {
+                    $html .= '<button onclick="excluir_aplicacao('.$aplicacao->id.')" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>';
+                }
+                $html .= '</div>
                 </div>';
             }
         $html .= '
@@ -1839,6 +1942,12 @@ class ProcedimentoSistemaController extends Controller
                     $total = $request->$var;
 
                     if($medicamento_id != ""){
+                        $medicamento = Medicamento::where('id', $medicamento_id)->first();
+                        $valor_inserido = valorFormDb($valor);
+                        if ($valor_inserido < $medicamento->vl_venda) {
+                            throw new \Exception('O valor do medicamento ' . $medicamento->nome . ' não pode ser menor do que o preço de tabela (R$ ' . number_format($medicamento->vl_venda, 2, ',', '.') . ').');
+                        }
+
                         $var = "is_soro_".$i;
                         $is_soro = $request->$var ?? 0;
 
@@ -1847,7 +1956,7 @@ class ProcedimentoSistemaController extends Controller
                             'procedimento_id' => $procedimento->id,
                             'medicamento_id' => $medicamento_id,
                             'quantidade' => $quantidade,
-                            'valor' => valorFormDb($valor),
+                            'valor' => $valor_inserido,
                             'total' => valorFormDb($total),
                             'situacao' => 'Aberta',
                             'is_soro' => $is_soro,
@@ -1905,7 +2014,11 @@ class ProcedimentoSistemaController extends Controller
     }
 
     public function recalcular_semanas_grupo($codigo){
-        $procedimentos = Procedimento::where('codigo', $codigo)->orderBy('data_aplicacao')->get();
+        $procedimentos = Procedimento::where('codigo', $codigo)
+            ->orderByRaw("CASE WHEN situacao IN ('Aplicado', 'Aplicação Parcial', 'Pendente', 'Atendimento') THEN 0 ELSE 1 END")
+            ->orderBy('data_aplicacao', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
         $i=0;
         foreach($procedimentos as $procedimento){
             $i++;

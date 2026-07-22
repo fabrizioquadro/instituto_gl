@@ -296,7 +296,9 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                                         </button>
                                         <div class="dropdown-menu" data-popper-placement="bottom-end">
                                             <button onclick="editar_aplicacao({{ $aplicacao->id }})" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>
+                                            @if(session()->has('administrador'))
                                             <button onclick="excluir_aplicacao({{ $aplicacao->id }})" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>
+                                            @endif
                                         </div>
                                     </div>
                                 @endif
@@ -477,6 +479,16 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                         </tbody>
                     </table>
                 </div>
+                <div class="alert alert-warning mb-2 mt-3">
+                    <h6 class="alert-heading fw-bold mb-1"><i class="mdi mdi-alert-circle-outline me-1"></i>Atenção: Adição de Valores!</h6>
+                    <span>A inclusão de novas medicações acarretará na geração de valores adicionais no financeiro. O paciente deverá realizar o pagamento para que as aplicações sejam liberadas na fila de atendimento.</span>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="aceite_cliente_modal" id="aceite_cliente_modal" required>
+                    <label class="form-check-label fw-bold text-danger" for="aceite_cliente_modal">
+                        Confirmo que informei o paciente sobre o custo adicional destas medicações.
+                    </label>
+                </div>
                 <span>* Esta ação será executada diretamente no banco de dados, não podendo ser desfeita.</span>
                 <div class="mb-3 mt-3">
                     <button class="btn btn-primary" type="button" onclick="salvar_adicionar_aplicacao()">Salvar</button>
@@ -570,6 +582,8 @@ function excluir_aplicacao(aplicacao_id){
             function(json){
                 if(json.controle == 'true'){
                     document.getElementById('tabela_aplicacao_aplicacao_linha_' + aplicacao_id).remove();
+                } else {
+                    alert(json.erro || 'Erro ao excluir a aplicação.');
                 }
             }
         );
@@ -593,12 +607,7 @@ function editar_aplicacao(aplicacao_id){
                 '{{ route("adm.medicamentos.buscar") }}',
                 {medicamento_id:json.medicamento_id},
                 function(med){
-                    if(med.unidade == "Procedimento" || med.nome.toLowerCase().startsWith('pellet')){
-                        document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
-                    }
-                    else{
-                        document.getElementById("modal_editar_aplicacao_valor").setAttribute('readonly','readonly');
-                    }
+                    document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
                 }
             );
 
@@ -615,20 +624,7 @@ function set_valor_medicamento(){
     valor = valor.toFixed(2);
     document.getElementById("modal_editar_aplicacao_valor").value = valor.replace('.',',');
 
-    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
-
-    $.getJSON(
-        '{{ route("adm.medicamentos.buscar") }}',
-        {medicamento_id:select.value},
-        function(json){
-            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
-                document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
-            }
-            else{
-                document.getElementById("modal_editar_aplicacao_valor").setAttribute('readonly','readonly');
-            }
-        }
-    );
+    document.getElementById("modal_editar_aplicacao_valor").removeAttribute('readonly');
 
     modal_editar_aplicacao_calcula_total_medicamento();
 }
@@ -640,20 +636,7 @@ function set_valor_medicamento_adicionar(){
     valor = valor.toFixed(2);
     document.getElementById("modal_adicionar_aplicacao_valor").value = valor.replace('.',',');
 
-    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
-
-    $.getJSON(
-        '{{ route("adm.medicamentos.buscar") }}',
-        {medicamento_id:select.value},
-        function(json){
-            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
-                document.getElementById("modal_adicionar_aplicacao_valor").removeAttribute('readonly');
-            }
-            else{
-                document.getElementById("modal_adicionar_aplicacao_valor").setAttribute('readonly','readonly');
-            }
-        }
-    );
+    document.getElementById("modal_adicionar_aplicacao_valor").removeAttribute('readonly');
 
     modal_adicionar_aplicacao_calcula_total_medicamento();
 }
@@ -667,6 +650,18 @@ function modal_editar_aplicacao_calcula_total_medicamento(){
             medicamento_id : medicamento_id
         },
         function(json){
+            let valorInput = document.getElementById("modal_editar_aplicacao_valor");
+            let valorDigitado = valorInput.value;
+            if(valorDigitado){
+                valorDigitado = valorDigitado.replace(/\./g,'').replace(',','.');
+                valorDigitado = parseFloat(valorDigitado);
+                let valorTabela = parseFloat(json.vl_venda);
+                if(valorDigitado < valorTabela){
+                    alert('O valor do medicamento não pode ser menor do que o preço de tabela (R$ ' + json.vl_venda.replace('.', ',') + ').');
+                    valorInput.value = json.vl_venda.replace('.', ',');
+                }
+            }
+
             if(json.unidade == 'Ampola'){
                 quantidade = Math.ceil(parseFloat(document.getElementById("modal_editar_aplicacao_quantidade").value));
             }
@@ -676,7 +671,7 @@ function modal_editar_aplicacao_calcula_total_medicamento(){
 
             valor = document.getElementById("modal_editar_aplicacao_valor").value;
             if(quantidade && valor){
-                valor = valor.replace('.','');
+                valor = valor.replace(/\./g,'');
                 valor = parseFloat(valor.replace(',','.'));
                 total = quantidade * valor;
                 total = total.toFixed(2);
@@ -695,6 +690,18 @@ function modal_adicionar_aplicacao_calcula_total_medicamento(){
             medicamento_id : medicamento_id
         },
         function(json){
+            let valorInput = document.getElementById("modal_adicionar_aplicacao_valor");
+            let valorDigitado = valorInput.value;
+            if(valorDigitado){
+                valorDigitado = valorDigitado.replace(/\./g,'').replace(',','.');
+                valorDigitado = parseFloat(valorDigitado);
+                let valorTabela = parseFloat(json.vl_venda);
+                if(valorDigitado < valorTabela){
+                    alert('O valor do medicamento não pode ser menor do que o preço de tabela (R$ ' + json.vl_venda.replace('.', ',') + ').');
+                    valorInput.value = json.vl_venda.replace('.', ',');
+                }
+            }
+
             if(json.unidade == 'Ampola'){
                 quantidade = Math.ceil(parseFloat(document.getElementById("modal_adicionar_aplicacao_quantidade").value));
             }
@@ -704,7 +711,7 @@ function modal_adicionar_aplicacao_calcula_total_medicamento(){
 
             valor = document.getElementById("modal_adicionar_aplicacao_valor").value;
             if(quantidade && valor){
-                valor = valor.replace('.','');
+                valor = valor.replace(/\./g,'');
                 valor = parseFloat(valor.replace(',','.'));
                 total = quantidade * valor;
                 total = total.toFixed(2);
@@ -742,6 +749,11 @@ function salvar_adicionar_aplicacao(){
     quantidade = document.getElementById('modal_adicionar_aplicacao_quantidade').value;
     valor = document.getElementById('modal_adicionar_aplicacao_valor').value;
     total = document.getElementById('modal_adicionar_aplicacao_total').value;
+    
+    if(!document.getElementById('aceite_cliente_modal').checked){
+        alert('Você deve confirmar que informou o paciente sobre o custo adicional destas medicações.');
+        return false;
+    }
 
     if(medicamento_id != "" && quantidade != "" && valor != "" && total != ""){
         $.getJSON(

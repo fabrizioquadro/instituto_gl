@@ -135,6 +135,7 @@ $template = "layout.".session()->get('layout');
                                             <option value="Débito">Débito</option>
                                             <option value="Crédito">Crédito</option>
                                             <option value="Pix">Pix</option>
+                                            <option value="Link de Pagamento">Link de Pagamento</option>
                                         </select>
                                     </td>
                                     <td>
@@ -222,6 +223,7 @@ function adicionar_forma(){
                 <option value="Débito">Débito</option>
                 <option value="Crédito">Crédito</option>
                 <option value="Pix">Pix</option>
+                <option value="Link de Pagamento">Link de Pagamento</option>
             </select>
         </td>
         <td>

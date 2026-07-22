@@ -24,7 +24,7 @@ $template = "layout.".session()->get('layout');
             </button>
         </div>
         <hr>
-        <form action="{{ route('sistema.procedimentos.insert') }}" method="post" enctype="multipart/form-data">
+        <form id="form_cadastro_procedimento" action="{{ route('sistema.procedimentos.insert') }}" method="post" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="inicio_cadastro" value="{{ now() }}">
             <input type="hidden" name="contador_procedimentos" id="contador_procedimentos" value="1">
@@ -177,6 +177,9 @@ $template = "layout.".session()->get('layout');
                                 </label>
                             </div>
                         </div>
+
+
+
                         <div class="table-responsive mt-3">
                             <table class="table table-sm">
                                 <thead class="table-light">
@@ -192,6 +195,7 @@ $template = "layout.".session()->get('layout');
                                     <tr id="linha_medicamento_1_1">
                                         <td>
                                             <input type="hidden" name="is_soro_1_1" id="is_soro_1_1" value="0">
+                                            <input type="hidden" name="is_combo_1_1" id="is_combo_1_1" value="0">
                                             <select onchange="set_valor_medicamento(1,1)" required name="medicamento_id_1_1" id="medicamento_id_1_1" class="form-control">
                                                 <option value="">Opções</option>
                                                 @foreach($medicamentos as $medicamento)
@@ -200,7 +204,7 @@ $template = "layout.".session()->get('layout');
                                             </select>
                                         </td>
                                         <td><input onblur="calcula_total_medicamento(1,1)" name="quantidade_1_1" id="quantidade_1_1" required type="text" class="form-control"></td>
-                                        <td><input onblur="calcula_total_medicamento(1,1)" name="valor_1_1" id="valor_1_1" required type="text" class="form-control" readonly></td>
+                                        <td><input onblur="calcula_total_medicamento(1,1)" name="valor_1_1" id="valor_1_1" required type="text" class="form-control"></td>
                                         <td><input onblur="calcula_total_medicamento(1,1)" name="total_1_1" id="total_1_1" required type="text" class="form-control total_1" readonly></td>
                                         <td>
                                             <button type="button" title='Excluir linha' onclick='excluir_linha_medicamento(1,1)' class="btn btn-sm rounded-pill btn-icon btn-label-danger btn-fab demo waves-effect">
@@ -262,6 +266,22 @@ $template = "layout.".session()->get('layout');
                     </div>
                 </div>
             </div>
+            @if(isset($codigo))
+            <div class="row mt-4 mb-3">
+                <div class="col-md-12">
+                    <div class="alert alert-warning mb-2">
+                        <h6 class="alert-heading fw-bold mb-1"><i class="mdi mdi-alert-circle-outline me-1"></i>Atenção: Adição de Valores!</h6>
+                        <span>A inclusão de novas medicações ou semanas acarretará na geração de valores adicionais no financeiro. O paciente deverá realizar o pagamento para que as aplicações sejam liberadas na fila de atendimento.</span>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="aceite_cliente" id="aceite_cliente_adicionar" required>
+                        <label class="form-check-label fw-bold text-danger" for="aceite_cliente_adicionar">
+                            Confirmo que informei o paciente sobre o custo adicional destas medicações.
+                        </label>
+                    </div>
+                </div>
+            </div>
+            @endif
             <div class="row mt-2 gy-4 align-items-end">
                 <div class="col-md-6 form-group">
                     <button type="submit" class="btn btn-primary me-2">Salvar</button>
@@ -278,7 +298,27 @@ $template = "layout.".session()->get('layout');
 </form>
 
 <script>
+const medicamentosMap = {
+    @foreach($medicamentos as $medicamento)
+        "{{ $medicamento->id }}": {
+            unidade: "{{ $medicamento->unidade }}",
+            vl_venda: {{ $medicamento->vl_venda ?? 0 }}
+        },
+    @endforeach
+};
+
+let isConfirmed = false;
+
 window.addEventListener('load',()=>{
+    const formObj = document.getElementById('form_cadastro_procedimento');
+    if (formObj) {
+        formObj.addEventListener('submit', function(e) {
+            if (!isConfirmed) {
+                e.preventDefault();
+                valida_e_confirma_procedimento();
+            }
+        });
+    }
     $('.combobox').combobox();
 
     $('#paciente_id').select2({
@@ -382,23 +422,8 @@ function set_valor_medicamento(linha, medicamento){
     valor = valor.toFixed(2);
     document.getElementById("valor_" + linha + '_' + medicamento).value = valor.replace('.',',');
 
-    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
-
-    //se for procedimento ou começar com Pellet pode editar o valor
-    $.getJSON(
-        '{{ route("adm.medicamentos.buscar") }}',
-        {medicamento_id:select.value},
-        function(json){
-            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
-                document.getElementById("valor_" + linha + '_' + medicamento).removeAttribute('readonly');
-                document.getElementById("valor_" + linha + '_' + medicamento).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
-            }
-            else{
-                document.getElementById("valor_" + linha + '_' + medicamento).setAttribute('readonly','readonly');
-                document.getElementById("valor_" + linha + '_' + medicamento).removeAttribute('onkeypress');
-            }
-        }
-    );
+    document.getElementById("valor_" + linha + '_' + medicamento).removeAttribute('readonly');
+    document.getElementById("valor_" + linha + '_' + medicamento).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
 
     calcula_total_medicamento(linha,medicamento)
 }
@@ -410,6 +435,18 @@ function calcula_total_medicamento(linha,medicamento){
         '{{ route("adm.medicamentos.buscar") }}',
         {medicamento_id:medicamento_id},
         function(json){
+            let valorInput = document.getElementById("valor_" + linha + '_' + medicamento);
+            let valorDigitado = valorInput.value;
+            if(valorDigitado){
+                valorDigitado = valorDigitado.replace(/\./g,'').replace(',','.');
+                valorDigitado = parseFloat(valorDigitado);
+                let valorTabela = parseFloat(json.vl_venda);
+                if(valorDigitado < valorTabela){
+                    alert('O valor do medicamento não pode ser menor do que o preço de tabela (R$ ' + json.vl_venda.replace('.', ',') + ').');
+                    valorInput.value = json.vl_venda.replace('.', ',');
+                }
+            }
+
             if(json.unidade == "Ampola"){
                 quantidade = Math.ceil(parseFloat(document.getElementById("quantidade_" + linha + '_' + medicamento).value));
             }
@@ -419,7 +456,7 @@ function calcula_total_medicamento(linha,medicamento){
 
             valor = document.getElementById("valor_" + linha + '_' + medicamento).value;
             if(quantidade && valor){
-                valor = valor.replace('.','');
+                valor = valor.replace(/\./g,'');
                 valor = parseFloat(valor.replace(',','.'));
                 total = quantidade * valor;
                 total = total.toFixed(2);
@@ -550,6 +587,7 @@ function adicionar_medicamento(linha){
     html = `
     <td>
         <input type="hidden" name="is_soro_${variavel}" id="is_soro_${variavel}" value="0">
+        <input type="hidden" name="is_combo_${variavel}" id="is_combo_${variavel}" value="0">
         <select onchange="set_valor_medicamento(${linha},${contador})" required name="medicamento_id_${variavel}" id="medicamento_id_${variavel}" class="form-control">
             <option value="">Opções</option>
             @foreach($medicamentos as $medicamento)
@@ -558,7 +596,7 @@ function adicionar_medicamento(linha){
         </select>
     </td>
     <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="quantidade_${variavel}" id="quantidade_${variavel}" required type="text" class="form-control"></td>
-    <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="valor_${variavel}" id="valor_${variavel}" required type="text" class="form-control" readonly></td>
+    <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="valor_${variavel}" id="valor_${variavel}" required type="text" class="form-control"></td>
     <td><input onblur="calcula_total_medicamento(${linha},${contador})" name="total_${variavel}" id="total_${variavel}" required type="text" class="form-control total_${linha}" readonly></td>
     <td>
         <button type="button" title='Excluir linha' onclick='excluir_linha_medicamento(${linha},${contador})' class="btn btn-sm rounded-pill btn-icon btn-label-danger btn-fab demo waves-effect">
@@ -641,6 +679,7 @@ function adicionar_procedimento(){
                     <tr id="linha_medicamento_${contador}_1">
                         <td>
                             <input type="hidden" name="is_soro_${contador}_1" id="is_soro_${contador}_1" value="0">
+                            <input type="hidden" name="is_combo_${contador}_1" id="is_combo_${contador}_1" value="0">
                             <select onchange="set_valor_medicamento(${contador},1)" required name="medicamento_id_${contador}_1" id="medicamento_id_${contador}_1" class="form-control">
                                 <option value="">Opções</option>
                                 @foreach($medicamentos as $medicamento)
@@ -755,7 +794,7 @@ function excluir_procedimento(nr_procedimento){
                                     <input type="hidden" name="gerador_is_soro_1" id="gerador_is_soro_1" value="0">
                                 </td>
                                 <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_quantidade_1" id="gerador_quantidade_1" required type="text" class="form-control"></td>
-                                <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control" readonly></td>
+                                <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control"></td>
                                 <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_total_1" id="gerador_total_1" required type="text" class="form-control" readonly></td>
                                 <td></td>
                             </tr>
@@ -789,9 +828,10 @@ document.getElementById('botao_gerador').addEventListener('click', ()=>{
                 @endforeach
             </select>
             <input type="hidden" name="gerador_is_soro_1" id="gerador_is_soro_1" value="0">
+            <input type="hidden" name="gerador_is_combo_1" id="gerador_is_combo_1" value="0">
         </td>
         <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_quantidade_1" id="gerador_quantidade_1" required type="text" class="form-control"></td>
-        <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control" readonly></td>
+        <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control"></td>
         <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_total_1" id="gerador_total_1" required type="text" class="form-control" readonly></td>
         <td></td>
     </tr>
@@ -807,23 +847,8 @@ function gerador_set_valor_medicamento(linha){
     valor = valor.toFixed(2);
     document.getElementById("gerador_valor_" + linha).value = valor.replace('.',',');
 
-    let nomeMedicamento = selectedOption.textContent.trim().toLowerCase();
-
-    //se for procedimento ou começar com Pellet pode editar o valor
-    $.getJSON(
-        '{{ route("adm.medicamentos.buscar") }}',
-        {medicamento_id:select.value},
-        function(json){
-            if(json.unidade == "Procedimento" || nomeMedicamento.startsWith('pellet')){
-                document.getElementById("gerador_valor_" + linha).removeAttribute('readonly');
-                document.getElementById("gerador_valor_" + linha).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
-            }
-            else{
-                document.getElementById("gerador_valor_" + linha).setAttribute('readonly','readonly');
-                document.getElementById("gerador_valor_" + linha).removeAttribute('onkeypress');
-            }
-        }
-    );
+    document.getElementById("gerador_valor_" + linha).removeAttribute('readonly');
+    document.getElementById("gerador_valor_" + linha).setAttribute('onkeypress',"return(MascaraMoeda(this,'.',',',event))");
 
     gerador_calcula_total_medicamento(linha);
 }
@@ -836,6 +861,18 @@ function gerador_calcula_total_medicamento(linha){
             medicamento_id : medicamento_id
         },
         function(json){
+            let valorInput = document.getElementById("gerador_valor_" + linha);
+            let valorDigitado = valorInput.value;
+            if(valorDigitado){
+                valorDigitado = valorDigitado.replace(/\./g,'').replace(',','.');
+                valorDigitado = parseFloat(valorDigitado);
+                let valorTabela = parseFloat(json.vl_venda);
+                if(valorDigitado < valorTabela){
+                    alert('O valor do medicamento não pode ser menor do que o preço de tabela (R$ ' + json.vl_venda.replace('.', ',') + ').');
+                    valorInput.value = json.vl_venda.replace('.', ',');
+                }
+            }
+
             if(json.unidade == 'Ampola'){
                 quantidade = Math.ceil(parseFloat(document.getElementById("gerador_quantidade_" + linha).value));
             }
@@ -845,7 +882,7 @@ function gerador_calcula_total_medicamento(linha){
 
             valor = document.getElementById("gerador_valor_" + linha).value;
             if(quantidade && valor){
-                valor = valor.replace('.','');
+                valor = valor.replace(/\./g,'');
                 valor = parseFloat(valor.replace(',','.'));
                 total = quantidade * valor;
                 total = total.toFixed(2);
@@ -853,9 +890,6 @@ function gerador_calcula_total_medicamento(linha){
             }
         }
     );
-
-
-
 }
 
 function gerador_adicionar_medicamento(){
@@ -875,9 +909,10 @@ function gerador_adicionar_medicamento(){
             @endforeach
         </select>
         <input type="hidden" name="gerador_is_soro_${contador}" id="gerador_is_soro_${contador}" value="0">
+        <input type="hidden" name="gerador_is_combo_${contador}" id="gerador_is_combo_${contador}" value="0">
     </td>
     <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_quantidade_${contador}" id="gerador_quantidade_${contador}" required type="text" class="form-control"></td>
-    <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control" readonly></td>
+    <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control"></td>
     <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_total_${contador}" id="gerador_total_${contador}" required type="text" class="form-control" readonly></td>
     <td></td>
     `;
@@ -907,9 +942,10 @@ function gerador_adicionar_medicamentos_combo(medicamento){
                 @endforeach
             </select>
             <input type="hidden" name="gerador_is_soro_${contador}" id="gerador_is_soro_${contador}" value="0">
+            <input type="hidden" name="gerador_is_combo_${contador}" id="gerador_is_combo_${contador}" value="0">
         </td>
         <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_quantidade_${contador}" id="gerador_quantidade_${contador}" required type="text" class="form-control"></td>
-        <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control" readonly></td>
+        <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control"></td>
         <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_total_${contador}" id="gerador_total_${contador}" required type="text" class="form-control" readonly></td>
         <td></td>
         `;
@@ -923,6 +959,7 @@ function gerador_adicionar_medicamentos_combo(medicamento){
     document.getElementById('gerador_valor_' + contador).value = medicamento['valor'];
     document.getElementById('gerador_total_' + contador).value = medicamento['total'];
     document.getElementById('gerador_is_soro_' + contador).value = is_soro_global ? 1 : 0;
+    document.getElementById('gerador_is_combo_' + contador).value = 1;
 
 }
 
@@ -992,12 +1029,14 @@ function gera_procedimentos_gerador(){
                 valor = document.getElementById('gerador_valor_' + j).value;
                 total = document.getElementById('gerador_total_' + j).value;
                 is_soro = document.getElementById('gerador_is_soro_' + j).value;
+                is_combo = document.getElementById('gerador_is_combo_' + j).value;
 
                 document.getElementById('medicamento_id_' + f + "_" + m).value = medicamento_id;
                 document.getElementById('quantidade_' + f + "_" + m).value = quantidade;
                 document.getElementById('valor_' + f + "_" + m).value = valor;
                 document.getElementById('total_' + f + "_" + m).value = total;
                 document.getElementById('is_soro_' + f + "_" + m).value = is_soro;
+                document.getElementById('is_combo_' + f + "_" + m).value = is_combo;
 
                 calcula_total_medicamento(f,m);
             }
@@ -1095,6 +1134,7 @@ function adicionar_medicamentos_combo_semana(linha, medicamento_obj){
     if(document.getElementById('medicamento_id_' + linha + '_1').value == ""){
         contador = 1;
         document.getElementById('is_soro_' + linha + '_1').value = is_soro_global ? '1' : '0';
+        document.getElementById('is_combo_' + linha + '_1').value = '1';
     }
     else{
         contador = parseInt(document.getElementById('contador_medicamentos_' + linha).value);
@@ -1108,6 +1148,7 @@ function adicionar_medicamentos_combo_semana(linha, medicamento_obj){
         html = `
         <td>
             <input type="hidden" name="is_soro_${variavel}" id="is_soro_${variavel}" value="${is_soro_global ? '1' : '0'}">
+            <input type="hidden" name="is_combo_${variavel}" id="is_combo_${variavel}" value="1">
             <select onchange="set_valor_medicamento(${linha},${contador})" required name="medicamento_id_${variavel}" id="medicamento_id_${variavel}" class="form-control">
                 <option value="">Opções</option>
                 @foreach($medicamentos as $medicamento)
@@ -1157,5 +1198,244 @@ function adicionar_medicamentos_combo_semana(linha, medicamento_obj){
     calcula_total_procedimento(linha);
 }
 
+function valida_e_confirma_procedimento() {
+    let erros = [];
+    
+    // 1. Basic fields validation
+    const pacienteSelect = document.getElementById('paciente_id');
+    if (pacienteSelect && pacienteSelect.value === '') {
+        erros.push('Por favor, escolha o Paciente.');
+    }
+    
+    const aceiteCheckbox = document.getElementById('aceite_cliente_adicionar');
+    if (aceiteCheckbox && !aceiteCheckbox.checked) {
+        erros.push('Você deve confirmar que informou o paciente sobre o custo adicional destas medicações.');
+    }
+    
+    const medicoSelect = document.getElementById('medico');
+    if (medicoSelect && medicoSelect.value === '') {
+        erros.push('Por favor, escolha o Médico.');
+    }
+    
+    const agendamentoInput = document.getElementById('agendamento');
+    if (agendamentoInput && agendamentoInput.value.trim() === '') {
+        erros.push('Por favor, preencha a data ou descrição do Agendamento.');
+    }
+    
+    const tipoAtendimentoSelect = document.getElementById('tipo_atendimento');
+    if (tipoAtendimentoSelect && tipoAtendimentoSelect.value === '') {
+        erros.push('Por favor, selecione o Tipo de Atendimento.');
+    }
+    
+    // 2. Loop through weeks
+    const numProcedimentos = parseInt(document.getElementById('contador_procedimentos').value);
+    let temMedicamentoControlado = false;
+    let totalGeral = 0;
+    let resumoSemanasHtml = '';
+    let semanasValidas = 0;
+    
+    for (let i = 1; i <= numProcedimentos; i++) {
+        const card = document.getElementById('card_' + i);
+        if (!card) continue;
+        
+        semanasValidas++;
+        const dataInput = document.getElementById('data_aplicacao_' + i);
+        if (!dataInput || dataInput.value === '') {
+            erros.push(`Semana ${i}: Por favor, informe a Data Prevista.`);
+        } else {
+            // Validar se a data não é retroativa
+            const dataProcedimento = new Date(dataInput.value + 'T23:59:59');
+            const hoje = new Date();
+            hoje.setHours(23, 59, 59, 0);
+            if (dataProcedimento < hoje) {
+                erros.push(`Semana ${i}: A Data Prevista (${formata_data_pt(dataInput.value)}) está no passado. Não é permitido cadastrar procedimentos com data retroativa.`);
+            }
+        }
+        
+        const semAplicacaoCheckbox = document.querySelector(`input[name="semana_sem_aplicacao_${i}"]:checked`);
+        const semAplicacao = semAplicacaoCheckbox !== null;
+        
+        if (semAplicacao) {
+            resumoSemanasHtml += `
+            <tr>
+                <td><strong>Semana ${i}</strong></td>
+                <td>${dataInput ? formata_data_pt(dataInput.value) : ''}</td>
+                <td class="text-muted"><span class="mdi mdi-minus-circle-outline me-1"></span>Semana sem Aplicação</td>
+                <td class="text-end font-monospace">R$ 0,00</td>
+            </tr>
+            `;
+            continue;
+        }
+        
+        const tabelaMeds = document.getElementById('tabela_medicamentos_' + i);
+        const rows = tabelaMeds ? tabelaMeds.querySelectorAll('tr[id^="linha_medicamento_"]') : [];
+        
+        if (rows.length === 0) {
+            erros.push(`Semana ${i}: Adicione pelo menos um medicamento ou marque a opção "Semana sem Aplicação".`);
+            continue;
+        }
+        
+        let medListText = '';
+        let totalSemana = 0;
+        
+        for (let r = 0; r < rows.length; r++) {
+            const row = rows[r];
+            const rowIdParts = row.id.split('_');
+            const j = rowIdParts[rowIdParts.length - 1]; // get medication index
+            
+            const medSelect = document.getElementById(`medicamento_id_${i}_${j}`);
+            if (!medSelect || medSelect.value === '') {
+                erros.push(`Semana ${i}, Linha ${r + 1}: Escolha um medicamento.`);
+                continue;
+            }
+            
+            const medNome = medSelect.options[medSelect.selectedIndex].text;
+            const medId = medSelect.value;
+            const medInfo = medicamentosMap[medId];
+            
+            if (medInfo && (medInfo.unidade === 'Ampola' || medInfo.unidade === 'Miligrama')) {
+                temMedicamentoControlado = true;
+            }
+            
+            const qtdInput = document.getElementById(`quantidade_${i}_${j}`);
+            const qtdVal = qtdInput ? qtdInput.value.trim() : '';
+            const qtd = parseFloat(qtdVal.replace(',', '.'));
+            if (qtdVal === '' || isNaN(qtd) || qtd <= 0) {
+                erros.push(`Semana ${i}, Medicamento "${medNome}": Informe uma quantidade válida (maior que 0).`);
+            }
+            
+            const valorInput = document.getElementById(`valor_${i}_${j}`);
+            const valorVal = valorInput ? valorInput.value.trim() : '';
+            const valor = parseFloat(valorVal.replaceAll('.', '').replace(',', '.'));
+            
+            const isComboInput = document.getElementById(`is_combo_${i}_${j}`);
+            const isCombo = isComboInput ? isComboInput.value === '1' : false;
+
+            if (valorVal === '' || isNaN(valor) || valor <= 0) {
+                erros.push(`Semana ${i}, Medicamento "${medNome}": Informe um valor unitário válido.`);
+            } else if (medInfo && valor < medInfo.vl_venda && !isCombo) {
+                erros.push(`Semana ${i}, Medicamento "${medNome}": O valor não pode ser menor do que o preço de tabela (R$ ${medInfo.vl_venda.toFixed(2).replace('.', ',')}).`);
+            }
+            
+            const totalInput = document.getElementById(`total_${i}_${j}`);
+            const total = parseFloat(totalInput && totalInput.value ? totalInput.value.replaceAll('.', '').replace(',', '.') : 0);
+            
+            totalSemana += total;
+            medListText += `<div class="mb-1"><span class="mdi mdi-pill me-1 text-secondary"></span>${medNome} (Qtd: ${qtdInput ? qtdInput.value : qtd}) - R$ ${valorInput ? valorInput.value : valor}</div>`;
+        }
+        
+        totalGeral += totalSemana;
+        resumoSemanasHtml += `
+        <tr>
+            <td><strong>Semana ${i}</strong></td>
+            <td>${dataInput ? formata_data_pt(dataInput.value) : ''}</td>
+            <td>${medListText}</td>
+            <td class="text-end font-monospace fw-semibold">R$ ${totalSemana.toFixed(2).replace('.', ',')}</td>
+        </tr>
+        `;
+    }
+    
+    if (semanasValidas === 0) {
+        erros.push('Por favor, adicione pelo menos uma semana/procedimento.');
+    }
+    
+    // 3. File attachments check (required if temMedicamentoControlado is true)
+    const anexosInput = document.getElementById('anexos');
+    if (temMedicamentoControlado && (!anexosInput || anexosInput.files.length === 0)) {
+        erros.push('É obrigatório inserir o anexo (prescrição médica) pois o procedimento contém medicamentos em Ampola ou Miligrama.');
+    }
+    
+    // 4. Action
+    if (erros.length > 0) {
+        let listaHtml = '';
+        erros.forEach(err => {
+            listaHtml += `<li class="mb-2"><span class="mdi mdi-circle-small me-1 text-danger"></span>${err}</li>`;
+        });
+        document.getElementById('lista_erros_validacao').innerHTML = listaHtml;
+        const modalErros = new bootstrap.Modal(document.getElementById('modal_erros_validacao'));
+        modalErros.show();
+    } else {
+        document.getElementById('tabela_confirmacao_resumo').innerHTML = resumoSemanasHtml;
+        document.getElementById('confirmacao_total_geral').innerText = 'R$ ' + totalGeral.toFixed(2).replace('.', ',');
+        const modalConfirmacao = new bootstrap.Modal(document.getElementById('modal_confirmacao_procedimento'));
+        modalConfirmacao.show();
+        
+        document.getElementById('confirmar_e_salvar_botao').onclick = function() {
+            isConfirmed = true;
+            modalConfirmacao.hide();
+            document.getElementById('form_cadastro_procedimento').submit();
+        };
+    }
+}
+
+function formata_data_pt(dataStr) {
+    if (!dataStr) return '';
+    const parts = dataStr.split('-');
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
 </script>
+
+<!-- Modal de Erros de Validação -->
+<div class="modal fade" id="modal_erros_validacao" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger d-flex align-items-center">
+                    <span class="mdi mdi-alert-circle-outline mdi-24px me-2"></span>Inconsistências no Cadastro
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-semibold mb-3">Por favor, corrija os seguintes itens antes de salvar:</p>
+                <ul id="lista_erros_validacao" class="list-unstyled text-danger ps-2"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="modal_confirmacao_procedimento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary d-flex align-items-center">
+                    <span class="mdi mdi-checkbox-marked-circle-outline mdi-24px me-2"></span>Confirmar Cadastro de Procedimentos
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-semibold mb-3">Revise o resumo das semanas abaixo antes de confirmar o cadastro:</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Semana</th>
+                                <th>Data Prevista</th>
+                                <th>Medicamentos / Situação</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela_confirmacao_resumo">
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="3" class="text-end fw-bold">Total Geral:</th>
+                                <th id="confirmacao_total_geral" class="text-end fw-bold font-monospace">R$ 0,00</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Corrigir Dados</button>
+                <button type="button" id="confirmar_e_salvar_botao" class="btn btn-primary">Confirmar e Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection

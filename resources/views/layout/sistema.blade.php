@@ -292,6 +292,7 @@ else{
         <script src="{{ asset('/public/template/vendor/js/menu.js') }}"></script>
         <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
         <!-- endbuild -->
 
@@ -303,5 +304,12 @@ else{
         <script src="{{ asset('/public/template/js/main.js') }}"></script>
         <script src="{{ asset('/public/js/script.js') }}"></script>
         <script src="{{ asset('/public/js/bootstrap-combobox.js') }}"></script>
+        <!-- Faixa de Ambiente de Teste -->
+        @if(config('app.env') !== 'production')
+        <div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #de3545; color: white; text-align: center; padding: 8px 0; font-weight: bold; font-size: 14px; z-index: 999999; letter-spacing: 1px; box-shadow: 0 -2px 10px rgba(0,0,0,0.15); text-transform: uppercase; pointer-events: none;">
+            ⚠️ Ambiente de Teste ⚠️
+        </div>
+        @endif
+        @yield('scripts')
     </body>
 </html>

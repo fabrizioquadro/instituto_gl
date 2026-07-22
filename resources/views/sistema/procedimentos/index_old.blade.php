@@ -71,7 +71,9 @@ $template = "layout.".session()->get('layout');
                                 </button>
                                 <div class="dropdown-menu" data-popper-placement="bottom-end">
                                     <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.acessar_grupo', $procedimento->codigo) }}"><i class="mdi mdi-eye me-1"></i> Acessar</a>
+                                    @if(session()->has('administrador'))
                                     <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.excluir_grupo', $procedimento->codigo) }}"><i class="mdi mdi-delete me-1"></i> Excluir Grupo</a>
+                                    @endif
                                     <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.imprimir_paciente', $procedimento->codigo) }}" target="_blank"><i class="mdi mdi-cloud-print me-1"></i> Imprimir Prontuário</a>
                                     <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.imprimir_cadastro', $procedimento->codigo) }}"><i class="mdi mdi-folder-open me-1"></i> Imprimir Cadastro</a>
                                     @if($st_procedimento != "Finalizado" && $st_procedimento != "Cancelado")
