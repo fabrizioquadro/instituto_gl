@@ -71,6 +71,7 @@ class PacienteSistemaController extends Controller
     }
 
     public function atualizar_integracao(){
+        set_time_limit(0);
         try {
             $configuracao = Configuracao::where('id', '1')->first();
             $api = api();

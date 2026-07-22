@@ -296,7 +296,9 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                                         </button>
                                         <div class="dropdown-menu" data-popper-placement="bottom-end">
                                             <button onclick="editar_aplicacao({{ $aplicacao->id }})" class="dropdown-item waves-effect"><i class="mdi mdi-pencil me-1"></i> Editar</button>
+                                            @if(session()->has('administrador'))
                                             <button onclick="excluir_aplicacao({{ $aplicacao->id }})" class="dropdown-item waves-effect"><i class="mdi mdi-delete me-1"></i> Excluir</button>
+                                            @endif
                                         </div>
                                     </div>
                                 @endif
@@ -476,6 +478,16 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                <div class="alert alert-warning mb-2 mt-3">
+                    <h6 class="alert-heading fw-bold mb-1"><i class="mdi mdi-alert-circle-outline me-1"></i>Atenção: Adição de Valores!</h6>
+                    <span>A inclusão de novas medicações acarretará na geração de valores adicionais no financeiro. O paciente deverá realizar o pagamento para que as aplicações sejam liberadas na fila de atendimento.</span>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="aceite_cliente_modal" id="aceite_cliente_modal" required>
+                    <label class="form-check-label fw-bold text-danger" for="aceite_cliente_modal">
+                        Confirmo que informei o paciente sobre o custo adicional destas medicações.
+                    </label>
                 </div>
                 <span>* Esta ação será executada diretamente no banco de dados, não podendo ser desfeita.</span>
                 <div class="mb-3 mt-3">
@@ -737,6 +749,11 @@ function salvar_adicionar_aplicacao(){
     quantidade = document.getElementById('modal_adicionar_aplicacao_quantidade').value;
     valor = document.getElementById('modal_adicionar_aplicacao_valor').value;
     total = document.getElementById('modal_adicionar_aplicacao_total').value;
+    
+    if(!document.getElementById('aceite_cliente_modal').checked){
+        alert('Você deve confirmar que informou o paciente sobre o custo adicional destas medicações.');
+        return false;
+    }
 
     if(medicamento_id != "" && quantidade != "" && valor != "" && total != ""){
         $.getJSON(

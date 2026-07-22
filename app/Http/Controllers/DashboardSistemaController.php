@@ -285,6 +285,15 @@ class DashboardSistemaController extends Controller
         ->first();
 
         if($estoque){
+            // Verificar se o lote está vencido
+            if($estoque->dt_vencimento && $estoque->dt_vencimento < date('Y-m-d')){
+                $retorno['controle'] = 'vencido';
+                $retorno['lote'] = $estoque->lote;
+                $retorno['mensagem'] = 'Este medicamento está VENCIDO desde ' . dataDbForm($estoque->dt_vencimento) . '. Não é possível aplicar.';
+                echo json_encode($retorno);
+                return;
+            }
+
             //vamos verificar se este medicamento possui saldo
             $saldo = Estoque::get_saldo_med_cb_clinica($_GET['codigo'], $_GET['clinica_id']);
             if($_GET['quantidade'] > $saldo){
@@ -332,6 +341,21 @@ class DashboardSistemaController extends Controller
         }
 
         if($estoque){
+            // Verificar se o lote está vencido (buscar dt_vencimento no Estoque)
+            $estoque_original = Estoque::where('codigo_barras', $_GET['codigo'])
+            ->where('medicamento_id', $_GET['medicamento_id'])
+            ->where('clinica_id', $user->clinica_id)
+            ->where('lote', $estoque->lote)
+            ->first();
+
+            if($estoque_original && $estoque_original->dt_vencimento && $estoque_original->dt_vencimento < date('Y-m-d')){
+                $retorno['controle'] = 'vencido';
+                $retorno['lote'] = $estoque->lote;
+                $retorno['mensagem'] = 'Este medicamento está VENCIDO desde ' . dataDbForm($estoque_original->dt_vencimento) . '. Não é possível aplicar.';
+                echo json_encode($retorno);
+                return;
+            }
+
             if($estoque->qt_restante < $_GET['quantidade']){
                 $retorno['controle'] = 'false';
                 $retorno['mensagem'] = 'Este frasco não possui o quantidade necessária para esta aplicação, faço o cadastro atraves da aplicação com 2 códigos.';
@@ -362,7 +386,11 @@ class DashboardSistemaController extends Controller
         ->where('clinica_id', $user->clinica_id)
         ->first();
 
-        if ($estoque && $estoque->dt_vencimento && $estoque->dt_vencimento < date('Y-m-d')) {
+        if (!$estoque) {
+            return redirect()->back()->with('mensagem_erro', 'Estoque não encontrado para o medicamento ' . ($medicamento->nome ?? '') . ' com o lote e código de barras informados.');
+        }
+
+        if ($estoque->dt_vencimento && $estoque->dt_vencimento < date('Y-m-d')) {
             return redirect()->back()->with('mensagem_erro', 'O lote ' . $request->lote . ' do medicamento ' . $medicamento->nome . ' está vencido desde ' . dataDbForm($estoque->dt_vencimento) . ' e não pode ser aberto.');
         }
 
@@ -893,7 +921,7 @@ class DashboardSistemaController extends Controller
         $estoques = Estoque::get_lotes_medicamento_mg($_GET['medicamento_id'],$user->clinica_id);
         $html = "<option value=''>Opções</option>";
         foreach($estoques as $estoque){
-            $html .= "<option value='".$estoque['codigo_barras']."' data-quantidade='".$estoque['estoque']."'>".$estoque['codigo_barras']."</option>";
+            $html .= "<option value='".$estoque['codigo_barras']."' data-lote='".$estoque['lote']."' data-quantidade='".$estoque['estoque']."'>".$estoque['codigo_barras']." - Lote: ".$estoque['lote']." (Saldo: ".$estoque['estoque'].")</option>";
         }
         $retorno['codigos'] = $html;
         echo json_encode($retorno);

@@ -89,7 +89,7 @@ $template = "layout.".session()->get('layout');
                                     <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.acessar', $procedimento->id) }}"><i class="mdi mdi-eye me-1"></i> Acessar</a>
                                     @if($procedimento->situacao != "Cancelado")
                                         <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.editar', $procedimento->id) }}"><i class="mdi mdi-pencil me-1"></i> Editar</a>
-                                        @if($procedimento->situacao != "Aplicado" && $procedimento->situacao != "Aplicação Parcial" && $procedimento->situacao != "Pendente" && $procedimento->situacao != "Atendimento" && !$procedimento->aplicacaos->where('situacao', 'Aplicada')->count())
+                                        @if(session()->has('administrador') && $procedimento->situacao != "Aplicado" && $procedimento->situacao != "Aplicação Parcial" && $procedimento->situacao != "Pendente" && $procedimento->situacao != "Atendimento" && !$procedimento->aplicacaos->where('situacao', 'Aplicada')->count())
                                             <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.excluir', $procedimento->id) }}"><i class="mdi mdi-trash-can-outline me-1"></i> Excluir</a>
                                         @endif
                                     @endif

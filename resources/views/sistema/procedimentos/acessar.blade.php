@@ -796,6 +796,7 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                                 </button>
                                 <div class="dropdown-menu" data-popper-placement="bottom-end">
                                     <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.acessar', $proc->id) }}"><i class="mdi mdi-eye me-1"></i> Acessar</a>
+                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.procedimentos.imprimir_detalhes', $proc->id) }}" target="_blank"><i class="mdi mdi-printer me-1"></i> Imprimir Detalhes</a>
                                 </div>
                             </div>
                         </td>
@@ -816,7 +817,10 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
 </div>
 <div class="card card-border-shadow-info mb-4">
     <div class="card-body">
-        <h4 class="card-title">Histórico de Alterações</h4>
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">Histórico de Alterações</h4>
+            <a href="{{ route('sistema.procedimentos.imprimir_detalhes', $procedimento->id) }}" target="_blank" class="btn btn-sm btn-outline-info"><i class="mdi mdi-printer me-1"></i> Imprimir Detalhes</a>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover table-sm">
                 <thead>

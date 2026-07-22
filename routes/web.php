@@ -220,6 +220,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/transferencias/adicionar', [TransferenciaSistemaController::class, 'adicionar'])->name('sistema.transferencias.adicionar');
         Route::get('/transferencias/excluir/{id}', [TransferenciaSistemaController::class, 'excluir'])->name('sistema.transferencias.excluir');
         Route::get('/transferencias/visualizar/{id}', [TransferenciaSistemaController::class, 'visualizar'])->name('sistema.transferencias.visualizar');
+        Route::get('/transferencias/imprimir_etiquetas/{id}', [TransferenciaSistemaController::class, 'imprimir_etiquetas'])->name('sistema.transferencias.imprimir_etiquetas');
         Route::get('/transferencias/gerar_pdf/{id}', [TransferenciaSistemaController::class, 'gerar_pdf'])->name('sistema.transferencias.gerar_pdf');
         Route::post('/transferencias/insert', [TransferenciaSistemaController::class, 'insert'])->name('sistema.transferencias.insert');
         Route::post('/transferencias/delete', [TransferenciaSistemaController::class, 'delete'])->name('sistema.transferencias.delete');
@@ -252,6 +253,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/procedimentos/imprimir_paciente/{codigo}', [ProcedimentoSistemaController::class, 'imprimir_paciente'])->name('sistema.procedimentos.imprimir_paciente');
         Route::post('/procedimentos/update_google_flag', [ProcedimentoSistemaController::class, 'update_google_flag'])->name('sistema.procedimentos.update_google_flag');
         Route::get('/procedimentos/imprimir_cadastro/{codigo}', [ProcedimentoSistemaController::class, 'imprimir_cadastro'])->name('sistema.procedimentos.imprimir_cadastro');
+        Route::get('/procedimentos/imprimir_detalhes/{id}', [ProcedimentoSistemaController::class, 'imprimir_detalhes'])->name('sistema.procedimentos.imprimir_detalhes');
         Route::get('/procedimentos/get_aplicacao', [ProcedimentoSistemaController::class, 'get_aplicacao'])->name('sistema.procedimentos.get_aplicacao');
         Route::get('/procedimentos/update_aplicacao', [ProcedimentoSistemaController::class, 'update_aplicacao'])->name('sistema.procedimentos.update_aplicacao');
         Route::post('/procedimentos/update_flag', [ProcedimentoSistemaController::class, 'update_flag'])->name('sistema.procedimentos.update_flag');

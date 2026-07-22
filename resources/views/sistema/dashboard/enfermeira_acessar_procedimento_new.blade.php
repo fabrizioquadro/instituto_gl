@@ -423,6 +423,19 @@ function busca_lote_por_codigo(e, medicamento_id, clinica_id, quantidade){
                 medicamento_id : medicamento_id
             },
             function(json){
+                if(json.controle == 'vencido'){
+                    Swal.fire({
+                        icon: 'error',
+                        title: '🚨 MEDICAMENTO VENCIDO!',
+                        html: '<b style="font-size: 1.3rem; color: #dc3545;">' + json.mensagem + '</b>',
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    document.getElementById('lote_' + medicamento_id).value = '';
+                    document.getElementById('codigo_barras_' + medicamento_id).value = '';
+                    return;
+                }
                 if(json.controle == 'true'){
                     document.getElementById('lote_' + medicamento_id).value = json.lote;
                 }
@@ -439,6 +452,9 @@ function busca_lote_por_codigo(e, medicamento_id, clinica_id, quantidade){
             }
         );
     }
+    else{
+        document.getElementById('lote_' + medicamento_id).value = '';
+    }
 }
 
 function busca_lote_por_codigo_frasco(e, medicamento_id, clinica_id, quantidade){
@@ -452,6 +468,20 @@ function busca_lote_por_codigo_frasco(e, medicamento_id, clinica_id, quantidade)
             },
             function(json){
                 console.log(json);
+                if(json.controle == 'vencido'){
+                    Swal.fire({
+                        icon: 'error',
+                        title: '🚨 MEDICAMENTO VENCIDO!',
+                        html: '<b style="font-size: 1.3rem; color: #dc3545;">' + json.mensagem + '</b>',
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    document.getElementById('codigo_barras_' + medicamento_id).value = '';
+                    document.getElementById('lote_' + medicamento_id).value = '';
+                    document.getElementById('codigo_barras_' + medicamento_id).focus();
+                    return;
+                }
                 if(json.controle == 'true'){
                     document.getElementById('lote_' + medicamento_id).value = json.lote;
                 }
@@ -463,6 +493,9 @@ function busca_lote_por_codigo_frasco(e, medicamento_id, clinica_id, quantidade)
                 }
             }
         );
+    }
+    else{
+        document.getElementById('lote_' + medicamento_id).value = '';
     }
 }
 
@@ -480,6 +513,20 @@ function busca_lote_por_codigo_frasco_2codigo(numero){
             },
             function(json){
                 console.log(json);
+                if(json.controle == 'vencido'){
+                    Swal.fire({
+                        icon: 'error',
+                        title: '🚨 MEDICAMENTO VENCIDO!',
+                        html: '<b style="font-size: 1.3rem; color: #dc3545;">' + json.mensagem + '</b>',
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    document.getElementById('modal2Codigo_codigo_' + numero).value = '';
+                    document.getElementById('modal2Codigo_lote_' + numero).value = '';
+                    document.getElementById('modal2Codigo_codigo_' + numero).focus();
+                    return;
+                }
                 if(json.controle == 'true'){
                     document.getElementById('modal2Codigo_lote_' + numero).value = json.lote;
                 }
@@ -553,12 +600,13 @@ function controle_pendente(medicamento_id, elem){
                     </div>
                     <div class="col-md-4">
                         <div class="form-floating form-floating-outline">
-                            <select required id="modal_codigo_barras" name='codigo_barras' class="select2 form-select">
+                            <select required id="modal_codigo_barras" name='codigo_barras' onchange="modal_seleciona_lote(this)" class="select2 form-select">
                                 <option value="">Opções</option>
                             </select>
                             <label for="modal_codigo_barras">Codigo de Barra:</label>
                         </div>
                     </div>
+                    <input type="hidden" id="modal_lote" name="lote" value="">
                     <div class="col-md-4">
                         <button class="btn btn-secondary" type="submit" onclick="gera_procedimentos_gerador()">Abrir</button>
                     </div>
@@ -582,10 +630,18 @@ function modal_get_lotes_medicamento(e){
                 medicamento_id : e.value
             },
             function(json){
-                //console.log(json);
                 document.getElementById('modal_codigo_barras').innerHTML = json.codigos;
+                document.getElementById('modal_lote').value = '';
             }
         );
+    }
+}
+
+function modal_seleciona_lote(e){
+    if(e.value){
+        document.getElementById('modal_lote').value = e.options[e.selectedIndex].getAttribute('data-lote');
+    } else {
+        document.getElementById('modal_lote').value = '';
     }
 }
 
@@ -686,6 +742,16 @@ document.getElementById('modal2Codigo_salvar').addEventListener('click', ()=>{
         input_cod_2.setAttribute('name', 'cod_med_2_' + medicamento_id);
         input_cod_2.setAttribute('value', codigo2);
 
+        input_lote_1 = document.createElement('input');
+        input_lote_1.setAttribute('type', 'hidden');
+        input_lote_1.setAttribute('name', 'lote_med_1_' + medicamento_id);
+        input_lote_1.setAttribute('value', lote1);
+
+        input_lote_2 = document.createElement('input');
+        input_lote_2.setAttribute('type', 'hidden');
+        input_lote_2.setAttribute('name', 'lote_med_2_' + medicamento_id);
+        input_lote_2.setAttribute('value', lote2);
+
         descricao = "Codigo: " + codigo1 + ", Quantidade: " + quantidade1 + "<br>Codigo: " + codigo2 + ", Quantidade: " + quantidade2;
         descricao_lote = "Lote: " + lote1 + "<br>Lote: " + lote2;
 
@@ -696,6 +762,8 @@ document.getElementById('modal2Codigo_salvar').addEventListener('click', ()=>{
         document.getElementById('td_aplicacao_codigo_' + medicamento_id).appendChild(input_qtd_2);
         document.getElementById('td_aplicacao_codigo_' + medicamento_id).appendChild(input_cod_1);
         document.getElementById('td_aplicacao_codigo_' + medicamento_id).appendChild(input_cod_2);
+        document.getElementById('td_aplicacao_codigo_' + medicamento_id).appendChild(input_lote_1);
+        document.getElementById('td_aplicacao_codigo_' + medicamento_id).appendChild(input_lote_2);
 
 
         modal2Codigo.hide();
@@ -751,7 +819,6 @@ document.getElementById('modal2Codigo_salvar').addEventListener('click', ()=>{
     });
     @endif
 </script>
-@endsection
 
 @section('scripts')
 <script>
@@ -788,36 +855,81 @@ function marcarAvaliadoGoogle(pacienteId) {
 @empty($visualizar)
 $('#btn_registrar_aplicacao').on('click', function(e) {
     // Encontrar todos os medicamentos que serão aplicados (checkbox não marcado)
-    let medicamentosAplicados = [];
+    let medicamentos = [];
     $('input[name^="controle_pendente_"]').each(function() {
         if (!this.checked) {
+            let id = $(this).attr('data-medicamento-id');
             let nome = $(this).attr('data-nome-medicamento');
+            let quantidade = $(this).attr('data-quantidade');
+
+            let codigo, lote;
+            let cod1 = $('input[name="cod_med_1_' + id + '"]').val();
+            if (cod1) {
+                // 2 códigos: ler dos hidden inputs
+                let cod2 = $('input[name="cod_med_2_' + id + '"]').val();
+                let lote1 = $('input[name="lote_med_1_' + id + '"]').val();
+                let lote2 = $('input[name="lote_med_2_' + id + '"]').val();
+                let qtd1 = $('input[name="quant_med_1_' + id + '"]').val();
+                let qtd2 = $('input[name="quant_med_2_' + id + '"]').val();
+                codigo = cod1 + ' / ' + cod2;
+                lote = lote1 + ' / ' + lote2;
+                quantidade = qtd1 + ' + ' + qtd2;
+            } else {
+                codigo = $('#codigo_barras_' + id).val() || '-';
+                lote = $('#lote_' + id).val() || '-';
+            }
+
             if (nome) {
-                medicamentosAplicados.push(nome);
+                medicamentos.push({ nome, quantidade, codigo, lote });
             }
         }
     });
-
-    let texto = "";
-    if (medicamentosAplicados.length > 0) {
-        texto = "Você confirma a aplicação de " + medicamentosAplicados.join(', ') + " conforme prescrição médica?";
-    } else {
-        texto = "Nenhum medicamento selecionado para aplicação nesta semana. Você confirma as demais anotações/exames conforme prescrição médica?";
-    }
 
     if (!$('#formulario_aplicacao')[0].checkValidity()) {
         $('#formulario_aplicacao')[0].reportValidity();
         return;
     }
 
-    $('#texto_confirmacao_medicamentos').text(texto);
+    let htmlTabela = '';
+    if (medicamentos.length > 0) {
+        htmlTabela = `
+            <p style="font-size: 1.1rem; font-weight: 500; color: #2b303a;">Confirme os dados dos medicamentos abaixo:</p>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Medicamento</th>
+                            <th>Quantidade</th>
+                            <th>Código</th>
+                            <th>Lote</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${medicamentos.map(m => `
+                            <tr>
+                                <td>${m.nome}</td>
+                                <td>${m.quantidade}</td>
+                                <td>${m.codigo}</td>
+                                <td>${m.lote}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <hr>
+        `;
+    } else {
+        htmlTabela = `<p style="font-size: 1.1rem; font-weight: 500; color: #2b303a;">Nenhum medicamento selecionado para aplicação nesta semana. Você confirma as demais anotações/exames conforme prescrição médica?</p><hr>`;
+    }
+
+    $('#conteudo_confirmacao_medicamentos').html(htmlTabela);
 
     $('#modal_confirmar_aplicacao').appendTo('body');
     let modalConfirmar = new bootstrap.Modal(document.getElementById('modal_confirmar_aplicacao'));
     modalConfirmar.show();
 });
 
-$('#btn_confirmar_submissao').on('click', function() {
+$(document).on('click', '#btn_confirmar_submissao', function() {
     $('#formulario_aplicacao').submit();
 });
 @endempty
@@ -825,16 +937,14 @@ $('#btn_confirmar_submissao').on('click', function() {
 
 <!-- Modal de Confirmação da Aplicação -->
 <div class="modal fade" id="modal_confirmar_aplicacao" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Confirmar Aplicação</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p id="texto_confirmacao_medicamentos" style="font-size: 1.1rem; font-weight: 500; color: #2b303a;"></p>
-                
-                <hr>
+                <div id="conteudo_confirmacao_medicamentos"></div>
                 
                 <h6 class="mb-2"><i class="mdi mdi-paperclip me-1"></i> Receita / Anexos do Procedimento</h6>
                 <div class="list-group">
@@ -852,9 +962,10 @@ $('#btn_confirmar_submissao').on('click', function() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" id="btn_confirmar_submissao">Confirmar e Salvar</button>
+                <button type="submit" class="btn btn-success" id="btn_confirmar_submissao" form="formulario_aplicacao">Confirmar e Salvar</button>
             </div>
         </div>
     </div>
 </div>
+@endsection
 @endsection

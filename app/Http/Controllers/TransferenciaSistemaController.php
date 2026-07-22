@@ -191,4 +191,17 @@ class TransferenciaSistemaController extends Controller
         $retorno['lotes'] = $html;
         echo json_encode($retorno);
     }
+
+    public function imprimir_etiquetas($id){
+        $estoques = Estoque::where('transferencia_id', $id)
+        ->where('tipo', 'Entrada')
+        ->get();
+
+        $estoque_ids = [];
+        foreach($estoques as $estoque){
+            $estoque_ids[] = $estoque->id;
+        }
+
+        return redirect('/sistema/entradas/etiquetas_imprimir/' . json_encode($estoque_ids));
+    }
 }

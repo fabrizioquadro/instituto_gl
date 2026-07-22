@@ -55,6 +55,7 @@ $template = "layout.".session()->get('layout');
                                     @if($user->clinica_id == $transferencia->clinica_id)
                                         <a class="dropdown-item waves-effect" href="{{ route('sistema.transferencias.excluir', $transferencia->id) }}"><i class="mdi mdi-trash-can-outline me-1"></i> Excluir</a>
                                     @endif
+                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.transferencias.imprimir_etiquetas', $transferencia->id) }}" target="_blank"><i class="mdi mdi-printer me-1"></i> Imprimir Etiquetas</a>
                                     <a class="dropdown-item waves-effect" href="{{ route('sistema.transferencias.visualizar', $transferencia->id) }}"><i class="mdi mdi-eye me-1"></i> Visualizar</a>
                                 </div>
                             </div>

@@ -81,7 +81,8 @@ class ProcedimentoSistemaController extends Controller
                 <div class='dropdown-menu' data-popper-placement='bottom-end'>
                     <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.acessar_grupo', $procedimento->codigo)."'><i class='mdi mdi-eye me-1'></i> Acessar</a>
                     <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_paciente', $procedimento->codigo)."'><i class='mdi mdi-cloud-print me-1'></i> Imprimir Prontuário</a>
-                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_cadastro', $procedimento->codigo)."'><i class='mdi mdi-folder-open me-1'></i> Imprimir Cadastro</a>";
+                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_cadastro', $procedimento->codigo)."'><i class='mdi mdi-folder-open me-1'></i> Imprimir Cadastro</a>
+                    <a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.imprimir_detalhes', $procedimento->id)."' target='_blank'><i class='mdi mdi-printer me-1'></i> Imprimir Detalhes</a>";
                     if($st_procedimento != "Finalizado" && $st_procedimento != "Cancelado"){
                         $botao .= "<a class='dropdown-item waves-effect' href='".route('sistema.procedimentos.cancelar', $procedimento->codigo)."'><i class='mdi mdi-cancel me-1'></i> Cancelar</a>";
                     }
@@ -213,6 +214,11 @@ class ProcedimentoSistemaController extends Controller
                 //vamos cadastrar o procedimento
                 $var = 'data_aplicacao_'.$i;
                 $data_aplicacao = $request->$var;
+
+                // Validar se a data não é retroativa
+                if($data_aplicacao && $data_aplicacao < date('Y-m-d')){
+                    throw new \Exception("Semana {$i}: A Data Prevista ({$data_aplicacao}) está no passado. Não é permitido cadastrar procedimentos com data retroativa.");
+                }
                 if($data_aplicacao){
                     $nr_procedimento++;
 
@@ -308,9 +314,12 @@ class ProcedimentoSistemaController extends Controller
                                 $var = "total_".$i."_".$j;
                                 $total = $request->$var;
 
+                                $var_combo = "is_combo_".$i."_".$j;
+                                $is_combo = $request->$var_combo ?? 0;
+                                
                                 $medicamento = Medicamento::where('id', $medicamento_id)->first();
                                 $valor_inserido = valorFormDb($valor);
-                                if ($valor_inserido < $medicamento->vl_venda) {
+                                if ($valor_inserido < $medicamento->vl_venda && !$is_combo) {
                                     throw new \Exception('O valor do medicamento ' . $medicamento->nome . ' não pode ser menor do que o preço de tabela (R$ ' . number_format($medicamento->vl_venda, 2, ',', '.') . ').');
                                 }
 
@@ -444,6 +453,13 @@ class ProcedimentoSistemaController extends Controller
         $observacoes = $procedimento->observacoes_procedimento()->orderBy('created_at','desc')->get();
 
         return view('sistema/procedimentos/acessar', compact('procedimento','retorno','procedimentos_vinculados','controle_aviso_coleta','financeiro','logs', 'observacoes'));
+    }
+
+    public function imprimir_detalhes($id){
+        $procedimento = Procedimento::where('id', $id)->first();
+        $logs = $procedimento->logs()->orderBy('created_at','desc')->get();
+
+        return view('sistema/procedimentos/imprimir_detalhes', compact('procedimento', 'logs'));
     }
 
     public function salvar_observacao(Request $request){
@@ -996,6 +1012,7 @@ class ProcedimentoSistemaController extends Controller
                         AplicacaoLote::where('aplicacao_id', $aplicacao->id)->delete();
 
                         Estoque::where('origem', 'Procedimento')
+                        ->where('tipo', 'Saida')
                         ->where('procedimento_id', $procedimento->id)
                         ->where('medicamento_id', $aplicacao->medicamento->id)
                         ->delete();

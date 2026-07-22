@@ -177,6 +177,9 @@ $template = "layout.".session()->get('layout');
                                 </label>
                             </div>
                         </div>
+
+
+
                         <div class="table-responsive mt-3">
                             <table class="table table-sm">
                                 <thead class="table-light">
@@ -192,6 +195,7 @@ $template = "layout.".session()->get('layout');
                                     <tr id="linha_medicamento_1_1">
                                         <td>
                                             <input type="hidden" name="is_soro_1_1" id="is_soro_1_1" value="0">
+                                            <input type="hidden" name="is_combo_1_1" id="is_combo_1_1" value="0">
                                             <select onchange="set_valor_medicamento(1,1)" required name="medicamento_id_1_1" id="medicamento_id_1_1" class="form-control">
                                                 <option value="">Opções</option>
                                                 @foreach($medicamentos as $medicamento)
@@ -262,6 +266,22 @@ $template = "layout.".session()->get('layout');
                     </div>
                 </div>
             </div>
+            @if(isset($codigo))
+            <div class="row mt-4 mb-3">
+                <div class="col-md-12">
+                    <div class="alert alert-warning mb-2">
+                        <h6 class="alert-heading fw-bold mb-1"><i class="mdi mdi-alert-circle-outline me-1"></i>Atenção: Adição de Valores!</h6>
+                        <span>A inclusão de novas medicações ou semanas acarretará na geração de valores adicionais no financeiro. O paciente deverá realizar o pagamento para que as aplicações sejam liberadas na fila de atendimento.</span>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="aceite_cliente" id="aceite_cliente_adicionar" required>
+                        <label class="form-check-label fw-bold text-danger" for="aceite_cliente_adicionar">
+                            Confirmo que informei o paciente sobre o custo adicional destas medicações.
+                        </label>
+                    </div>
+                </div>
+            </div>
+            @endif
             <div class="row mt-2 gy-4 align-items-end">
                 <div class="col-md-6 form-group">
                     <button type="submit" class="btn btn-primary me-2">Salvar</button>
@@ -567,6 +587,7 @@ function adicionar_medicamento(linha){
     html = `
     <td>
         <input type="hidden" name="is_soro_${variavel}" id="is_soro_${variavel}" value="0">
+        <input type="hidden" name="is_combo_${variavel}" id="is_combo_${variavel}" value="0">
         <select onchange="set_valor_medicamento(${linha},${contador})" required name="medicamento_id_${variavel}" id="medicamento_id_${variavel}" class="form-control">
             <option value="">Opções</option>
             @foreach($medicamentos as $medicamento)
@@ -658,6 +679,7 @@ function adicionar_procedimento(){
                     <tr id="linha_medicamento_${contador}_1">
                         <td>
                             <input type="hidden" name="is_soro_${contador}_1" id="is_soro_${contador}_1" value="0">
+                            <input type="hidden" name="is_combo_${contador}_1" id="is_combo_${contador}_1" value="0">
                             <select onchange="set_valor_medicamento(${contador},1)" required name="medicamento_id_${contador}_1" id="medicamento_id_${contador}_1" class="form-control">
                                 <option value="">Opções</option>
                                 @foreach($medicamentos as $medicamento)
@@ -806,6 +828,7 @@ document.getElementById('botao_gerador').addEventListener('click', ()=>{
                 @endforeach
             </select>
             <input type="hidden" name="gerador_is_soro_1" id="gerador_is_soro_1" value="0">
+            <input type="hidden" name="gerador_is_combo_1" id="gerador_is_combo_1" value="0">
         </td>
         <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_quantidade_1" id="gerador_quantidade_1" required type="text" class="form-control"></td>
         <td><input onblur="gerador_calcula_total_medicamento(1)" name="gerador_valor_1" id="gerador_valor_1" required type="text" class="form-control"></td>
@@ -886,6 +909,7 @@ function gerador_adicionar_medicamento(){
             @endforeach
         </select>
         <input type="hidden" name="gerador_is_soro_${contador}" id="gerador_is_soro_${contador}" value="0">
+        <input type="hidden" name="gerador_is_combo_${contador}" id="gerador_is_combo_${contador}" value="0">
     </td>
     <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_quantidade_${contador}" id="gerador_quantidade_${contador}" required type="text" class="form-control"></td>
     <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control"></td>
@@ -918,6 +942,7 @@ function gerador_adicionar_medicamentos_combo(medicamento){
                 @endforeach
             </select>
             <input type="hidden" name="gerador_is_soro_${contador}" id="gerador_is_soro_${contador}" value="0">
+            <input type="hidden" name="gerador_is_combo_${contador}" id="gerador_is_combo_${contador}" value="0">
         </td>
         <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_quantidade_${contador}" id="gerador_quantidade_${contador}" required type="text" class="form-control"></td>
         <td><input onblur="gerador_calcula_total_medicamento(${contador})" name="gerador_valor_${contador}" id="gerador_valor_${contador}" required type="text" class="form-control"></td>
@@ -934,6 +959,7 @@ function gerador_adicionar_medicamentos_combo(medicamento){
     document.getElementById('gerador_valor_' + contador).value = medicamento['valor'];
     document.getElementById('gerador_total_' + contador).value = medicamento['total'];
     document.getElementById('gerador_is_soro_' + contador).value = is_soro_global ? 1 : 0;
+    document.getElementById('gerador_is_combo_' + contador).value = 1;
 
 }
 
@@ -1003,12 +1029,14 @@ function gera_procedimentos_gerador(){
                 valor = document.getElementById('gerador_valor_' + j).value;
                 total = document.getElementById('gerador_total_' + j).value;
                 is_soro = document.getElementById('gerador_is_soro_' + j).value;
+                is_combo = document.getElementById('gerador_is_combo_' + j).value;
 
                 document.getElementById('medicamento_id_' + f + "_" + m).value = medicamento_id;
                 document.getElementById('quantidade_' + f + "_" + m).value = quantidade;
                 document.getElementById('valor_' + f + "_" + m).value = valor;
                 document.getElementById('total_' + f + "_" + m).value = total;
                 document.getElementById('is_soro_' + f + "_" + m).value = is_soro;
+                document.getElementById('is_combo_' + f + "_" + m).value = is_combo;
 
                 calcula_total_medicamento(f,m);
             }
@@ -1106,6 +1134,7 @@ function adicionar_medicamentos_combo_semana(linha, medicamento_obj){
     if(document.getElementById('medicamento_id_' + linha + '_1').value == ""){
         contador = 1;
         document.getElementById('is_soro_' + linha + '_1').value = is_soro_global ? '1' : '0';
+        document.getElementById('is_combo_' + linha + '_1').value = '1';
     }
     else{
         contador = parseInt(document.getElementById('contador_medicamentos_' + linha).value);
@@ -1119,6 +1148,7 @@ function adicionar_medicamentos_combo_semana(linha, medicamento_obj){
         html = `
         <td>
             <input type="hidden" name="is_soro_${variavel}" id="is_soro_${variavel}" value="${is_soro_global ? '1' : '0'}">
+            <input type="hidden" name="is_combo_${variavel}" id="is_combo_${variavel}" value="1">
             <select onchange="set_valor_medicamento(${linha},${contador})" required name="medicamento_id_${variavel}" id="medicamento_id_${variavel}" class="form-control">
                 <option value="">Opções</option>
                 @foreach($medicamentos as $medicamento)
@@ -1177,6 +1207,11 @@ function valida_e_confirma_procedimento() {
         erros.push('Por favor, escolha o Paciente.');
     }
     
+    const aceiteCheckbox = document.getElementById('aceite_cliente_adicionar');
+    if (aceiteCheckbox && !aceiteCheckbox.checked) {
+        erros.push('Você deve confirmar que informou o paciente sobre o custo adicional destas medicações.');
+    }
+    
     const medicoSelect = document.getElementById('medico');
     if (medicoSelect && medicoSelect.value === '') {
         erros.push('Por favor, escolha o Médico.');
@@ -1207,6 +1242,14 @@ function valida_e_confirma_procedimento() {
         const dataInput = document.getElementById('data_aplicacao_' + i);
         if (!dataInput || dataInput.value === '') {
             erros.push(`Semana ${i}: Por favor, informe a Data Prevista.`);
+        } else {
+            // Validar se a data não é retroativa
+            const dataProcedimento = new Date(dataInput.value + 'T23:59:59');
+            const hoje = new Date();
+            hoje.setHours(23, 59, 59, 0);
+            if (dataProcedimento < hoje) {
+                erros.push(`Semana ${i}: A Data Prevista (${formata_data_pt(dataInput.value)}) está no passado. Não é permitido cadastrar procedimentos com data retroativa.`);
+            }
         }
         
         const semAplicacaoCheckbox = document.querySelector(`input[name="semana_sem_aplicacao_${i}"]:checked`);
@@ -1264,8 +1307,14 @@ function valida_e_confirma_procedimento() {
             const valorInput = document.getElementById(`valor_${i}_${j}`);
             const valorVal = valorInput ? valorInput.value.trim() : '';
             const valor = parseFloat(valorVal.replaceAll('.', '').replace(',', '.'));
+            
+            const isComboInput = document.getElementById(`is_combo_${i}_${j}`);
+            const isCombo = isComboInput ? isComboInput.value === '1' : false;
+
             if (valorVal === '' || isNaN(valor) || valor <= 0) {
                 erros.push(`Semana ${i}, Medicamento "${medNome}": Informe um valor unitário válido.`);
+            } else if (medInfo && valor < medInfo.vl_venda && !isCombo) {
+                erros.push(`Semana ${i}, Medicamento "${medNome}": O valor não pode ser menor do que o preço de tabela (R$ ${medInfo.vl_venda.toFixed(2).replace('.', ',')}).`);
             }
             
             const totalInput = document.getElementById(`total_${i}_${j}`);

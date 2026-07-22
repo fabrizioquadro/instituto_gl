@@ -60,22 +60,27 @@ class ApiFlegowController extends Controller
     }
 
     public function get_pacientes($ultima_atualizacao = null){
-        $parametros = [
-            'limit' => '5000',
-        ];
         $array_retorno = array();
-        while(strtotime(date('Y-m-d')) >= strtotime($ultima_atualizacao)){
-            $parametros['alterado_em'] = $ultima_atualizacao;
+        $offset = 0;
+        $limit = 5000;
+
+        while(true){
+            $parametros = [
+                'limit' => $limit,
+                'offset' => $offset,
+            ];
+            if($ultima_atualizacao){
+                $parametros['alterado_em'] = $ultima_atualizacao;
+            }
 
             $apiUrl = "https://api.feegow.com/v1/api/patient/list?".http_build_query($parametros);
             $ch = curl_init();
 
             curl_setopt($ch, CURLOPT_URL, $apiUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-            // Define explicitamente o método GET (opcional)
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-
+            curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 "x-access-token: $this->token",
                 "Content-Type: application/json"
@@ -85,10 +90,15 @@ class ApiFlegowController extends Controller
 
             if (curl_errno($ch)) {
                 echo 'Erro na requisição: ' . curl_error($ch);
+                break;
             } else {
                 $retorno = json_decode($response, true);
             }
             curl_close($ch);
+
+            if(!isset($retorno['content']) || empty($retorno['content'])){
+                break;
+            }
 
             foreach($retorno['content'] as $paciente){
                 $array = array();
@@ -98,7 +108,7 @@ class ApiFlegowController extends Controller
                 $array_retorno[] = $array;
             }
 
-            $ultima_atualizacao = date('Y-m-d', strtotime("+1 days",strtotime($ultima_atualizacao)));
+            $offset += $limit;
         }
 
         return $array_retorno;
@@ -116,10 +126,9 @@ class ApiFlegowController extends Controller
 
         curl_setopt($ch, CURLOPT_URL, $apiUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        // Define explicitamente o método GET (opcional)
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-
+        curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "x-access-token: $this->token",
             "Content-Type: application/json"
@@ -193,10 +202,9 @@ class ApiFlegowController extends Controller
 
         curl_setopt($ch, CURLOPT_URL, $apiUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        // Define explicitamente o método GET (opcional)
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "x-access-token: $this->token",
             "Content-Type: application/json"
