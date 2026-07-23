@@ -1311,7 +1311,7 @@ function valida_e_confirma_procedimento() {
             const isComboInput = document.getElementById(`is_combo_${i}_${j}`);
             const isCombo = isComboInput ? isComboInput.value === '1' : false;
 
-            if (valorVal === '' || isNaN(valor) || valor <= 0) {
+            if (valorVal === '' || isNaN(valor) || valor < 0) {
                 erros.push(`Semana ${i}, Medicamento "${medNome}": Informe um valor unitário válido.`);
             } else if (medInfo && valor < medInfo.vl_venda && !isCombo) {
                 erros.push(`Semana ${i}, Medicamento "${medNome}": O valor não pode ser menor do que o preço de tabela (R$ ${medInfo.vl_venda.toFixed(2).replace('.', ',')}).`);
