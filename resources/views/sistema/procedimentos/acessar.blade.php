@@ -631,6 +631,9 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                         <th>Lote Aplicação</th>
                         <th>C.Barras</th>
                         <th>Enfermagem</th>
+                        @if(session()->has('administrador'))
+                            <th style="width:50px;">Ações</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -694,6 +697,137 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
         </div>
     </div>
 </div>
+
+@if(session()->has('administrador'))
+{{-- Modal de edição de aplicação --}}
+<div class="modal fade" id="modal_editar_aplicacao" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form id="form_editar_aplicacao" class="modal-content" method="post">
+            @csrf
+            <input type="hidden" id="edit_aplicacao_id" name="aplicacao_id">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Aplicação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <select required id="edit_situacao" name="situacao" class="form-select" onchange="controleCamposEdicao()">
+                                <option value="Aberta">Aberta</option>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Aplicada">Aplicada</option>
+                            </select>
+                            <label for="edit_situacao">Situação</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input type="datetime-local" id="edit_dt_hr_chegada" name="dt_hr_chegada" class="form-control">
+                            <label for="edit_dt_hr_chegada">Dt/Hora Chegada</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input type="datetime-local" id="edit_dt_hr_atendimento" name="dt_hr_atendimento" class="form-control">
+                            <label for="edit_dt_hr_atendimento">Dt/Hora Atendimento</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input type="date" id="edit_data_aplicacao" name="data_aplicacao" class="form-control">
+                            <label for="edit_data_aplicacao">Data Aplicação</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" id="edit_lote" name="lote" class="form-control" placeholder="Lote">
+                            <label for="edit_lote">Lote</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" id="edit_codigo_barras" name="codigo_barras" class="form-control" placeholder="Código de Barras">
+                            <label for="edit_codigo_barras">Código de Barras</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <select id="edit_enfermeira_id" name="enfermeira_id" class="form-select">
+                                <option value="">Selecione</option>
+                                @php
+                                $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('st_usuario', 'Ativo')->get();
+                                @endphp
+                                @foreach($enfermeiras as $enf)
+                                    <option value="{{ $enf->id }}">{{ $enf->nome }}</option>
+                                @endforeach
+                            </select>
+                            <label for="edit_enfermeira_id">Enfermagem</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" id="edit_obs" name="obs" class="form-control" placeholder="Observação">
+                            <label for="edit_obs">Observação</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalEdicao(aplicacaoId) {
+    // Buscar dados da aplicação via AJAX
+    fetch('{{ url("sistema/procedimentos/get_aplicacao_dados") }}/' + aplicacaoId)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('edit_aplicacao_id').value = data.id;
+            document.getElementById('edit_situacao').value = data.situacao;
+            document.getElementById('edit_dt_hr_chegada').value = data.dt_hr_chegada || '';
+            document.getElementById('edit_dt_hr_atendimento').value = data.dt_hr_atendimento || '';
+            document.getElementById('edit_data_aplicacao').value = data.data_aplicacao || '';
+            document.getElementById('edit_lote').value = data.lote || '';
+            document.getElementById('edit_codigo_barras').value = data.codigo_barras || '';
+            document.getElementById('edit_enfermeira_id').value = data.enfermeira_id || '';
+            document.getElementById('edit_obs').value = data.obs || '';
+
+            document.getElementById('form_editar_aplicacao').action = '{{ route("sistema.procedimentos.atualizar_aplicacao") }}';
+
+            controleCamposEdicao();
+
+            let modal = new bootstrap.Modal(document.getElementById('modal_editar_aplicacao'));
+            modal.show();
+        });
+}
+
+function controleCamposEdicao() {
+    let situacao = document.getElementById('edit_situacao').value;
+    let campos = ['edit_dt_hr_chegada', 'edit_dt_hr_atendimento', 'edit_data_aplicacao', 'edit_lote', 'edit_codigo_barras', 'edit_enfermeira_id', 'edit_obs'];
+    let isAplicada = (situacao === 'Aplicada');
+
+    campos.forEach(id => {
+        let el = document.getElementById(id);
+        if (isAplicada) {
+            el.removeAttribute('disabled');
+            if (id !== 'edit_enfermeira_id') {
+                el.setAttribute('required', 'required');
+            }
+        } else {
+            el.setAttribute('disabled', 'disabled');
+            el.removeAttribute('required');
+            el.value = '';
+        }
+    });
+}
+</script>
+@endif
+
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between">

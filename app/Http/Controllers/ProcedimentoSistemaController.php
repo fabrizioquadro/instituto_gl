@@ -2137,4 +2137,140 @@ class ProcedimentoSistemaController extends Controller
             $procedimento->save();
         }
     }
+
+    public function getAplicacaoDados($id)
+    {
+        $aplicacao = Aplicacao::with('lote', 'enfermeira')->where('id', $id)->first();
+
+        if (!$aplicacao) {
+            return response()->json(['error' => 'Aplicação não encontrada'], 404);
+        }
+
+        $data_aplicacao = null;
+        $lote = null;
+        $codigo_barras = null;
+
+        $loteObj = $aplicacao->lote;
+        if ($loteObj) {
+            $lote = $loteObj->lote;
+            $codigo_barras = $loteObj->codigo_barras;
+            $data_aplicacao = $loteObj->created_at ? explode(' ', $loteObj->created_at)[0] : null;
+        }
+
+        // Formatar datetime-local (formato HTML)
+        $dt_hr_chegada = null;
+        $dt_hr_atendimento = null;
+        if ($aplicacao->dt_hr_chegada) {
+            $dt_hr_chegada = date('Y-m-d\TH:i', strtotime($aplicacao->dt_hr_chegada));
+        }
+        if ($aplicacao->dt_hr_atendimento) {
+            $dt_hr_atendimento = date('Y-m-d\TH:i', strtotime($aplicacao->dt_hr_atendimento));
+        }
+
+        return response()->json([
+            'id' => $aplicacao->id,
+            'situacao' => $aplicacao->situacao,
+            'dt_hr_chegada' => $dt_hr_chegada,
+            'dt_hr_atendimento' => $dt_hr_atendimento,
+            'data_aplicacao' => $data_aplicacao,
+            'lote' => $lote,
+            'codigo_barras' => $codigo_barras,
+            'enfermeira_id' => $aplicacao->user_id_aplicacao,
+            'obs' => $aplicacao->obs,
+        ]);
+    }
+
+    public function atualizarAplicacao(Request $request)
+    {
+        try {
+            $aplicacao = Aplicacao::where('id', $request->aplicacao_id)->first();
+
+            if (!$aplicacao) {
+                return redirect()->back()->with('mensagem_erro', 'Aplicação não encontrada');
+            }
+
+            $situacao = $request->situacao;
+            $aplicacao->situacao = $situacao;
+
+            if ($situacao == 'Aplicada') {
+                $aplicacao->obs = $request->obs;
+                $aplicacao->user_id_aplicacao = $request->enfermeira_id ?: null;
+                $aplicacao->dt_hr_chegada = $request->dt_hr_chegada ? date('Y-m-d H:i:s', strtotime($request->dt_hr_chegada)) : null;
+                $aplicacao->dt_hr_atendimento = $request->dt_hr_atendimento ? date('Y-m-d H:i:s', strtotime($request->dt_hr_atendimento)) : null;
+
+                // Atualiza ou cria lote (usando DB raw para controlar created_at)
+                $dataAplicacao = $request->data_aplicacao ? date('Y-m-d', strtotime($request->data_aplicacao)) : date('Y-m-d');
+                $loteObj = $aplicacao->lote;
+                if ($loteObj) {
+                    \DB::table('aplicacao_lotes')->where('id', $loteObj->id)->update([
+                        'lote' => $request->lote,
+                        'codigo_barras' => $request->codigo_barras,
+                        'created_at' => $dataAplicacao,
+                        'updated_at' => $dataAplicacao,
+                    ]);
+                } elseif ($request->lote || $request->codigo_barras) {
+                    \DB::table('aplicacao_lotes')->insert([
+                        'aplicacao_id' => $aplicacao->id,
+                        'quantidade' => $aplicacao->quantidade,
+                        'lote' => $request->lote,
+                        'codigo_barras' => $request->codigo_barras,
+                        'created_at' => $dataAplicacao,
+                        'updated_at' => $dataAplicacao,
+                    ]);
+                }
+
+                $aplicacao->save();
+
+                // Atualiza situação e data do procedimento
+                $procedimento = Procedimento::where('id', $aplicacao->procedimento_id)->first();
+                if ($procedimento) {
+                    $procedimento->data_aplicacao = $dataAplicacao;
+
+                    $temAberta = Aplicacao::where('procedimento_id', $procedimento->id)
+                        ->whereIn('situacao', ['Aberta', 'Pendente'])
+                        ->count();
+
+                    if ($temAberta == 0) {
+                        $procedimento->situacao = 'Aplicado';
+                    } elseif ($procedimento->situacao == 'Agendado') {
+                        $procedimento->situacao = 'Aplicação Parcial';
+                    }
+                    $procedimento->save();
+                }
+            } else {
+                // Aberta ou Pendente - limpa dados
+                $aplicacao->obs = null;
+                $aplicacao->user_id_aplicacao = null;
+                $aplicacao->dt_hr_chegada = null;
+                $aplicacao->dt_hr_atendimento = null;
+                $aplicacao->save();
+
+                // Remove lotes
+                AplicacaoLote::where('aplicacao_id', $aplicacao->id)->delete();
+
+                // Reavalia procedimento
+                $procedimento = Procedimento::where('id', $aplicacao->procedimento_id)->first();
+                if ($procedimento) {
+                    $temAplicada = Aplicacao::where('procedimento_id', $procedimento->id)
+                        ->where('situacao', 'Aplicada')
+                        ->count();
+
+                    if ($temAplicada == 0) {
+                        $procedimento->situacao = 'Agendado';
+                        $procedimento->data_aplicacao = null;
+                        $procedimento->dt_hr_finalizacao = null;
+                        $procedimento->user_id_aplicacao = null;
+                        $procedimento->clinica_id_aplicacao = null;
+                    } else {
+                        $procedimento->situacao = 'Aplicação Parcial';
+                    }
+                    $procedimento->save();
+                }
+            }
+
+            return redirect()->back()->with('mensagem', 'Aplicação atualizada com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('mensagem_erro', 'Erro ao atualizar aplicação: ' . $e->getMessage());
+        }
+    }
 }

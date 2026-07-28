@@ -256,6 +256,8 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/procedimentos/imprimir_detalhes/{id}', [ProcedimentoSistemaController::class, 'imprimir_detalhes'])->name('sistema.procedimentos.imprimir_detalhes');
         Route::get('/procedimentos/get_aplicacao', [ProcedimentoSistemaController::class, 'get_aplicacao'])->name('sistema.procedimentos.get_aplicacao');
         Route::get('/procedimentos/update_aplicacao', [ProcedimentoSistemaController::class, 'update_aplicacao'])->name('sistema.procedimentos.update_aplicacao');
+        Route::get('/procedimentos/get_aplicacao_dados/{id}', [ProcedimentoSistemaController::class, 'getAplicacaoDados'])->name('sistema.procedimentos.get_aplicacao_dados');
+        Route::post('/procedimentos/atualizar_aplicacao', [ProcedimentoSistemaController::class, 'atualizarAplicacao'])->name('sistema.procedimentos.atualizar_aplicacao');
         Route::post('/procedimentos/update_flag', [ProcedimentoSistemaController::class, 'update_flag'])->name('sistema.procedimentos.update_flag');
         Route::post('/procedimentos/update_data', [ProcedimentoSistemaController::class, 'update_data'])->name('sistema.procedimentos.update_data');
         Route::get('/procedimentos/delete_aplicacao', [ProcedimentoSistemaController::class, 'delete_aplicacao'])->name('sistema.procedimentos.delete_aplicacao');
@@ -283,6 +285,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/financeiros/get_procedimentos_abertos', [FinanceiroSistemaController::class, 'get_procedimentos_abertos'])->name('sistema.financeiros.get_procedimentos_abertos');
         Route::get('/financeiros/adicionar_pagamento/{id}', [FinanceiroSistemaController::class, 'adicionar_pagamento'])->name('sistema.financeiros.adicionar_pagamento');
         Route::get('/financeiros/delete_pagamento/{id?}', [FinanceiroSistemaController::class, 'delete_pagamento'])->name('sistema.financeiros.delete_pagamento');
+        Route::get('/financeiros/delete_anexo_pagamento/{id}', [FinanceiroSistemaController::class, 'delete_anexo_pagamento'])->name('sistema.financeiros.delete_anexo_pagamento');
         Route::post('/financeiros/insert_pagamento', [FinanceiroSistemaController::class, 'insert_pagamento'])->name('sistema.financeiros.insert_pagamento');
         Route::get('/financeiros/editar_pagamento/{id}', [FinanceiroSistemaController::class, 'editar_pagamento'])->name('sistema.financeiros.editar_pagamento');
         Route::post('/financeiros/update_pagamento', [FinanceiroSistemaController::class, 'update_pagamento'])->name('sistema.financeiros.update_pagamento');
