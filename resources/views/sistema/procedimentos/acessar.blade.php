@@ -632,7 +632,11 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
                         <th>C.Barras</th>
                         <th>Enfermagem</th>
                         @if(session()->has('administrador'))
-                            <th style="width:50px;">Ações</th>
+                            <th style="width:50px;" class="text-center">
+                                <button type="button" class="btn btn-sm p-0 border-0 bg-transparent" onclick="abrirModalEdicaoGeral()" title="Editar Todas as Aplicações">
+                                    <span class="tf-icons mdi mdi-cog" style="font-size:18px;"></span>
+                                </button>
+                            </th>
                         @endif
                     </tr>
                 </thead>
@@ -699,132 +703,130 @@ $arquivos = App\Models\ProcedimentoAnexo::whereIn('procedimento_id', $in)->get()
 </div>
 
 @if(session()->has('administrador'))
-{{-- Modal de edição de aplicação --}}
-<div class="modal fade" id="modal_editar_aplicacao" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <form id="form_editar_aplicacao" class="modal-content" method="post">
+{{-- Modal de edição em lote de aplicações --}}
+<div class="modal fade" id="modal_editar_aplicacoes" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <form id="form_editar_aplicacoes" class="modal-content" method="post" action="{{ route('sistema.procedimentos.atualizar_aplicacoes_lote') }}">
             @csrf
-            <input type="hidden" id="edit_aplicacao_id" name="aplicacao_id">
+            <input type="hidden" name="procedimento_id" value="{{ $procedimento->id }}">
             <div class="modal-header">
-                <h5 class="modal-title">Editar Aplicação</h5>
+                <h5 class="modal-title">Editar Aplicações</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <select required id="edit_situacao" name="situacao" class="form-select" onchange="controleCamposEdicao()">
-                                <option value="Aberta">Aberta</option>
-                                <option value="Pendente">Pendente</option>
-                                <option value="Aplicada">Aplicada</option>
-                            </select>
-                            <label for="edit_situacao">Situação</label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <input type="datetime-local" id="edit_dt_hr_chegada" name="dt_hr_chegada" class="form-control">
-                            <label for="edit_dt_hr_chegada">Dt/Hora Chegada</label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <input type="datetime-local" id="edit_dt_hr_atendimento" name="dt_hr_atendimento" class="form-control">
-                            <label for="edit_dt_hr_atendimento">Dt/Hora Atendimento</label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <input type="date" id="edit_data_aplicacao" name="data_aplicacao" class="form-control">
-                            <label for="edit_data_aplicacao">Data Aplicação</label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <input type="text" id="edit_lote" name="lote" class="form-control" placeholder="Lote">
-                            <label for="edit_lote">Lote</label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <input type="text" id="edit_codigo_barras" name="codigo_barras" class="form-control" placeholder="Código de Barras">
-                            <label for="edit_codigo_barras">Código de Barras</label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <select id="edit_enfermeira_id" name="enfermeira_id" class="form-select">
-                                <option value="">Selecione</option>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Medicamento</th>
+                                <th style="width:110px;">Situação</th>
+                                <th style="width:170px;">Dt Chegada</th>
+                                <th style="width:170px;">Dt Atendimento</th>
+                                <th style="width:120px;">Data Aplic</th>
+                                <th style="width:120px;">Lote</th>
+                                <th style="width:130px;">C. Barras</th>
+                                <th style="width:150px;">Enfermagem</th>
+                                <th>Obs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php
+                            $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('st_usuario', 'Ativo')->get();
+                            @endphp
+                            @foreach($procedimento->aplicacaos as $aplicacao)
                                 @php
-                                $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('st_usuario', 'Ativo')->get();
+                                $loteObj = $aplicacao->lote;
+                                $dt_lote = $loteObj ? explode(' ', $loteObj->created_at)[0] : '';
+                                $lote = $loteObj ? $loteObj->lote : '';
+                                $codbarras = $loteObj ? $loteObj->codigo_barras : '';
+                                $dt_chegada = $aplicacao->dt_hr_chegada ? date('Y-m-d\TH:i', strtotime($aplicacao->dt_hr_chegada)) : '';
+                                $dt_atend = $aplicacao->dt_hr_atendimento ? date('Y-m-d\TH:i', strtotime($aplicacao->dt_hr_atendimento)) : '';
                                 @endphp
-                                @foreach($enfermeiras as $enf)
-                                    <option value="{{ $enf->id }}">{{ $enf->nome }}</option>
-                                @endforeach
-                            </select>
-                            <label for="edit_enfermeira_id">Enfermagem</label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-floating form-floating-outline">
-                            <input type="text" id="edit_obs" name="obs" class="form-control" placeholder="Observação">
-                            <label for="edit_obs">Observação</label>
-                        </div>
-                    </div>
+                                <tr>
+                                    <td class="align-middle">
+                                        <strong>{{ $aplicacao->medicamento->nome }}</strong>
+                                        <input type="hidden" name="aplicacoes[{{ $aplicacao->id }}][id]" value="{{ $aplicacao->id }}">
+                                    </td>
+                                    <td>
+                                        <select name="aplicacoes[{{ $aplicacao->id }}][situacao]" class="form-select form-select-sm sit-app" onchange="controleCamposLote(this)">
+                                            <option value="Aberta" {{ $aplicacao->situacao == 'Aberta' ? 'selected' : '' }}>Aberta</option>
+                                            <option value="Pendente" {{ $aplicacao->situacao == 'Pendente' ? 'selected' : '' }}>Pendente</option>
+                                            <option value="Aplicada" {{ $aplicacao->situacao == 'Aplicada' ? 'selected' : '' }}>Aplicada</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="datetime-local" name="aplicacoes[{{ $aplicacao->id }}][dt_hr_chegada]" class="form-control form-control-sm campo-app" value="{{ $dt_chegada }}">
+                                    </td>
+                                    <td>
+                                        <input type="datetime-local" name="aplicacoes[{{ $aplicacao->id }}][dt_hr_atendimento]" class="form-control form-control-sm campo-app" value="{{ $dt_atend }}">
+                                    </td>
+                                    <td>
+                                        <input type="date" name="aplicacoes[{{ $aplicacao->id }}][data_aplicacao]" class="form-control form-control-sm campo-app" value="{{ $dt_lote }}">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="aplicacoes[{{ $aplicacao->id }}][lote]" class="form-control form-control-sm campo-app" value="{{ $lote }}" placeholder="Lote">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="aplicacoes[{{ $aplicacao->id }}][codigo_barras]" class="form-control form-control-sm campo-app" value="{{ $codbarras }}" placeholder="C. Barras">
+                                    </td>
+                                    <td>
+                                        <select name="aplicacoes[{{ $aplicacao->id }}][enfermeira_id]" class="form-select form-select-sm campo-app">
+                                            <option value="">Selecione</option>
+                                            @foreach($enfermeiras as $enf)
+                                                <option value="{{ $enf->id }}" {{ $aplicacao->user_id_aplicacao == $enf->id ? 'selected' : '' }}>{{ $enf->nome }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="aplicacoes[{{ $aplicacao->id }}][obs]" class="form-control form-control-sm campo-app" value="{{ $aplicacao->obs }}" placeholder="Obs">
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar</button>
+                <button type="submit" class="btn btn-primary">Salvar Todas</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-function abrirModalEdicao(aplicacaoId) {
-    // Buscar dados da aplicação via AJAX
-    fetch('{{ url("sistema/procedimentos/get_aplicacao_dados") }}/' + aplicacaoId)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('edit_aplicacao_id').value = data.id;
-            document.getElementById('edit_situacao').value = data.situacao;
-            document.getElementById('edit_dt_hr_chegada').value = data.dt_hr_chegada || '';
-            document.getElementById('edit_dt_hr_atendimento').value = data.dt_hr_atendimento || '';
-            document.getElementById('edit_data_aplicacao').value = data.data_aplicacao || '';
-            document.getElementById('edit_lote').value = data.lote || '';
-            document.getElementById('edit_codigo_barras').value = data.codigo_barras || '';
-            document.getElementById('edit_enfermeira_id').value = data.enfermeira_id || '';
-            document.getElementById('edit_obs').value = data.obs || '';
-
-            document.getElementById('form_editar_aplicacao').action = '{{ route("sistema.procedimentos.atualizar_aplicacao") }}';
-
-            controleCamposEdicao();
-
-            let modal = new bootstrap.Modal(document.getElementById('modal_editar_aplicacao'));
-            modal.show();
-        });
+function abrirModalEdicaoGeral() {
+    let modal = new bootstrap.Modal(document.getElementById('modal_editar_aplicacoes'));
+    modal.show();
 }
 
-function controleCamposEdicao() {
-    let situacao = document.getElementById('edit_situacao').value;
-    let campos = ['edit_dt_hr_chegada', 'edit_dt_hr_atendimento', 'edit_data_aplicacao', 'edit_lote', 'edit_codigo_barras', 'edit_enfermeira_id', 'edit_obs'];
-    let isAplicada = (situacao === 'Aplicada');
+function controleCamposLote(selectEl) {
+    let row = selectEl.closest('tr');
+    let campos = row.querySelectorAll('.campo-app');
+    let isAplicada = (selectEl.value === 'Aplicada');
 
-    campos.forEach(id => {
-        let el = document.getElementById(id);
+    campos.forEach(el => {
         if (isAplicada) {
             el.removeAttribute('disabled');
-            if (id !== 'edit_enfermeira_id') {
-                el.setAttribute('required', 'required');
-            }
         } else {
             el.setAttribute('disabled', 'disabled');
-            el.removeAttribute('required');
             el.value = '';
         }
     });
 }
+
+// Aplicar controle inicial ao abrir o modal
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.sit-app').forEach(function(el) {
+        controleCamposLote(el);
+    });
+});
+
+document.getElementById('modal_editar_aplicacoes').addEventListener('shown.bs.modal', function() {
+    document.querySelectorAll('.sit-app').forEach(function(el) {
+        controleCamposLote(el);
+    });
+});
 </script>
 @endif
 

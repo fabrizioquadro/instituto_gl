@@ -2138,139 +2138,88 @@ class ProcedimentoSistemaController extends Controller
         }
     }
 
-    public function getAplicacaoDados($id)
-    {
-        $aplicacao = Aplicacao::with('lote', 'enfermeira')->where('id', $id)->first();
-
-        if (!$aplicacao) {
-            return response()->json(['error' => 'Aplicação não encontrada'], 404);
-        }
-
-        $data_aplicacao = null;
-        $lote = null;
-        $codigo_barras = null;
-
-        $loteObj = $aplicacao->lote;
-        if ($loteObj) {
-            $lote = $loteObj->lote;
-            $codigo_barras = $loteObj->codigo_barras;
-            $data_aplicacao = $loteObj->created_at ? explode(' ', $loteObj->created_at)[0] : null;
-        }
-
-        // Formatar datetime-local (formato HTML)
-        $dt_hr_chegada = null;
-        $dt_hr_atendimento = null;
-        if ($aplicacao->dt_hr_chegada) {
-            $dt_hr_chegada = date('Y-m-d\TH:i', strtotime($aplicacao->dt_hr_chegada));
-        }
-        if ($aplicacao->dt_hr_atendimento) {
-            $dt_hr_atendimento = date('Y-m-d\TH:i', strtotime($aplicacao->dt_hr_atendimento));
-        }
-
-        return response()->json([
-            'id' => $aplicacao->id,
-            'situacao' => $aplicacao->situacao,
-            'dt_hr_chegada' => $dt_hr_chegada,
-            'dt_hr_atendimento' => $dt_hr_atendimento,
-            'data_aplicacao' => $data_aplicacao,
-            'lote' => $lote,
-            'codigo_barras' => $codigo_barras,
-            'enfermeira_id' => $aplicacao->user_id_aplicacao,
-            'obs' => $aplicacao->obs,
-        ]);
-    }
-
-    public function atualizarAplicacao(Request $request)
+    public function atualizarAplicacoesLote(Request $request)
     {
         try {
-            $aplicacao = Aplicacao::where('id', $request->aplicacao_id)->first();
+            $aplicacoesData = $request->aplicacoes;
+            $procedimento = Procedimento::where('id', $request->procedimento_id)->first();
 
-            if (!$aplicacao) {
-                return redirect()->back()->with('mensagem_erro', 'Aplicação não encontrada');
+            if (!$procedimento) {
+                return redirect()->back()->with('mensagem_erro', 'Procedimento não encontrado');
             }
 
-            $situacao = $request->situacao;
-            $aplicacao->situacao = $situacao;
+            foreach ($aplicacoesData as $appId => $data) {
+                $aplicacao = Aplicacao::where('id', $appId)->where('procedimento_id', $procedimento->id)->first();
+                if (!$aplicacao) continue;
 
-            if ($situacao == 'Aplicada') {
-                $aplicacao->obs = $request->obs;
-                $aplicacao->user_id_aplicacao = $request->enfermeira_id ?: null;
-                $aplicacao->dt_hr_chegada = $request->dt_hr_chegada ? date('Y-m-d H:i:s', strtotime($request->dt_hr_chegada)) : null;
-                $aplicacao->dt_hr_atendimento = $request->dt_hr_atendimento ? date('Y-m-d H:i:s', strtotime($request->dt_hr_atendimento)) : null;
+                $situacao = $data['situacao'];
+                $aplicacao->situacao = $situacao;
 
-                // Atualiza ou cria lote (usando DB raw para controlar created_at)
-                $dataAplicacao = $request->data_aplicacao ? date('Y-m-d', strtotime($request->data_aplicacao)) : date('Y-m-d');
-                $loteObj = $aplicacao->lote;
-                if ($loteObj) {
-                    \DB::table('aplicacao_lotes')->where('id', $loteObj->id)->update([
-                        'lote' => $request->lote,
-                        'codigo_barras' => $request->codigo_barras,
-                        'created_at' => $dataAplicacao,
-                        'updated_at' => $dataAplicacao,
-                    ]);
-                } elseif ($request->lote || $request->codigo_barras) {
-                    \DB::table('aplicacao_lotes')->insert([
-                        'aplicacao_id' => $aplicacao->id,
-                        'quantidade' => $aplicacao->quantidade,
-                        'lote' => $request->lote,
-                        'codigo_barras' => $request->codigo_barras,
-                        'created_at' => $dataAplicacao,
-                        'updated_at' => $dataAplicacao,
-                    ]);
-                }
+                if ($situacao == 'Aplicada') {
+                    $aplicacao->obs = $data['obs'] ?? null;
+                    $aplicacao->user_id_aplicacao = !empty($data['enfermeira_id']) ? $data['enfermeira_id'] : null;
+                    $aplicacao->dt_hr_chegada = !empty($data['dt_hr_chegada']) ? date('Y-m-d H:i:s', strtotime($data['dt_hr_chegada'])) : null;
+                    $aplicacao->dt_hr_atendimento = !empty($data['dt_hr_atendimento']) ? date('Y-m-d H:i:s', strtotime($data['dt_hr_atendimento'])) : null;
+                    $aplicacao->save();
 
-                $aplicacao->save();
-
-                // Atualiza situação e data do procedimento
-                $procedimento = Procedimento::where('id', $aplicacao->procedimento_id)->first();
-                if ($procedimento) {
-                    $procedimento->data_aplicacao = $dataAplicacao;
-
-                    $temAberta = Aplicacao::where('procedimento_id', $procedimento->id)
-                        ->whereIn('situacao', ['Aberta', 'Pendente'])
-                        ->count();
-
-                    if ($temAberta == 0) {
-                        $procedimento->situacao = 'Aplicado';
-                    } elseif ($procedimento->situacao == 'Agendado') {
-                        $procedimento->situacao = 'Aplicação Parcial';
+                    $dataAplicacao = !empty($data['data_aplicacao']) ? date('Y-m-d', strtotime($data['data_aplicacao'])) : date('Y-m-d');
+                    $loteObj = $aplicacao->lote;
+                    if ($loteObj) {
+                        \DB::table('aplicacao_lotes')->where('id', $loteObj->id)->update([
+                            'lote' => $data['lote'] ?? '',
+                            'codigo_barras' => $data['codigo_barras'] ?? '',
+                            'created_at' => $dataAplicacao,
+                            'updated_at' => $dataAplicacao,
+                        ]);
+                    } elseif (!empty($data['lote']) || !empty($data['codigo_barras'])) {
+                        \DB::table('aplicacao_lotes')->insert([
+                            'aplicacao_id' => $aplicacao->id,
+                            'quantidade' => $aplicacao->quantidade,
+                            'lote' => $data['lote'] ?? '',
+                            'codigo_barras' => $data['codigo_barras'] ?? '',
+                            'created_at' => $dataAplicacao,
+                            'updated_at' => $dataAplicacao,
+                        ]);
                     }
-                    $procedimento->save();
-                }
-            } else {
-                // Aberta ou Pendente - limpa dados
-                $aplicacao->obs = null;
-                $aplicacao->user_id_aplicacao = null;
-                $aplicacao->dt_hr_chegada = null;
-                $aplicacao->dt_hr_atendimento = null;
-                $aplicacao->save();
+                } else {
+                    $aplicacao->obs = null;
+                    $aplicacao->user_id_aplicacao = null;
+                    $aplicacao->dt_hr_chegada = null;
+                    $aplicacao->dt_hr_atendimento = null;
+                    $aplicacao->save();
 
-                // Remove lotes
-                AplicacaoLote::where('aplicacao_id', $aplicacao->id)->delete();
-
-                // Reavalia procedimento
-                $procedimento = Procedimento::where('id', $aplicacao->procedimento_id)->first();
-                if ($procedimento) {
-                    $temAplicada = Aplicacao::where('procedimento_id', $procedimento->id)
-                        ->where('situacao', 'Aplicada')
-                        ->count();
-
-                    if ($temAplicada == 0) {
-                        $procedimento->situacao = 'Agendado';
-                        $procedimento->data_aplicacao = null;
-                        $procedimento->dt_hr_finalizacao = null;
-                        $procedimento->user_id_aplicacao = null;
-                        $procedimento->clinica_id_aplicacao = null;
-                    } else {
-                        $procedimento->situacao = 'Aplicação Parcial';
-                    }
-                    $procedimento->save();
+                    AplicacaoLote::where('aplicacao_id', $aplicacao->id)->delete();
                 }
             }
 
-            return redirect()->back()->with('mensagem', 'Aplicação atualizada com sucesso!');
+            // Reavaliar situação geral do procedimento
+            $totalAplicadas = Aplicacao::where('procedimento_id', $procedimento->id)
+                ->where('situacao', 'Aplicada')->count();
+            $totalAbertas = Aplicacao::where('procedimento_id', $procedimento->id)
+                ->whereIn('situacao', ['Aberta', 'Pendente'])->count();
+
+            if ($totalAplicadas > 0) {
+                // Pega a menor data de aplicacao entre os lotes
+                $menorData = \DB::table('aplicacao_lotes')
+                    ->join('aplicacaos', 'aplicacao_lotes.aplicacao_id', '=', 'aplicacaos.id')
+                    ->where('aplicacaos.procedimento_id', $procedimento->id)
+                    ->min('aplicacao_lotes.created_at');
+                $procedimento->data_aplicacao = $menorData ? explode(' ', $menorData)[0] : date('Y-m-d');
+            }
+
+            if ($totalAbertas == 0 && $totalAplicadas > 0) {
+                $procedimento->situacao = 'Aplicado';
+            } elseif ($totalAbertas > 0 && $totalAplicadas > 0) {
+                $procedimento->situacao = 'Aplicação Parcial';
+            } elseif ($totalAplicadas == 0) {
+                $procedimento->situacao = 'Agendado';
+                $procedimento->data_aplicacao = null;
+            }
+            $procedimento->save();
+
+            return redirect()->back()->with('mensagem', 'Aplicações atualizadas com sucesso!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('mensagem_erro', 'Erro ao atualizar aplicação: ' . $e->getMessage());
+            return redirect()->back()->with('mensagem_erro', 'Erro ao atualizar aplicações: ' . $e->getMessage());
         }
     }
 }

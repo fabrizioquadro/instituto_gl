@@ -10,11 +10,4 @@
     <th>{!! $aplicacao->lotes() !!}</th>
     <th>{!! $aplicacao->codigos() !!}</th>
     <th>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</th>
-    @if(session()->has('administrador'))
-    <th class="text-center">
-        <button type="button" class="btn btn-sm btn-outline-secondary waves-effect p-1" onclick="abrirModalEdicao({{ $aplicacao->id }})" title="Editar Aplicação">
-            <span class="tf-icons mdi mdi-cog"></span>
-        </button>
-    </th>
-    @endif
 </tr>
