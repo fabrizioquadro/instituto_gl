@@ -279,7 +279,7 @@ class EntradaSistemaController extends Controller
                     box-sizing: border-box;
                 }
                 .linha{
-                    margin-left: 3mm;
+                    justify-content: center;
                     height: 15mm;
                     display: flex;
                     page-break-after: always;
@@ -295,9 +295,12 @@ class EntradaSistemaController extends Controller
                     background-color: #f0f0f0;
                     padding-top: 3mm
                 }
+                .linha .etiqueta:last-child {
+                    margin-right: 0;
+                }
                 @media print {
                     .linha{
-                        margin-left: 3mm;
+                        justify-content: center;
                         height: 15mm;
                         display: flex;
                         page-break-after: always;
@@ -312,6 +315,9 @@ class EntradaSistemaController extends Controller
                         font-size: 10px;
                         background-color: #f0f0f0;
                         padding-top: 3mm !important;
+                    }
+                    .linha .etiqueta:last-child {
+                        margin-right: 0;
                     }
                 }
                 </style>
