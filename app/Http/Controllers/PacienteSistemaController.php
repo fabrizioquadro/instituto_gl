@@ -72,6 +72,9 @@ class PacienteSistemaController extends Controller
 
     public function atualizar_integracao(){
         set_time_limit(0);
+        // Flag para controlar a integração com o Kamino (desabilitado para evitar timeout)
+        // Mude para true quando quiser reativar a integração com o Kamino
+        $integrar_kamino = false;
         try {
             $configuracao = Configuracao::where('id', '1')->first();
             $api = api();
@@ -132,38 +135,42 @@ class PacienteSistemaController extends Controller
                 }
             }
 
-            //vamos buscar todos os pacientes que não foram integrado ao kamino
-            $pacientes = Paciente::where('integrado_kamino', 'Não')->get();
-            foreach($pacientes as $paciente){
-                if($paciente->cpf != ""){
+            // ===== INTEGRAÇÃO COM KAMINO (DESABILITADA) =====
+            if ($integrar_kamino) {
+                //vamos buscar todos os pacientes que não foram integrado ao kamino
+                $pacientes = Paciente::where('integrado_kamino', 'Não')->get();
+                foreach($pacientes as $paciente){
+                    if($paciente->cpf != ""){
 
-                    $dados = [
-                        'Nome' => $paciente->nm_paciente,
-                        'CPFCNPJ' => $paciente->cpf,
-                        'Cliente' => true,
-                        'Logradouro' => $paciente->endereco,
-                        'Nro' => $paciente->numero,
-                        'Complemento' => $paciente->complemento,
-                        'Bairro' => $paciente->bairro,
-                        'CEP' => $paciente->cep,
-                        'Cidade' => $paciente->cidade,
-                        'UF' => $paciente->estado,
-                        'EmailPrincipal' => $paciente->email,
-                        'TelefonePrincipal' => $paciente->telefone,
-                    ];
+                        $dados = [
+                            'Nome' => $paciente->nm_paciente,
+                            'CPFCNPJ' => $paciente->cpf,
+                            'Cliente' => true,
+                            'Logradouro' => $paciente->endereco,
+                            'Nro' => $paciente->numero,
+                            'Complemento' => $paciente->complemento,
+                            'Bairro' => $paciente->bairro,
+                            'CEP' => $paciente->cep,
+                            'Cidade' => $paciente->cidade,
+                            'UF' => $paciente->estado,
+                            'EmailPrincipal' => $paciente->email,
+                            'TelefonePrincipal' => $paciente->telefone,
+                        ];
 
-                    $api_kamino = new ApiKaminoController();
-                    try {
-                        $retorno = json_decode($api_kamino->import_cliente(json_encode($dados)));
-                        if(isset($retorno) && $retorno->Sucesso == true){
-                            $paciente->integrado_kamino = 'Sim';
-                            $paciente->save();
+                        $api_kamino = new ApiKaminoController();
+                        try {
+                            $retorno = json_decode($api_kamino->import_cliente(json_encode($dados)));
+                            if(isset($retorno) && $retorno->Sucesso == true){
+                                $paciente->integrado_kamino = 'Sim';
+                                $paciente->save();
+                            }
+                        } catch (\Exception $e) {
+                            $erro_kamino = true;
                         }
-                    } catch (\Exception $e) {
-                        $erro_kamino = true;
                     }
                 }
             }
+            // ===== FIM INTEGRAÇÃO KAMINO =====
 
             $configuracao->ultima_atualizacao_pacientes = date('Y-m-d');
             $configuracao->save();
