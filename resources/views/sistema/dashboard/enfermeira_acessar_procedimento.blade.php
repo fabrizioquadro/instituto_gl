@@ -899,10 +899,11 @@ function marcarAvaliadoGoogle(pacienteId) {
     });
 
     // Bloqueio de Digitação Manual Inteligente para Código de Barras
+    // DESABILITADO em 2026-08-01: a leitora quebrou e as enfermeiras precisam digitar manualmente
     @php
         $is_admin = session()->has('administrador') || (session()->has('user') && session()->get('user')->tipo == 'Administrador');
     @endphp
-    @if(!$is_admin)
+    @if(false && !$is_admin)
     let lastKeyTime = Date.now();
     $(document).on('keydown', 'input[id^="codigo_barras_"]', function(e) {
         // Permitir teclas de controle: Backspace, Tab, Enter, Setas
