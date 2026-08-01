@@ -874,6 +874,14 @@ class DashboardSistemaController extends Controller
         }
     }
 
+    /**
+     * Endpoint leve para manter a sessão viva sem recarregar a página.
+     * Chamado via AJAX a cada 10 minutos pelas páginas de aplicação da enfermeira.
+     */
+    public function keep_alive(){
+        return response()->json(['ok' => true, 'time' => time()]);
+    }
+
     public function add_biopedancia_coleta($paciente_id){
         $paciente = Paciente::where('id', $paciente_id)->first();
         return view('sistema/dashboard/add_biopedancia_coleta', compact('paciente'));

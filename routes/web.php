@@ -183,6 +183,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/dashboard/insert_biopedancia_coleta', [DashboardSistemaController::class, 'insert_biopedancia_coleta'])->name('sistema.dashboard.insert_biopedancia_coleta');
         Route::get('/dashboard/get_lotes_medicamento_mg', [DashboardSistemaController::class, 'get_lotes_medicamento_mg'])->name('sistema.dashboard.get_lotes_medicamento_mg');
         Route::get('/dashboard/filtrar_atrasados', [DashboardSistemaController::class, 'filtrar_atrasados'])->name('sistema.dashboard.filtrar_atrasados');
+        Route::get('/dashboard/keep-alive', [DashboardSistemaController::class, 'keep_alive'])->name('sistema.dashboard.keep_alive');
 
         Route::any('/fila_atendimento', [DashboardSistemaController::class, 'fila_atendimento'])->name('sistema.fila_atendimento');
 

@@ -782,6 +782,16 @@ document.getElementById('modal2Codigo_salvar').addEventListener('click', ()=>{
         }
     });
 
+    // Keep-alive: renova a sessão a cada 10 minutos SEM recarregar a página
+    // Evita que a sessão expire (e o token CSRF invalide) quando a página fica muito tempo aberta
+    setInterval(() => {
+        fetch("{{ route('sistema.dashboard.keep_alive') }}", {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            cache: 'no-store'
+        }).catch(() => {});
+    }, 10 * 60 * 1000);
+
     // Bloqueio de Digitação Manual Inteligente para Código de Barras
     // DESABILITADO em 2026-08-01: a leitora quebrou e as enfermeiras precisam digitar manualmente
     @php
