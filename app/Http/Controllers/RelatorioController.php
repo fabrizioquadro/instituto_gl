@@ -437,7 +437,7 @@ class RelatorioController extends Controller
                             $procedimento->paciente->nm_paciente,
                             $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '',
                             $procedimento->medico,
-                            $aplicacao->medicamento->nome,
+                            $aplicacao->medicamento ? $aplicacao->medicamento->nome : '',
                             $aplicacao->quantidade,
                             'R$ '.valorDbForm($aplicacao->valor),
                             'R$ '.valorDbForm($aplicacao->total),

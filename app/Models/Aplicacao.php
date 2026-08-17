@@ -35,8 +35,12 @@ class Aplicacao extends Model
         return $this->hasOne(AplicacaoLote::class);
     }
 
+    public function aplicacaoLotes(){
+        return $this->hasMany(AplicacaoLote::class, 'aplicacao_id', 'id');
+    }
+
     public function lotes(){
-        $lotes = AplicacaoLote::where('aplicacao_id', $this->id)->get();
+        $lotes = $this->aplicacaoLotes;
         $retorno = "";
         if($lotes->count() > 1){
             foreach ($lotes as $lote){
@@ -53,7 +57,7 @@ class Aplicacao extends Model
     }
 
     public function codigos(){
-        $lotes = AplicacaoLote::where('aplicacao_id', $this->id)->get();
+        $lotes = $this->aplicacaoLotes;
         $retorno = "";
         if($lotes->count() > 1){
             foreach ($lotes as $lote){
@@ -70,11 +74,11 @@ class Aplicacao extends Model
     }
 
     public function vencimentos(){
-        $lotes = AplicacaoLote::where('aplicacao_id', $this->id)->get();
+        $lotes = $this->aplicacaoLotes;
         $retorno = "";
         if($lotes->count() > 1){
             foreach ($lotes as $lote){
-                $estoque = Estoque::where('codigo_barras', $lote->codigo_barras)->first();
+                $estoque = $lote->estoque;
                 if($estoque){
                     $retorno .= "<br>Codigo: ".$lote->codigo_barras.", ".dataDbForm($estoque->dt_vencimento);
                 }
@@ -83,7 +87,7 @@ class Aplicacao extends Model
         }
         else{
             foreach ($lotes as $lote){
-                $estoque = Estoque::where('codigo_barras', $lote->codigo_barras)->first();
+                $estoque = $lote->estoque;
                 if($estoque){
                     $retorno .= dataDbForm($estoque->dt_vencimento);
                 }

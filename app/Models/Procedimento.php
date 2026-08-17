@@ -320,7 +320,40 @@ class Procedimento extends Model
             $in[] = $linha->id;
         }
 
-        return SELF::whereIn('id', $in)->get();
+        if(empty($in)){
+            return collect();
+        }
+
+        return SELF::select([
+            'id','codigo','nr_procedimento','tipo_atendimento','st_pagamento',
+            'flag_coordenacao','flag_qualidade','dt_hr_chegada','dt_hr_atendimento',
+            'dt_hr_finalizacao','inicio_cadastro','data_aplicacao','medico',
+            'clinica_id_aplicacao','paciente_id'
+        ])->with([
+            'paciente:id,nm_paciente',
+            'clinica_aplicacao:id,nome',
+            'aplicacaos' => function($query) use ($filtro){
+                $query->select([
+                    'id','procedimento_id','medicamento_id','user_id_aplicacao',
+                    'quantidade','valor','total','situacao','obs',
+                    'dt_hr_chegada','dt_hr_atendimento','updated_at'
+                ])->where('situacao', 'Aplicada');
+                if(!empty($filtro['dt_inc'])){
+                    $query->where('updated_at', '>=', $filtro['dt_inc'].' 00:00:00');
+                }
+                if(!empty($filtro['dt_fn'])){
+                    $query->where('updated_at', '<=', $filtro['dt_fn'].' 23:59:59');
+                }
+            },
+            'aplicacaos.medicamento:id,nome',
+            'aplicacaos.enfermeira:id,nome',
+            'aplicacaos.aplicacaoLotes' => function($query){
+                $query->select('id','aplicacao_id','quantidade','lote','codigo_barras');
+            },
+            'aplicacaos.aplicacaoLotes.estoque' => function($query){
+                $query->select('id','codigo_barras','dt_vencimento');
+            },
+        ])->whereIn('id', $in)->get();
     }
 
 

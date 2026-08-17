@@ -122,7 +122,7 @@
                                         <td>{{ $procedimento->paciente->nm_paciente }}</td>
                                         <td>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</td>
                                         <td>{{ $procedimento->clinica_aplicacao->nome }}</td>
-                                        <td>{{ $aplicacao->medicamento->nome }}</td>
+                                        <td>{{ $aplicacao->medicamento ? $aplicacao->medicamento->nome : '' }}</td>
                                         <td>{{ $aplicacao->quantidade }}</td>
                                         <td>R$ {{ valorDbForm($aplicacao->valor) }}</td>
                                         <td>R$ {{ valorDbForm($aplicacao->total) }}</td>

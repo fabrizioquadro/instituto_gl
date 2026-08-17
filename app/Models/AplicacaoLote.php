@@ -16,4 +16,8 @@ class AplicacaoLote extends Model
         'codigo_barras',
         'estoque_aberto_id',
     ];
+
+    public function estoque(){
+        return $this->belongsTo(Estoque::class, 'codigo_barras', 'codigo_barras');
+    }
 }
