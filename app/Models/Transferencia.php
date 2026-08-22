@@ -32,7 +32,7 @@ class Transferencia extends Model
     }
 
     public function administrador(){
-        return $this->belongsTo(Administrador::class,'administrador_id','id');
+        return $this->belongsTo(User::class,'administrador_id','id');
     }
 
     public function medicamentos($clinica_id){

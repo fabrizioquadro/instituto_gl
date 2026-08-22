@@ -56,8 +56,6 @@ Route::middleware(['verificaAdministrador'])->group(function () {
     Route::prefix('adm')->group(function(){
         Route::get('/dashboard', [DashboardAdmController::class, 'index'])->name('adm.dashboard');
         Route::get('/dashboard/alterar_clinica_user', [DashboardAdmController::class, 'alterar_clinica_user'])->name('adm.dashboard.alterar_clinica_user');
-        Route::get('/dashboard/alterar_tipo_user', [DashboardAdmController::class, 'alterar_tipo_user'])->name('adm.dashboard.alterar_tipo');
-        Route::get('/dashboard/alterar_enfermeira', [DashboardAdmController::class, 'alterar_enfermeira'])->name('adm.dashboard.alterar_enfermeira');
         Route::get('/perfil', [DashboardAdmController::class, 'perfil'])->name('adm.perfil');
         Route::get('/alterar_senha', [DashboardAdmController::class, 'alterar_senha'])->name('adm.alterar_senha');
         Route::post('/perfil/atualizar_foto', [DashboardAdmController::class, 'atualizar_foto'])->name('adm.perfil.atualizar_foto');

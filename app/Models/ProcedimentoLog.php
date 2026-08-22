@@ -36,7 +36,7 @@ class ProcedimentoLog extends Model
 
     public function administrador()
     {
-        return $this->belongsTo(Administrador::class);
+        return $this->belongsTo(User::class, 'administrador_id', 'id');
     }
 
     public static function registrar($procedimento_id, $acao, $descricao = null, $dados_antigos = null, $dados_novos = null)

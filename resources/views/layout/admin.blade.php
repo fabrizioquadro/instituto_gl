@@ -10,8 +10,6 @@ else{
 $clinicas = App\Models\Clinica::all()->sortBy('nome');
 $user = session()->get('user');
 
-$enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id', $user->clinica_id)->get();
-
 @endphp
 <html lang="pt-BR" class="light-style layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr" data-theme="theme-default" data-assets-path="{{ asset('/public/template') }}/" data-template="vertical-menu-template">
     <head>
@@ -285,42 +283,6 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                                         <label for="clinica_id">Clinica:</label>
                                     </div>
                                 </div>
-                                <div class="nav-item navbar-search-wrapper mb-0" style="width: 30% !important">
-                                    <div class="form-floating form-floating-outline">
-                                        <select id="layout_admin_tipo" class="select2 form-select">
-                                            <option @if($user->tipo == 'Secretária') selected @endif value="Secretária">Secretária</option>
-                                            <option @if($user->tipo == 'Enfermagem') selected @endif value="Enfermagem">Enfermagem</option>
-                                        </select>
-                                        <label for="layout_admin_tipo">Tipo Usuário:</label>
-                                    </div>
-                                </div>
-                                @if($user->tipo == "Enfermagem")
-                                    <div class="nav-item navbar-search-wrapper mb-0" style="width: 30% !important">
-                                        <div class="form-floating form-floating-outline">
-                                            <select id="layout_admin_enfermeira" class="select2 form-select">
-                                                @foreach($enfermeiras as $enfermeira)
-                                                    <option @if($user->id == $enfermeira->id) selected @endif value="{{ $enfermeira->id }}">{{ $enfermeira->nome }}</option>
-                                                @endforeach
-                                            </select>
-                                            <label for="layout_admin_enfermeira">Usuário Enfermagem:</label>
-                                        </div>
-                                    </div>
-                                    <script type="text/javascript">
-                                    document.getElementById('layout_admin_enfermeira').addEventListener('change', (e)=>{
-                                        if(e.target.value){
-                                            $.getJSON(
-                                                '{{ route("adm.dashboard.alterar_enfermeira") }}',
-                                                {
-                                                    user_id : e.target.value
-                                                },
-                                                function(json){
-                                                    window.location.reload();
-                                                }
-                                            );
-                                        }
-                                    })
-                                    </script>
-                                @endif
                             </div>
                             <ul class="navbar-nav flex-row align-items-center ms-auto">
                                 <!-- Style Switcher -->
@@ -474,19 +436,6 @@ $enfermeiras = App\Models\User::where('tipo', 'Enfermagem')->where('clinica_id',
                     '{{ route("adm.dashboard.alterar_clinica_user") }}',
                     {
                         clinica_id : e.target.value
-                    },
-                    function(json){
-                        window.location.reload();
-                    }
-                );
-            }
-        })
-        document.getElementById('layout_admin_tipo').addEventListener('change', (e)=>{
-            if(e.target.value){
-                $.getJSON(
-                    '{{ route("adm.dashboard.alterar_tipo") }}',
-                    {
-                        tipo : e.target.value
                     },
                     function(json){
                         window.location.reload();

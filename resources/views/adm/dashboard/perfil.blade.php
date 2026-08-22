@@ -50,6 +50,16 @@
                         <label for="email">Email:</label>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="form-floating form-floating-outline">
+                        <select required class="form-control" id="clinica_id" name="clinica_id">
+                            @foreach($clinicas as $clinica)
+                                <option @if($adm->clinica_id == $clinica->id) selected @endif value="{{ $clinica->id }}">{{ $clinica->nome }}</option>
+                            @endforeach
+                        </select>
+                        <label for="clinica_id">Clínica:</label>
+                    </div>
+                </div>
             </div>
             <div class="mt-4">
                 <button type="submit" class="btn btn-primary me-2">Salvar</button>

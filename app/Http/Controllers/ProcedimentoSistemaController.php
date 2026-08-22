@@ -14,7 +14,7 @@ use App\Models\Paciente;
 use App\Models\Financeiro;
 use App\Models\FinanceiroProcedimento;
 use App\Models\FinanceiroFormasPagamento;
-use App\Models\Administrador;
+use App\Models\User;
 use App\Models\Estoque;
 use App\Models\EstoqueAberto;
 use App\Models\Combo;
@@ -678,7 +678,7 @@ class ProcedimentoSistemaController extends Controller
     public function enviar_fila_aplicacao_sem_pagamento(Request $request){
         try {
             //vamos veridicar o administrador
-            $autorizador = Administrador::where('email',$request->autorizador_email)->where('st_usuario', 'Ativo')->first();
+            $autorizador = User::where('email',$request->autorizador_email)->where('tipo','Administrador')->where('st_usuario', 'Ativo')->first();
             if(!$autorizador){
                 return redirect()->back()->with('mensagem_erro', "Autorizador inválido");
                 die();

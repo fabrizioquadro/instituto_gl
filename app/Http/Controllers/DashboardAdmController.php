@@ -274,7 +274,8 @@ class DashboardAdmController extends Controller
 
     public function perfil(){
         $adm = session()->get('administrador');
-        return view('adm/dashboard/perfil', compact('adm'));
+        $clinicas = Clinica::all()->sortBy('nome');
+        return view('adm/dashboard/perfil', compact('adm','clinicas'));
     }
 
     public function atualizar_foto(Request $request){
@@ -304,7 +305,15 @@ class DashboardAdmController extends Controller
         $adm = session()->get('administrador');
         $adm->nome = $request->nome;
         $adm->email = $request->email;
+        $adm->clinica_id = $request->clinica_id;
         $adm->save();
+
+        // Mantém o session('user') em sincronia com a clínica escolhida
+        $user = session()->get('user');
+        if($user && $user->id == $adm->id){
+            $user->clinica_id = $request->clinica_id;
+            session()->put('user', $user);
+        }
         return redirect()->route('adm.perfil')->with('mensagem', 'Perfil Atualizado!');
     }
 
@@ -321,43 +330,21 @@ class DashboardAdmController extends Controller
     }
 
     public function alterar_clinica_user(){
-        $user = new User();
-        $user->id = '0';
-        $user->nome = "Adm";
-        $user->tipo = "Secretária";
-        $user->clinica_id = $_GET['clinica_id'];
-        session()->put('user', $user);
+        // O admin opera como ele mesmo (user real); a clínica escolhida vira o
+        // contexto ativo e é persistida (users.clinica_id).
+        $user = session()->get('user');
+        if($user && $user->id){
+            $user->clinica_id = $_GET['clinica_id'];
+            User::where('id', $user->id)->update(['clinica_id' => $user->clinica_id]);
+            session()->put('user', $user);
 
-        $retorno['controle'] = 'true';
-        echo json_encode($retorno);
-    }
-
-    public function alterar_tipo_user(){
-        $user_old = session()->get('user');
-
-        $user = new User();
-        $user->id = '0';
-        $user->nome = "Adm";
-        $user->tipo = $_GET['tipo'];
-        $user->clinica_id = $user_old->clinica_id;
-
-        if($_GET['tipo'] == "Enfermagem"){
-            $user = User::where('tipo', 'Enfermagem')
-            ->where('clinica_id', $user->clinica_id)
-            ->where('st_usuario', 'Ativo')
-            ->first();
+            // Mantém o session('administrador') em sincronia
+            $adm = session()->get('administrador');
+            if($adm){
+                $adm->clinica_id = $user->clinica_id;
+                session()->put('administrador', $adm);
+            }
         }
-
-        session()->put('user', $user);
-
-        $retorno['controle'] = 'true';
-        echo json_encode($retorno);
-    }
-
-    public function alterar_enfermeira(){
-        $user = User::where('id', $_GET['user_id'])->where('st_usuario', 'Ativo')->first();
-
-        session()->put('user', $user);
 
         $retorno['controle'] = 'true';
         echo json_encode($retorno);

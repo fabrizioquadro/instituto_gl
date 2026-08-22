@@ -5,7 +5,7 @@
 
 <div class="d-flex justify-content-between">
     <h4 class="card-title">Dashboard</h4>
-    @if($administrador->id == '6' || $administrador->id == '3' || $administrador->id == '1')
+    @if(in_array($administrador->email, ['fabrizio.quadro@gmail.com', 'matheus.keller@institutogl.com', 'naerte@institutogl.com']))
         <div class="col-md-3">
             <form action="{{ route('adm.dashboard') }}" method="get">
                 <div class="form-floating form-floating-outline">
@@ -21,7 +21,7 @@
     @endif
 </div>
 <hr>
-@if($administrador->id == '6' || $administrador->id == '3' || $administrador->id == '1')
+@if(in_array($administrador->email, ['fabrizio.quadro@gmail.com', 'matheus.keller@institutogl.com', 'naerte@institutogl.com']))
     <div class="row">
         <div class="col-sm-6 col-md-4 col-lg-4">
             <div class="card card-border-shadow-success h-100">

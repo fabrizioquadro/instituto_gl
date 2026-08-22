@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Administrador;
 use App\Models\User;
 use App\Models\Clinica;
 use App\Models\Estoque;
@@ -25,43 +24,39 @@ class LoginController extends Controller
     }
 
     public function login(Request $request){
-        $adm = Administrador::where('email', $request->email)->first();
-        if($adm){
-            if($adm->st_usuario != 'Ativo'){
+        // 1) Administrador: autentica pela tabela users (tipo = Administrador),
+        //    mantendo o modelo de sessão (session administrador/user/layout),
+        //    que é o usado pelas telas admin e pelo contexto de clínica/enfermeira.
+        $admin = User::where('email', $request->email)->where('tipo', 'Administrador')->first();
+        if($admin){
+            if($admin->st_usuario != 'Ativo'){
                 return redirect()->back()->with('erro', "Este usuário está inativo e não pode acessar o sistema.");
             }
-            if(Hash::check($request->password, $adm->password)){
-                session()->put('administrador', $adm);
+            if(Hash::check($request->password, $admin->password)){
+                $request->session()->regenerate();
+                session()->put('administrador', $admin);
+                session()->put('user', $admin);
                 session()->put('layout', 'admin');
-                $user = new User();
-                $user->id = '0';
-                $user->nome = "Adm";
-                $user->tipo = "Secretária";
-                $user->clinica_id = Clinica::all()->first() ? Clinica::all()->first()->id : '';
-                session()->put('user', $user);
-
                 return redirect()->route('adm.dashboard');
             }
-            else{
-                return redirect()->back()->with('erro', "Senha Inválida");
-            }
+            return redirect()->back()->with('erro', "Senha Inválida");
+        }
+
+        // 2) Usuário do sistema (Enfermagem/Secretária) via Auth
+        $dados = $request->except('_token');
+        if(Auth::attempt(array_merge($dados, ['st_usuario' => 'Ativo']))){
+            $request->session()->regenerate();
+            $user = auth()->user();
+            session()->put('layout', 'sistema');
+            return redirect()->route('sistema.dashboard');
         }
         else{
-            $dados = $request->except('_token');
-            if(Auth::attempt(array_merge($dados, ['st_usuario' => 'Ativo']))){
-                $request->session()->regenerate();
-                $user = auth()->user();
-                session()->put('layout', 'sistema');
-                return redirect()->route('sistema.dashboard');
+            // Check if the email exists but is inactive to provide better feedback
+            $inactive_user = User::where('email', $request->email)->where('st_usuario', 'Inativo')->first();
+            if($inactive_user){
+                return redirect()->back()->with('erro', "Este usuário está inativo e não pode acessar o sistema.");
             }
-            else{
-                // Check if the email exists but is inactive to provide better feedback
-                $inactive_user = User::where('email', $request->email)->where('st_usuario', 'Inativo')->first();
-                if($inactive_user){
-                    return redirect()->back()->with('erro', "Este usuário está inativo e não pode acessar o sistema.");
-                }
-                return redirect()->back()->with('erro', "Email ou senha inválidos");
-            }
+            return redirect()->back()->with('erro', "Email ou senha inválidos");
         }
     }
 
@@ -70,12 +65,12 @@ class LoginController extends Controller
     }
 
     public function recuperar_senha(Request $request){
-        $adm = Administrador::where('email', $request->email)->first();
-        if($adm){
+        $user = User::where('email', $request->email)->first();
+        if($user){
             $novaSenha = createPassword(8, true, true, true, false);
 
-            $adm->password = bcrypt($novaSenha);
-            $adm->save();
+            $user->password = bcrypt($novaSenha);
+            $user->save();
 
             $mensagem = "
             <h4>Nova Senha de Acesso ao Instituto GL - Sistema Online</h4>
@@ -87,35 +82,12 @@ class LoginController extends Controller
             </p>
             ";
 
-            enviarMail($adm->email, 'Nova Senha de Acesso', $mensagem);
+            enviarMail($user->email, 'Nova Senha de Acesso', $mensagem);
 
             return redirect()->route('index')->with('sucesso','Sua nova senha foi enviado para o seu email.');
         }
         else{
-            $user = User::where('email', $request->email)->first();
-            if($user){
-                $novaSenha = createPassword(8, true, true, true, false);
-
-                $user->password = bcrypt($novaSenha);
-                $user->save();
-
-                $mensagem = "
-                <h4>Nova Senha de Acesso ao Instituto GL - Sistema Online</h4>
-                <p>
-                    Foi alterado por sua solicitação a senha de acesso ao sistema.
-                </p>
-                <p>
-                    Sua nova senha é: $novaSenha
-                </p>
-                ";
-
-                enviarMail($user->email, 'Nova Senha de Acesso', $mensagem);
-
-                return redirect()->route('index')->with('sucesso','Sua nova senha foi enviado para o seu email.');
-            }
-            else{
-                return redirect()->back()->with('erro', "Email inválido");
-            }
+            return redirect()->back()->with('erro', "Email inválido");
         }
     }
 
