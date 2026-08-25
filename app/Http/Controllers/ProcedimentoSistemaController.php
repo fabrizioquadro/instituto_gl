@@ -1769,6 +1769,13 @@ class ProcedimentoSistemaController extends Controller
             $procedimento->data_aplicacao = date('Y-m-d');
         }
 
+        // Correção: se era "Semana Sem Aplicação" e recebeu medicamento que gera aplicação,
+        // volta para "Agendado" (agora precisa ser aplicado)
+        if($procedimento->situacao == 'Semana Sem Aplicação' && $medicamento && $medicamento->aplicacao == 'Sim'){
+            $procedimento->situacao = 'Agendado';
+            $procedimento->semana_sem_aplicacao = 'Não';
+        }
+
         if(empty($procedimento->user_id_aplicacao)){
             $procedimento->user_id_aplicacao = $user->id;
         }
@@ -1830,6 +1837,7 @@ class ProcedimentoSistemaController extends Controller
             $combo = Combo::find($request->combo_id);
             $is_soro = $combo && str_starts_with(strtolower($combo->nome), 'soro');
 
+            $combo_tem_aplicacao = false;
             foreach($medicamentos as $linha){
                 $dados = [
                     'procedimento_id' => $procedimento->id,
@@ -1842,6 +1850,11 @@ class ProcedimentoSistemaController extends Controller
                 ];
                 $aplicacao = Aplicacao::create($dados);
 
+                $med_combo = Medicamento::find($linha->medicamento_id);
+                if($med_combo && $med_combo->aplicacao == 'Sim'){
+                    $combo_tem_aplicacao = true;
+                }
+
                 $procedimento->valor += $aplicacao->total;
                 $procedimento->flag_coordenacao = 0;
                 $procedimento->flag_qualidade = 0;
@@ -1852,6 +1865,14 @@ class ProcedimentoSistemaController extends Controller
                 $procedimento->situacao = 'Aplicação Parcial';
                 $procedimento->flag_coordenacao = 0;
                 $procedimento->flag_qualidade = 0;
+                $procedimento->save();
+            }
+
+            // Correção: se era "Semana Sem Aplicação" e o combo tem medicamento que gera aplicação,
+            // volta para "Agendado"
+            if($procedimento->situacao == 'Semana Sem Aplicação' && $combo_tem_aplicacao){
+                $procedimento->situacao = 'Agendado';
+                $procedimento->semana_sem_aplicacao = 'Não';
                 $procedimento->save();
             }
 
@@ -1969,6 +1990,14 @@ class ProcedimentoSistemaController extends Controller
                 $procedimento->valor = Aplicacao::where('procedimento_id', $procedimento->id)->sum('total');
                 if($procedimento->situacao == "Aplicado"){
                     $procedimento->situacao = 'Aplicação Parcial';
+                }
+                // Correção: se era "Semana Sem Aplicação" e recebeu medicamento que gera aplicação,
+                // volta para "Agendado"
+                $tem_medicamento_aplicacao = Aplicacao::where('procedimento_id', $procedimento->id)
+                    ->where('situacao', 'Aberta')->exists();
+                if($procedimento->situacao == 'Semana Sem Aplicação' && $tem_medicamento_aplicacao){
+                    $procedimento->situacao = 'Agendado';
+                    $procedimento->semana_sem_aplicacao = 'Não';
                 }
                 $procedimento->flag_coordenacao = 0;
                 $procedimento->flag_qualidade = 0;
