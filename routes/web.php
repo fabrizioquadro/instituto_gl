@@ -15,6 +15,7 @@ use App\Http\Controllers\BaixaSistemaController;
 use App\Http\Controllers\TransferenciaSistemaController;
 use App\Http\Controllers\EstoqueSistemaController;
 use App\Http\Controllers\ProcedimentoSistemaController;
+use App\Http\Controllers\PrescricaoSistemaController;
 use App\Http\Controllers\PacienteSistemaController;
 use App\Http\Controllers\DashboardAdmSisController;
 use App\Http\Controllers\EstoqueAdmController;
@@ -46,6 +47,7 @@ Route::get('/teste', [LoginController::class, 'teste']);
 Route::get('/teste_financeiro', [LoginController::class, 'teste_financeiro']);
 Route::post('/login', [LoginController::class, 'login'])->name('login');
 Route::get('/esqueceu_senha', [LoginController::class, 'esqueceu_senha'])->name('esqueceu_senha');
+
 Route::post('/recuperar_senha', [LoginController::class, 'recuperar_senha'])->name('recuperar_senha');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
 
@@ -267,6 +269,47 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/procedimentos/cancelar_set/', [ProcedimentoSistemaController::class, 'cancelar_set'])->name('sistema.procedimentos.cancelar_set');
         Route::get('/procedimentos/editar_medico/{codigo}', [ProcedimentoSistemaController::class, 'editar_medico'])->name('sistema.procedimentos.editar_medico');
         Route::post('/procedimentos/editar_medico_set', [ProcedimentoSistemaController::class, 'editar_medico_set'])->name('sistema.procedimentos.editar_medico_set');
+
+        // Prescrições (V2)
+        Route::get('/dash', [PrescricaoSistemaController::class, 'dash'])->name('sistema.dash');
+        Route::get('/dash/iniciar_atendimento/{id}', [PrescricaoSistemaController::class, 'iniciar_atendimento'])->name('sistema.dash.iniciar_atendimento');
+        Route::get('/prescricoes', [PrescricaoSistemaController::class, 'index'])->name('sistema.prescricoes');
+        Route::get('/prescricoes/index_pesq', [PrescricaoSistemaController::class, 'index_pesq'])->name('sistema.prescricoes.index_pesq');
+        Route::get('/prescricoes/adicionar', [PrescricaoSistemaController::class, 'adicionar'])->name('sistema.prescricoes.adicionar');
+        Route::post('/prescricoes/insert', [PrescricaoSistemaController::class, 'insert'])->name('sistema.prescricoes.insert');
+        Route::get('/prescricoes/acessar/{id}', [PrescricaoSistemaController::class, 'acessar'])->name('sistema.prescricoes.acessar');
+        // semanas
+        Route::get('/prescricoes/acessar_semana/{id}', [PrescricaoSistemaController::class, 'acessar_semana'])->name('sistema.prescricoes.acessar_semana');
+        Route::get('/prescricoes/financeiro/{prescricao_id}', [PrescricaoSistemaController::class, 'financeiro'])->name('sistema.prescricoes.financeiro');
+        Route::post('/prescricoes/lancar_pagamento', [PrescricaoSistemaController::class, 'lancar_pagamento'])->name('sistema.prescricoes.lancar_pagamento');
+        Route::post('/prescricoes/registrar_pagamento', [PrescricaoSistemaController::class, 'registrar_pagamento'])->name('sistema.prescricoes.registrar_pagamento');
+        Route::get('/prescricoes/enfermagem_acessar/{id}', [PrescricaoSistemaController::class, 'enfermagem_acessar'])->name('sistema.prescricoes.enfermagem_acessar');
+        Route::post('/prescricoes/enfermagem/set_aplicacao', [PrescricaoSistemaController::class, 'set_aplicacao_enfermagem'])->name('sistema.prescricoes.set_aplicacao_enfermagem');
+        Route::get('/prescricoes/enfermagem/busca_lote_por_codigo', [PrescricaoSistemaController::class, 'busca_lote_por_codigo'])->name('sistema.prescricoes.busca_lote_por_codigo');
+        Route::get('/prescricoes/enfermagem/busca_lote_por_codigo_frasco', [PrescricaoSistemaController::class, 'busca_lote_por_codigo_frasco'])->name('sistema.prescricoes.busca_lote_por_codigo_frasco');
+        Route::get('/prescricoes/enfermagem/get_lotes_medicamento_mg', [PrescricaoSistemaController::class, 'get_lotes_medicamento_mg'])->name('sistema.prescricoes.get_lotes_medicamento_mg');
+        Route::post('/prescricoes/enfermagem/abrir_frasco', [PrescricaoSistemaController::class, 'abrir_frasco'])->name('sistema.prescricoes.abrir_frasco');
+        Route::post('/prescricoes/enfermagem/marcar_anexo_visualizado', [PrescricaoSistemaController::class, 'marcar_anexo_visualizado'])->name('sistema.prescricoes.marcar_anexo_visualizado');
+        Route::post('/prescricoes/enviar_fila_aplicacao', [PrescricaoSistemaController::class, 'enviar_fila_aplicacao'])->name('sistema.prescricoes.enviar_fila_aplicacao');
+        Route::post('/prescricoes/enviar_fila_aplicacao_sem_pagamento', [PrescricaoSistemaController::class, 'enviar_fila_aplicacao_sem_pagamento'])->name('sistema.prescricoes.enviar_fila_aplicacao_sem_pagamento');
+        Route::get('/prescricoes/editar_semana/{id}', [PrescricaoSistemaController::class, 'editar_semana'])->name('sistema.prescricoes.editar_semana');
+        Route::post('/prescricoes/update_semana', [PrescricaoSistemaController::class, 'update_semana'])->name('sistema.prescricoes.update_semana');
+        Route::get('/prescricoes/excluir_semana/{id}', [PrescricaoSistemaController::class, 'excluir_semana'])->name('sistema.prescricoes.excluir_semana');
+        Route::post('/prescricoes/delete_semana', [PrescricaoSistemaController::class, 'delete_semana'])->name('sistema.prescricoes.delete_semana');
+        Route::get('/prescricoes/adicionar_semana/{prescricao_id}', [PrescricaoSistemaController::class, 'adicionar_semana'])->name('sistema.prescricoes.adicionar_semana');
+        Route::post('/prescricoes/insert_semana', [PrescricaoSistemaController::class, 'insert_semana'])->name('sistema.prescricoes.insert_semana');
+        Route::get('/prescricoes/adicionar_medicamentos/{prescricao_id}', [PrescricaoSistemaController::class, 'adicionar_medicamentos'])->name('sistema.prescricoes.adicionar_medicamentos');
+        Route::post('/prescricoes/insert_medicamentos', [PrescricaoSistemaController::class, 'insert_medicamentos'])->name('sistema.prescricoes.insert_medicamentos');
+        Route::get('/prescricoes/delete_medicamento/{id}', [PrescricaoSistemaController::class, 'delete_medicamento'])->name('sistema.prescricoes.delete_medicamento');
+        Route::get('/prescricoes/imprimir_paciente/{prescricao_id}', [PrescricaoSistemaController::class, 'imprimir_paciente'])->name('sistema.prescricoes.imprimir_paciente');
+        Route::get('/prescricoes/imprimir_cadastro/{prescricao_id}', [PrescricaoSistemaController::class, 'imprimir_cadastro'])->name('sistema.prescricoes.imprimir_cadastro');
+        Route::get('/prescricoes/imprimir_detalhes/{prescricao_id}', [PrescricaoSistemaController::class, 'imprimir_detalhes'])->name('sistema.prescricoes.imprimir_detalhes');
+        Route::post('/prescricoes/update_flag', [PrescricaoSistemaController::class, 'update_flag'])->name('sistema.prescricoes.update_flag');
+        Route::post('/prescricoes/salvar_observacao', [PrescricaoSistemaController::class, 'salvar_observacao'])->name('sistema.prescricoes.salvar_observacao');
+        Route::get('/prescricoes/editar/{id}', [PrescricaoSistemaController::class, 'editar_prescricao'])->name('sistema.prescricoes.editar_prescricao');
+        Route::post('/prescricoes/update', [PrescricaoSistemaController::class, 'update_prescricao'])->name('sistema.prescricoes.update_prescricao');
+        Route::post('/prescricoes/pagamento/update', [PrescricaoSistemaController::class, 'update_pagamento'])->name('sistema.prescricoes.update_pagamento');
+        Route::post('/prescricoes/pagamento/excluir', [PrescricaoSistemaController::class, 'excluir_pagamento'])->name('sistema.prescricoes.excluir_pagamento');
 
         Route::get('/pacientes', [PacienteSistemaController::class, 'index'])->name('sistema.pacientes');
         Route::get('/pacientes/index_pesq', [PacienteSistemaController::class, 'index_pesq'])->name('sistema.pacientes.index_pesq');

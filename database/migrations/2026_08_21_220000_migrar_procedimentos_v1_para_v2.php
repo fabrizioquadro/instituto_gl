@@ -57,7 +57,8 @@ return new class extends Migration
     {
         return match ($sit) {
             'Agendado' => 'Agendada',
-            'Fila de Aplicação', 'Atendimento', 'Pendente' => 'Em Atendimento',
+            'Fila de Aplicação', 'Atendimento' => 'Em Atendimento',
+            'Pendente' => 'Aplicação Parcial', // na V1 aplicou alguns medicamentos e faltaram outros
             'Aplicado' => 'Aplicada',
             'Aplicação Parcial' => 'Aplicação Parcial',
             'Cancelado' => 'Cancelada',

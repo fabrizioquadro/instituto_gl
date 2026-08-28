@@ -40,6 +40,15 @@ else{
         <link rel="stylesheet" href="{{ asset('/public/template/vendor/libs/swiper/swiper.css') }}" />
 
         <link href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" rel="stylesheet">
+        <style>
+            /* O CSS do DataTables (CDN) sobrescreve o padding do table-sm — força o compacto */
+            .table.table-sm.dataTable thead th,
+            .table.table-sm.dataTable thead td,
+            .table.table-sm.dataTable tbody th,
+            .table.table-sm.dataTable tbody td {
+                padding: 0.2rem 0.5rem !important;
+            }
+        </style>
         <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.0/ckeditor5.css" />
         <link rel="stylesheet" href="{{ asset('/public/css/bootstrap-combobox.css') }}" />
 
@@ -80,6 +89,12 @@ else{
                             <a href="{{ route('sistema.dashboard') }}" class="menu-link">
                                 <i class="menu-icon tf-icons mdi mdi-home-outline"></i>
                                 <div data-i18n="Dashboard">Dashboard</div>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{{ route('sistema.dash') }}" class="menu-link">
+                                <i class="menu-icon tf-icons mdi mdi-view-dashboard-outline"></i>
+                                <div data-i18n="Dash">Dash</div>
                             </a>
                         </li>
                         <li class="menu-item">
@@ -136,6 +151,12 @@ else{
                                 <a href="{{ route('sistema.procedimentos') }}" class="menu-link">
                                     <i class="menu-icon tf-icons mdi mdi-needle"></i>
                                     <div data-i18n="Procedimentos">Procedimentos</div>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ route('sistema.prescricoes') }}" class="menu-link">
+                                    <i class="menu-icon tf-icons mdi mdi-clipboard-text-outline"></i>
+                                    <div data-i18n="Prescrições">Prescrições</div>
                                 </a>
                             </li>
                         @endif

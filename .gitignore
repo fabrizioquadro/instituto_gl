@@ -20,3 +20,6 @@ yarn-error.log
 /public/procedimentos
 /public/rel_enfermagem
 /public/zips
+
+# Backups do banco (instalação local/servidor - nao vao pro git)
+/backup_*.sql

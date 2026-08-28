@@ -23,6 +23,9 @@ class EstoqueSistemaController extends Controller
 
         foreach($medicamentos as $linha){
             $medicamento = Medicamento::where('id', $linha->medicamento_id)->first();
+            if(!$medicamento){
+                continue;
+            }
             $lotes = Estoque::get_codigos_medicamento($medicamento->id, $user->clinica_id);
 
             foreach($lotes as $lote){

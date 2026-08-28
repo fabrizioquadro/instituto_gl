@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamentos do Paciente - Feegow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .info { color: #666; margin-bottom: 20px; font-size: 14px; }
+        .resumo { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .card {
+            background: white; border-radius: 8px; padding: 15px 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; flex: 1; min-width: 150px;
+        }
+        .card .numero { font-size: 28px; font-weight: bold; }
+        .card .rotulo { font-size: 12px; color: #666; text-transform: uppercase; margin-top: 5px; }
+        .card.total .numero { color: #333; }
+        table {
+            width: 100%; border-collapse: collapse; background: white;
+            border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th {
+            background: #4472C4; color: white; padding: 12px 10px;
+            text-align: left; font-size: 13px; white-space: nowrap;
+        }
+        td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        tr:hover { background: #f8f9fa; }
+        .footer { margin-top: 20px; text-align: center; color: #999; font-size: 12px; }
+        .sem-resultado { background: white; border-radius: 8px; padding: 40px; text-align: center; color: #666; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Agendamentos do Paciente na Feegow</h1>
+        <div class="info">
+            Paciente: <strong>Leandro Mingardi Mazzaro</strong> (ID Feegow: 14841)<br>
+            Período: 11-02-2026 até 10-08-2026 | Gerado em: 10/08/2026 01:31:43
+        </div>
+
+        <div class="resumo">
+            <div class="card total">
+                <div class="numero">23</div>
+                <div class="rotulo">Total de Agendamentos</div>
+            </div>
+            <div class="card" style="border-top:4px solid #28a745">
+                <div class="numero">23</div>
+                <div class="rotulo">Atendido</div>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID Agendamento</th>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>ID Paciente</th>
+                    <th>ID Procedimento</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Unidade</th>
+                    <th>Agendado Por</th>
+                    <th>Notas</th>
+                    <th>Agendado Em</th>
+                </tr>
+            </thead>
+            <tbody>
+        <tr>
+            <td style="white-space:nowrap">158476</td>
+            <td style="white-space:nowrap">2026-08-07</td>
+            <td style="white-space:nowrap">14:17</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 1.25 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-08-07 14:12:12</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">155927</td>
+            <td style="white-space:nowrap">2026-07-23</td>
+            <td style="white-space:nowrap">09:23</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-07-23 09:18:42</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">153971</td>
+            <td style="white-space:nowrap">2026-07-10</td>
+            <td style="white-space:nowrap">12:58</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 3.75 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-07-10 12:53:39</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">151678</td>
+            <td style="white-space:nowrap">2026-06-25</td>
+            <td style="white-space:nowrap">14:46</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>MOUNJARO 90MG 1.25 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-06-25 14:41:23</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">150585</td>
+            <td style="white-space:nowrap">2026-06-18</td>
+            <td style="white-space:nowrap">15:21</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>MOUNJARO 90MG 3.75 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-06-18 15:16:10</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">149402</td>
+            <td style="white-space:nowrap">2026-06-11</td>
+            <td style="white-space:nowrap">13:30</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), L CARNITINA 1 Ampola(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), MOUNJARO 90MG 5 Miligrama(s), VITAMINA D 1 Ampola(s)</td>
+            <td style="white-space:nowrap">2026-06-11 13:25:49</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">147059</td>
+            <td style="white-space:nowrap">2026-06-11</td>
+            <td style="white-space:nowrap">11:00</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">4</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Carolina da Rocha Marcolino</td>
+            <td></td>
+            <td style="white-space:nowrap">2026-05-28 11:31:21</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">147068</td>
+            <td style="white-space:nowrap">2026-05-28</td>
+            <td style="white-space:nowrap">11:59</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-05-28 11:55:00</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">146436</td>
+            <td style="white-space:nowrap">2026-05-23</td>
+            <td style="white-space:nowrap">15:02</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 2.5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-05-23 14:57:51</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">145007</td>
+            <td style="white-space:nowrap">2026-05-16</td>
+            <td style="white-space:nowrap">09:18</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-05-16 09:13:25</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">143645</td>
+            <td style="white-space:nowrap">2026-05-08</td>
+            <td style="white-space:nowrap">14:27</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 2.5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-05-08 14:22:52</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">142634</td>
+            <td style="white-space:nowrap">2026-05-02</td>
+            <td style="white-space:nowrap">13:41</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-05-02 13:36:41</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">141449</td>
+            <td style="white-space:nowrap">2026-04-25</td>
+            <td style="white-space:nowrap">15:34</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 2.5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-04-25 15:29:52</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">139894</td>
+            <td style="white-space:nowrap">2026-04-17</td>
+            <td style="white-space:nowrap">12:39</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 6.25 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-04-17 12:34:50</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">138620</td>
+            <td style="white-space:nowrap">2026-04-10</td>
+            <td style="white-space:nowrap">15:32</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>MOUNJARO 90MG 6.25 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-04-10 15:27:45</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">137625</td>
+            <td style="white-space:nowrap">2026-04-04</td>
+            <td style="white-space:nowrap">14:58</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-04-04 14:53:00</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">136503</td>
+            <td style="white-space:nowrap">2026-03-28</td>
+            <td style="white-space:nowrap">15:22</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-03-28 15:17:36</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">134544</td>
+            <td style="white-space:nowrap">2026-03-19</td>
+            <td style="white-space:nowrap">10:50</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-03-19 10:45:15</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">133389</td>
+            <td style="white-space:nowrap">2026-03-12</td>
+            <td style="white-space:nowrap">18:34</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-03-12 18:29:35</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">122884</td>
+            <td style="white-space:nowrap">2026-03-12</td>
+            <td style="white-space:nowrap">16:00</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">4</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Nathani Abreu de Santana</td>
+            <td></td>
+            <td style="white-space:nowrap">2026-01-09 12:58:50</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">131040</td>
+            <td style="white-space:nowrap">2026-02-27</td>
+            <td style="white-space:nowrap">13:24</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>MOUNJARO 60MG 8.75 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-02-27 13:19:15</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">129767</td>
+            <td style="white-space:nowrap">2026-02-20</td>
+            <td style="white-space:nowrap">14:15</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 8.75 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-02-20 14:10:40</td>
+        </tr>
+        <tr>
+            <td style="white-space:nowrap">128834</td>
+            <td style="white-space:nowrap">2026-02-13</td>
+            <td style="white-space:nowrap">13:29</td>
+            <td style="white-space:nowrap">14841</td>
+            <td style="white-space:nowrap">52</td>
+            <td style="white-space:nowrap">R$ 0,00</td>
+            <td style="white-space:nowrap"><span style="color:#28a745;font-weight:bold">Atendido</span> <small style="color:#999">(id 3)</small></td>
+            <td style="white-space:nowrap">INSTITUTO GL TATUAPÉ</td>
+            <td style="white-space:nowrap">Agendamento Online</td>
+            <td>COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 7.5 Miligrama(s)</td>
+            <td style="white-space:nowrap">2026-02-13 13:24:03</td>
+        </tr>
+            </tbody>
+        </table>
+        <div class="footer">Relatório gerado por scripts_recuperacao/buscar_agendamentos_paciente_feegow.php</div>
+    </div>
+</body>
+</html>

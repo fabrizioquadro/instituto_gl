@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação de Aplicações - Agendamentos Feegow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .info { color: #666; margin-bottom: 20px; font-size: 14px; }
+        .resumo {
+            display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .card {
+            background: white; border-radius: 8px; padding: 15px 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; flex: 1; min-width: 150px;
+        }
+        .card .numero { font-size: 28px; font-weight: bold; }
+        .card .rotulo { font-size: 12px; color: #666; text-transform: uppercase; margin-top: 5px; }
+        .card.total .numero { color: #333; }
+        .card.ok .numero { color: #28a745; }
+        .card.falha .numero { color: #dc3545; }
+        .card.erro .numero { color: #ffc107; }
+        table {
+            width: 100%; border-collapse: collapse; background: white;
+            border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th {
+            background: #4472C4; color: white; padding: 12px 10px;
+            text-align: left; font-size: 13px; white-space: nowrap;
+        }
+        td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        tr:hover { background: #f8f9fa; }
+        tr.sucesso td:first-child { border-left: 4px solid #28a745; }
+        tr.falha td:first-child { border-left: 4px solid #dc3545; }
+        .footer { margin-top: 20px; text-align: center; color: #999; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Verificação de Aplicações</h1>
+        <div class="info">Arquivo: agendamentos_feegow_18072026.xlsx | Gerado em: 31/07/2026 02:54:17</div>
+        
+        <div class="resumo">
+            <div class="card total">
+                <div class="numero">158</div>
+                <div class="rotulo">Total de Agendamentos</div>
+            </div>
+            <div class="card ok">
+                <div class="numero">128</div>
+                <div class="rotulo">Com Aplicação ✓</div>
+            </div>
+            <div class="card falha">
+                <div class="numero">30</div>
+                <div class="rotulo">Sem Aplicação ❌</div>
+            </div>
+            <div class="card erro">
+                <div class="numero">0</div>
+                <div class="rotulo">Erros</div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:30px"></th>
+                    <th>Data</th>
+                    <th>Paciente</th>
+                    <th>Código</th>
+                    <th>Semana</th>
+                    <th>ID Procedimento</th>
+                    <th>Medicamentos (Feegow)</th>
+                    <th>Aplicações (Sistema)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Marivalda Conceição dos Santos</td>
+            <td>2200520260516124907, 2200520260516124907</td>
+            <td>8, 10</td>
+            <td>32527, 32529</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Luis Queiroz Cardoso</td>
+            <td>2027820260627100612</td>
+            <td>3</td>
+            <td>39257</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), MOUNJARO 60MG (2.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Antonio Carlos Pereira</td>
+            <td>1900720260522120425, 1900720260522120425</td>
+            <td>6, 8</td>
+            <td>39556, 39559</td>
+            <td>MOUNJARO 60MG 8 Miligrama(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>MOUNJARO 60MG (8 Miligrama), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (8.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Reinaldo Moraes Silva</td>
+            <td>2236820260601142819</td>
+            <td>8</td>
+            <td>35062</td>
+            <td>TESTOSTERONA CIPIONATO 0.5 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 10 Miligrama(s)</td>
+            <td>TESTOSTERONA CIPIONATO (0.5 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (10 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Maria de Fátima Pires Franco Silva</td>
+            <td>2236720260601142107</td>
+            <td>8</td>
+            <td>35054</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 10 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (10 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Simone Carolina Pires Franco Silva</td>
+            <td>2217920260711131253</td>
+            <td>2</td>
+            <td>41645</td>
+            <td>MOUNJARO 60MG 10.5 Miligrama(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), NADH 1 Ampola(s)</td>
+            <td>MOUNJARO 90MG (10.5 Miligrama), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), NADH (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Bruno Coelho</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 12 Miligrama(s), TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Eduarda Regina Veiga</td>
+            <td>2254520260618151806</td>
+            <td>5</td>
+            <td>37705</td>
+            <td>MOUNJARO 60MG 1.25 Miligrama(s)</td>
+            <td>MOUNJARO 60MG (1.25 Miligrama), N ACETILCISTEÍNA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Gabriel Leme Pavani</td>
+            <td>2254620260618151431</td>
+            <td>5</td>
+            <td>37697</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 3.75 Miligrama(s), TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (3.75 Miligrama), TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Thiago de Lima Melo</td>
+            <td>2197220260523160853</td>
+            <td>8</td>
+            <td>33917</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Fernanda Caputo Franceschini</td>
+            <td>2236120260602100420</td>
+            <td>7</td>
+            <td>35130</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 3.75 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (3.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Tarciso Miguel de Oliveira Neto</td>
+            <td>1934520260630153912</td>
+            <td>3</td>
+            <td>39685</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (2.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Samira de Oliveira Dreige</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Isaías Barboza da Silva</td>
+            <td>2101320260703100529</td>
+            <td>3</td>
+            <td>40149</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (2.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Vinicius Pereira de Matos</td>
+            <td>2143820260525134820</td>
+            <td>7</td>
+            <td>33993</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Julio de Souza Freire</td>
+            <td>2094320260620110539</td>
+            <td>5</td>
+            <td>38085</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Felipe Costa Sendrete</td>
+            <td>2179420260627114949</td>
+            <td>4</td>
+            <td>39348</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), MOUNJARO 90MG 7.25 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), MOUNJARO 90MG (7.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Rafael Pires Franco Silva</td>
+            <td>2217820260706121032</td>
+            <td>2</td>
+            <td>40668</td>
+            <td>MOUNJARO 60MG 12.5 Miligrama(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>MOUNJARO 90MG (12.5 Miligrama), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Valeska Pires Franco Silva</td>
+            <td>2179520260627114550</td>
+            <td>4</td>
+            <td>39340</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 7 Miligrama(s)</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (7 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Paulo Roberto dos Santos</td>
+            <td>2235920260613110707</td>
+            <td>6</td>
+            <td>37012</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Leandro Carvalho Costa</td>
+            <td>1978320260711112216</td>
+            <td>2</td>
+            <td>41592</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), MOUNJARO 60MG 7.5 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), MOUNJARO 90MG (7.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Pedro Henrique de Andrade Raneia</td>
+            <td>2221520260516120333</td>
+            <td>10</td>
+            <td>38076</td>
+            <td>MOUNJARO 60MG 1.25 Miligrama(s)</td>
+            <td>MOUNJARO 90MG (1.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Joilson Martins Vianna</td>
+            <td>1964020260703184913</td>
+            <td>3</td>
+            <td>40253</td>
+            <td>CHORIOMON HCG 1 Ampola(s)</td>
+            <td>CHORIOMON HCG (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Fernando Duarte Cardo</td>
+            <td>1201820260328133751</td>
+            <td>7</td>
+            <td>24275</td>
+            <td>L CARNITINA 1 Ampola(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s)</td>
+            <td>L CARNITINA (1 Ampola), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), COENZIMA Q10 (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Erivaldo Silva Castro</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>CHORIOMON HCG 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Daniel Bernardino da Silva</td>
+            <td>2069520260627111444</td>
+            <td>4</td>
+            <td>39316</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (2.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Alexandre Araújo de Oliveira Pinheiro</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), VITAMINA D 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Paulo Henrique Riotinto Lima</td>
+            <td>1959920260521200444</td>
+            <td>7</td>
+            <td>33505</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Fabio Soares Pereira</td>
+            <td>2231920260603101716</td>
+            <td>7</td>
+            <td>35400</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 7.5 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (7.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Paula Sebastiana Oliveira Victor</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Renata Saraiva Rodrigues</td>
+            <td>1560220260615202014</td>
+            <td>3</td>
+            <td>37194</td>
+            <td>N ACETILCISTEÍNA 0.5 Ampola(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), NANDROLONA 0.5 Ampola(s), NADH 1 Ampola(s)</td>
+            <td>N ACETILCISTEÍNA (0.5 Ampola), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), CURCUMINA (1 Ampola), NANDROLONA (0.5 Ampola), NADH (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Renata Ercolin</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 3.75 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Ludovina Aparecida Vaz Coutinho</td>
+            <td>1972020260311170906</td>
+            <td>7</td>
+            <td>20917</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s)</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>Parcial - Faltando: COENZIMA Q</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Renato Pereira de Carvalho</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Camila Cavalcante Vince</td>
+            <td>2254320260704123041</td>
+            <td>3</td>
+            <td>40466</td>
+            <td>BCAA-HMB 1 Ampola(s), MAGNÉSIO 1 Ampola(s), VITAMINA B3 1 Ampola(s), L TAURINA INOSITOL 1 Ampola(s), N ACETILCISTEÍNA 1 Ampola(s)</td>
+            <td>MOUNJARO 90MG (2.5 Miligrama), NANDROLONA (0.5 Ampola)</td>
+            <td>Parcial - Faltando: BCAA-HMB, MAGNÉSIO, VITAMINA B, L TAURINA INOSITOL, N ACETILCISTEÍNA</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Aline Magalhães dos Santos</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 1.25 Miligrama(s), VITAMINA D 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Daniele Ribeiro Vieira</td>
+            <td>1673820260620144843</td>
+            <td>5</td>
+            <td>38184</td>
+            <td>MOUNJARO 60MG 8.75 Miligrama(s)</td>
+            <td>MOUNJARO 60MG (8.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Silvana Riguete Lino de Oliveira</td>
+            <td>2111620260523145828</td>
+            <td>6</td>
+            <td>41874</td>
+            <td>MOUNJARO 90MG 8.75 Miligrama(s), CURCUMINA 1 Ampola(s), L CARNITINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), VITAMINA C 1 Ampola(s)</td>
+            <td>MOUNJARO 90MG (8.75 Miligrama), CURCUMINA (1 Ampola), L CARNITINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), VITAMINA C (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Beatriz Ribeiro Vieira</td>
+            <td>1881020260620145330</td>
+            <td>5</td>
+            <td>38192</td>
+            <td>MOUNJARO 60MG 8.75 Miligrama(s)</td>
+            <td>MOUNJARO 60MG (8.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Cristiane Caldeira de Moura</td>
+            <td>2119920260425154010</td>
+            <td>7</td>
+            <td>28824</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), NANDROLONA 0.5 Ampola(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), NANDROLONA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Flávio Tacumi Matake</td>
+            <td>2148720260606144043</td>
+            <td>7</td>
+            <td>35786</td>
+            <td>MOUNJARO 60MG 2.5 Miligrama(s), L CARNITINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), CHORIOMON HCG 1 Ampola(s)</td>
+            <td>MOUNJARO 90MG (2.5 Miligrama), L CARNITINA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), CHORIOMON HCG (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Glauciane Tancredo de Moura</td>
+            <td>2158520260523103717, 2158520260523103717</td>
+            <td>7, 9</td>
+            <td>33694, 33696</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Lucas Caldeira Gutierrez</td>
+            <td>1394220260704102449</td>
+            <td>3</td>
+            <td>40361</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Gabriela Duranzi Winterink</td>
+            <td>2234620260603142201</td>
+            <td>7</td>
+            <td>35486</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 3.75 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (8.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Fernando Nascimento de Oliveira</td>
+            <td>2023520260430154213</td>
+            <td>7</td>
+            <td>29738</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Isabela Lacerda Santiago Diniz</td>
+            <td>2096820260529113937</td>
+            <td>7</td>
+            <td>34643</td>
+            <td>MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>MOUNJARO 90MG (2.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Victor Rodrigues Meira</td>
+            <td>2064520260417130928</td>
+            <td>7</td>
+            <td>27506</td>
+            <td>L CARNITINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>L CARNITINA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (1.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Juliana Peixe</td>
+            <td>1859720260427171816</td>
+            <td>6</td>
+            <td>29022</td>
+            <td>MOUNJARO 90MG 6.25 Miligrama(s)</td>
+            <td>CURCUMINA (1 Ampola), MORUSIL (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), MOUNJARO 90MG (6.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Mariana Luiza de Melo Iizuka</td>
+            <td>2202520260707134831</td>
+            <td>2</td>
+            <td>40840</td>
+            <td>CURCUMINA 1 Ampola(s), L CARNITINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td>CURCUMINA (1 Ampola), L CARNITINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), MOUNJARO 60MG (5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>&#039;&#039;Ligia Maria Rodrigues de Paula</td>
+            <td>2063620260424132501</td>
+            <td>6</td>
+            <td>28478</td>
+            <td>MOUNJARO 60MG 1.25 Miligrama(s)</td>
+            <td>MOUNJARO 60MG (1.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Christian Henrique Marques</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Jonas Silva</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Ana Cristina Rodrigues Simonelli</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>L CARNITINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 3.5 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Maria Aldark Ferraz dos Santos de Melo</td>
+            <td>2229720260612175613</td>
+            <td>4</td>
+            <td>36897</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 6.25 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (6.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Ivonete de Moraes Carvalho</td>
+            <td>2205220260521134258</td>
+            <td>5</td>
+            <td>33349</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), NANDROLONA 0.5 Ampola(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), NANDROLONA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Naiana Martins Sacramento</td>
+            <td>1896620260514144715</td>
+            <td>9</td>
+            <td>31951</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), NANDROLONA 0.5 Ampola(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), NANDROLONA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Eduardo Penco</td>
+            <td>1121420260627132117</td>
+            <td>4</td>
+            <td>39404</td>
+            <td>MOUNJARO 60MG 14 Miligrama(s)</td>
+            <td>MOUNJARO 60MG (14 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Agatha dos Santos Paiva</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 3.75 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Rogério Almeida Mamona</td>
+            <td>2270320260704140957</td>
+            <td>3</td>
+            <td>40506</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Renan Mendonça Piva</td>
+            <td>1011520260515123052</td>
+            <td>9</td>
+            <td>32207</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 3.75 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (3.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Roberta Angelon Brunelli</td>
+            <td>1858520260609144349</td>
+            <td>4</td>
+            <td>36003</td>
+            <td>CURCUMINA 1 Ampola(s), L CARNITINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td>CURCUMINA (1 Ampola), L CARNITINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Larissa Tavares de Menezes</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 1.25 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Jose Esequiel de Lima Neto</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Victor Frederico Barbosa de Andrade</td>
+            <td>2036020260528185603</td>
+            <td>8</td>
+            <td>34560</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), NANDROLONA 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), NANDROLONA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Rafael Loures Correa</td>
+            <td>2116420260627105954</td>
+            <td>4</td>
+            <td>39287</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Ricardo Polimeno</td>
+            <td>1654920260702171336</td>
+            <td>3</td>
+            <td>40088</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Karina Aparecida Barbosa</td>
+            <td>2168120260626135907</td>
+            <td>4</td>
+            <td>39070</td>
+            <td>CURCUMINA 1 Ampola(s), L CARNITINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), MOUNJARO 60MG 10 Miligrama(s)</td>
+            <td>CURCUMINA (1 Ampola), L CARNITINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), MOUNJARO 90MG (10 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Paula Guimarães Cardoso</td>
+            <td>1938720260627131042</td>
+            <td>4</td>
+            <td>39396</td>
+            <td>MOUNJARO 60MG 6 Miligrama(s), L CARNITINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>MOUNJARO 60MG (6 Miligrama), L CARNITINA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Marcello Lincoln Gomes Mattos</td>
+            <td>1199620260423194300</td>
+            <td>11</td>
+            <td>28370</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Amanda Grzyb</td>
+            <td>2270920260708102416</td>
+            <td>2</td>
+            <td>40977</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (2.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Luiz Filipe Martin Morra</td>
+            <td>1818620260624111249</td>
+            <td>4</td>
+            <td>38559</td>
+            <td>CHORIOMON HCG 1 Ampola(s)</td>
+            <td>CHORIOMON HCG (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Diego Semensato de Oliveira Cardoso</td>
+            <td>2216820260704140310</td>
+            <td>3</td>
+            <td>40496</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), MOUNJARO 60MG 9.5 Miligrama(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), MOUNJARO 90MG (9.5 Miligrama), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Henrique Pedroso</td>
+            <td>1981820260620115333</td>
+            <td>5</td>
+            <td>38098</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Sabrina Araujo Oliveira</td>
+            <td>1419020260422181048</td>
+            <td>6</td>
+            <td>28136</td>
+            <td>CURCUMINA 1 Ampola(s), L CARNITINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td>CURCUMINA (1 Ampola), L CARNITINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), MOUNJARO 60MG (5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Isaque Saraiva Bezerra</td>
+            <td>1881720260516120132</td>
+            <td>5</td>
+            <td>32491</td>
+            <td>CHORIOMON HCG 1 Ampola(s)</td>
+            <td>CHORIOMON HCG (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Eufrasio Alexandre Barbosa Júnior</td>
+            <td>2201120260617111252</td>
+            <td>5</td>
+            <td>37440</td>
+            <td>L CARNITINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 9 Miligrama(s), CHORIOMON HCG 1 Ampola(s)</td>
+            <td>L CARNITINA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (9 Miligrama), Biompedância (1 Procedimento), CHORIOMON HCG (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Mônica Cleia Sousa Carvalho</td>
+            <td>963520260616115900</td>
+            <td>2</td>
+            <td>37261</td>
+            <td>CURCUMINA 1 Ampola(s), MORUSIL 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), NADH 1 Ampola(s), NANDROLONA 0.5 Ampola(s)</td>
+            <td>CURCUMINA (1 Ampola), MORUSIL (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), NADH (1 Ampola), NANDROLONA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Gislaine Gomes Santos</td>
+            <td>674320260407174618</td>
+            <td>4</td>
+            <td>25540</td>
+            <td>MOUNJARO 60MG 2 Miligrama(s), ZINCO 2 Ampola(s), VITAMINA C 2 Ampola(s)</td>
+            <td>MOUNJARO 60MG (2 Miligrama)</td>
+            <td>Parcial - Faltando: ZINCO, VITAMINA C</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>David Medeiros Leite</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 2.5 Miligrama(s), TESTOSTERONA ENANTATO 1 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Monalisa Santos Lima</td>
+            <td>2164020260724121226</td>
+            <td>1</td>
+            <td>42475</td>
+            <td>CURCUMINA 1 Ampola(s), L CARNITINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td>CURCUMINA (1 Ampola), L CARNITINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), MOUNJARO 90MG (5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Luiz Caue Sashihara Fontes</td>
+            <td>1839220260619175749</td>
+            <td>3</td>
+            <td>37990</td>
+            <td>CHORIOMON HCG 1 Ampola(s)</td>
+            <td>CHORIOMON HCG (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Fabio Augusto Nunes Fuentes</td>
+            <td>1073920260615111000</td>
+            <td>4</td>
+            <td>37133</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 3.75 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (3.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Camilla Scarpa</td>
+            <td>1839320260619175816</td>
+            <td>3</td>
+            <td>37996</td>
+            <td>NANDROLONA 0.5 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>NANDROLONA (0.5 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Roberta Keli Pellegrini Pacheco</td>
+            <td>2201720260710115251</td>
+            <td>2</td>
+            <td>41303</td>
+            <td>MOUNJARO 60MG 5 Miligrama(s), CURCUMINA 1 Ampola(s), L CARNITINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td>MOUNJARO 60MG (5 Miligrama), CURCUMINA (1 Ampola), L CARNITINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Thiago Gomes do Nascimento</td>
+            <td>2112620260626184310</td>
+            <td>4</td>
+            <td>39172</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Fernanda Oliveira</td>
+            <td>1497220260415113529</td>
+            <td>7</td>
+            <td>26996</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 7.5 Miligrama(s)</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (7.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Rogério Custódio de Oliveira</td>
+            <td>1980720260516162245</td>
+            <td>7</td>
+            <td>32644</td>
+            <td>N ACETILCISTEÍNA 0.5 Ampola(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 90MG 7.5 Miligrama(s), TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>N ACETILCISTEÍNA (0.5 Ampola), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (7.5 Miligrama), TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Bruno Pinto de Almeida Santos</td>
+            <td>2087820260627114232</td>
+            <td>4</td>
+            <td>39331</td>
+            <td>MOUNJARO 60MG 10 Miligrama(s), N ACETILCISTEÍNA 0.5 Ampola(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>MOUNJARO 90MG (10 Miligrama), N ACETILCISTEÍNA (0.5 Ampola), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), CURCUMINA (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Davi Damasceno Cruz</td>
+            <td>935620260611102451, 935620260611102451, 935620260611102451, 935620260611102451</td>
+            <td>5, 6, 7, 8</td>
+            <td>36479, 36480, 36481, 36482</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MORUSIL 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MORUSIL (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Marcos Roberto Queiroz</td>
+            <td>1961120260502161424</td>
+            <td>7</td>
+            <td>30029</td>
+            <td>CURCUMINA 1 Ampola(s), MORUSIL 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 8.75 Miligrama(s)</td>
+            <td>CURCUMINA (1 Ampola), MORUSIL (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 90MG (8.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Bruno Ramos de Almeida Vieira</td>
+            <td>1517820260213140207</td>
+            <td>12</td>
+            <td>16621</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Mauricio Colella Ferreira</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>&amp;quot;Tauana Lemes de Oliveira&amp;quot;</td>
+            <td>1924720260522175932</td>
+            <td>1</td>
+            <td>33573</td>
+            <td>CURCUMINA 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>CURCUMINA (1 Ampola), MOUNJARO 60MG (2.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Silvia Guedes da Silva</td>
+            <td>2133420260523140035, 2133420260523144040</td>
+            <td>5, 9</td>
+            <td>33812, 33842</td>
+            <td>MOUNJARO 60MG 1.25 Miligrama(s)</td>
+            <td>MOUNJARO 90MG (1.25 Miligrama), MOUNJARO 90MG (1.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Tiago Roberto Gonçalves</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 3 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Vando Alcantara Aniceto</td>
+            <td>2148420260618194924, 2148420260618194924, 2148420260618194924, 2148420260618194924</td>
+            <td>5, 6, 7, 8</td>
+            <td>37809, 37810, 37811, 37812</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Arcenio Rodrigues da Silva</td>
+            <td>2207320260508131957</td>
+            <td>10</td>
+            <td>31035</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Tatiane Cabral</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 2 Miligrama(s), NADH 1 Ampola(s), L CARNITINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Fabiana Antonia de Andrade</td>
+            <td>2176020260613102242</td>
+            <td>6</td>
+            <td>36989</td>
+            <td>MOUNJARO 60MG 2.5 Miligrama(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>MOUNJARO 90MG (2.5 Miligrama), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Paula Cristina Cravo Roxo</td>
+            <td>2159420260625143936</td>
+            <td>4</td>
+            <td>38826</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), NADH 1 Ampola(s)</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), CURCUMINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), NADH (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Itamar Finozzi</td>
+            <td>2133920260627162827</td>
+            <td>4</td>
+            <td>39514</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Sergio Adriano Menezes dos Santos Souza</td>
+            <td>2186720260704144142</td>
+            <td>3</td>
+            <td>40544</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Lucas Rosestolato</td>
+            <td>2244920260603183727</td>
+            <td>7</td>
+            <td>35586</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Rodrigo George Garcia</td>
+            <td>2218020260515143908</td>
+            <td>10</td>
+            <td>32257</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Marluci Mucedula Marques da Silva</td>
+            <td>2217320260523102249</td>
+            <td>8</td>
+            <td>33679</td>
+            <td>NADH 1 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>NADH (1 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Janete Pereira da Silva</td>
+            <td>2205720260613152517</td>
+            <td>6</td>
+            <td>37112</td>
+            <td>MOUNJARO 60MG 6.25 Miligrama(s), NADH 1 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>MOUNJARO 90MG (6.25 Miligrama), NADH (1 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Lucio Ribeiro da Silva</td>
+            <td>1428920260425144402</td>
+            <td>6</td>
+            <td>29026</td>
+            <td>N ACETILCISTEÍNA 0.5 Ampola(s), NANDROLONA 1 Ampola(s)</td>
+            <td>N ACETILCISTEÍNA (0.5 Ampola), NANDROLONA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Luciane Mucedula Marques da Silva</td>
+            <td>1680520260620094023</td>
+            <td>3</td>
+            <td>38038</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s), NADH 1 Ampola(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (2.5 Miligrama), NADH (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Beatriz Teixeira Santos</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 7.5 Miligrama(s), NANDROLONA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), L CARNITINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Flávio Augusto Gomide</td>
+            <td>2104320260523152058</td>
+            <td>8</td>
+            <td>33892</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 1.25 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (1.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Talita Oliveira Takaji</td>
+            <td>2258520260627123148</td>
+            <td>4</td>
+            <td>39382</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Carla Santana Andrade Zanardi</td>
+            <td>2182520260504190936</td>
+            <td>8</td>
+            <td>30209</td>
+            <td>MOUNJARO 60MG 1.25 Miligrama(s)</td>
+            <td>MOUNJARO 90MG (1.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Suely Pereira Carvalho da Silva</td>
+            <td>1799320260609103959</td>
+            <td>5</td>
+            <td>35912</td>
+            <td>CURCUMINA 1 Ampola(s), L CARNITINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td>CURCUMINA (1 Ampola), L CARNITINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Matheus Motta Ferreira</td>
+            <td>1990020260601200129</td>
+            <td>6</td>
+            <td>35109</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Barbara Rosestolato</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>FERRO ENDOVENOSO 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Caroline Pena Carvalho Martins</td>
+            <td>1655020260505140607, 1655020260505140607</td>
+            <td>5, 6</td>
+            <td>30349, 30350</td>
+            <td>CURCUMINA 1 Ampola(s), MORUSIL 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td>CURCUMINA (1 Ampola), MORUSIL (1 Ampola), VITAMINA C (1 Ampola), BCAA-HMB (1 Ampola), MAGNÉSIO (1 Ampola), VITAMINA B3 (1 Ampola), N ACETILCISTEÍNA (1 Ampola), NANDROLONA (0.5 Ampola), MOUNJARO 60MG (5 Miligrama), CURCUMINA (1 Ampola), MORUSIL (1 Ampola), MOUNJARO 60MG (5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Daniella Dionisio Xavier Buccini</td>
+            <td>2258420260704143151, 2258420260704143241</td>
+            <td>3, 3</td>
+            <td>40518, 40530</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), NADH 1 Ampola(s), MOUNJARO 60MG 1.25 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), NADH (1 Ampola), MOUNJARO 60MG (1.25 Miligrama), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), NADH (1 Ampola), MOUNJARO 60MG (1.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Carolina Fiorentino de Araújo Rocha Oliveira</td>
+            <td>2024320260425154251</td>
+            <td>7</td>
+            <td>28832</td>
+            <td>MOUNJARO 60MG 2.5 Miligrama(s), NANDROLONA 0.5 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>MOUNJARO 90MG (2.5 Miligrama), NANDROLONA (0.5 Ampola), N ACETILCISTEÍNA (0.5 Ampola), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Débora Lopes da Silva</td>
+            <td>1879220260704123011</td>
+            <td>3</td>
+            <td>40458</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>&amp;quot;Marcos Paulo de Miranda Leal&amp;quot;</td>
+            <td>2202320260711142930</td>
+            <td>1</td>
+            <td>41666</td>
+            <td>MOUNJARO 60MG 6.25 Miligrama(s), TESTOSTERONA ENANTATO 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>MOUNJARO 90MG (6.25 Miligrama), TESTOSTERONA ENANTATO (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Zuleide da Silva</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 1.25 Miligrama(s), VITAMINA D 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Vanessa Chaves de Oliveira Leal</td>
+            <td>2157820260613160313</td>
+            <td>6</td>
+            <td>37121</td>
+            <td>MOUNJARO 60MG 7.5 Miligrama(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td>MOUNJARO 90MG (7.5 Miligrama)</td>
+            <td>Parcial - Faltando: PQQ - PIRROLOQUINOLINA QUINONA, CURCUMINA, N ACETILCISTEÍNA</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Lucas Gonzaga Almeida</td>
+            <td>2203120260530105047</td>
+            <td>7</td>
+            <td>34851</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 3.75 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 90MG (3.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Thiago Ribeiro Vieira</td>
+            <td>1303120260410101223</td>
+            <td>9</td>
+            <td>26245</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 3 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (3 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Lucas de Godoi Paronetti</td>
+            <td>2148320260602152046</td>
+            <td>5</td>
+            <td>35295</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 6.25 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (6.25 Miligrama), Biompedância (1 Procedimento)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Breno Mauricio Mattos Martins</td>
+            <td>1655220260602124736</td>
+            <td>7</td>
+            <td>35229</td>
+            <td>NADH 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>NADH (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Thiago Santos Gonzaga</td>
+            <td>2034320260506184904</td>
+            <td>7</td>
+            <td>30696</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), N ACETILCISTEÍNA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Roberto Cardoso Teixeira</td>
+            <td>2146720260618104241</td>
+            <td>5</td>
+            <td>37585</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 8.75 Miligrama(s)</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), CURCUMINA (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (8.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Marcia Souza Santos</td>
+            <td>1928920260613123846</td>
+            <td>5</td>
+            <td>37040</td>
+            <td>NANDROLONA 1 Ampola(s), CURCUMINA 1 Ampola(s), BCAA-HMB 1 Ampola(s), MAGNÉSIO 1 Ampola(s), VITAMINA B3 1 Ampola(s), L TAURINA INOSITOL 1 Ampola(s), N ACETILCISTEÍNA 1 Ampola(s)</td>
+            <td>NANDROLONA (1 Ampola), CURCUMINA (1 Ampola), BCAA-HMB (1 Ampola), MAGNÉSIO (1 Ampola), VITAMINA B3 (1 Ampola), L TAURINA INOSITOL (1 Ampola), N ACETILCISTEÍNA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Marcelo Guimarães Belmonte da Silva</td>
+            <td>2046920260523162144</td>
+            <td>8</td>
+            <td>33953</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Janaina Eloiza Máximo</td>
+            <td>2203320260711120849, 2203320260711120849</td>
+            <td>2, 3</td>
+            <td>41619, 41620</td>
+            <td>MOUNJARO 60MG 4.25 Miligrama(s)</td>
+            <td>MOUNJARO 90MG (4.25 Miligrama), MOUNJARO 90MG (4.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Wanessa Lima Leão</td>
+            <td>1479720260521120505</td>
+            <td>5</td>
+            <td>33323</td>
+            <td>MOUNJARO 90MG 7.5 Miligrama(s), NANDROLONA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MORUSIL 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td>MOUNJARO 60MG (7.5 Miligrama), NANDROLONA (0.5 Ampola), CURCUMINA (1 Ampola), MORUSIL (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Marcella Smith Amaral Feitosa Lima</td>
+            <td>2258920260713184345</td>
+            <td>2</td>
+            <td>41793</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), NADH 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), NADH (1 Ampola), MOUNJARO 90MG (2.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Thiago Vieira Ishie</td>
+            <td>1679820260713191056, 1679820260627085517</td>
+            <td>1, 4</td>
+            <td>41801, 39227</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), NANDROLONA 2 Ampola(s), MOUNJARO 90MG 1.25 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), NANDROLONA (1 Ampola), MOUNJARO 60MG (5 Miligrama), TESTOSTERONA ENANTATO (1 Ampola), NANDROLONA (2 Ampola), MOUNJARO 60MG (1.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Daniel Ornelas Gannone</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 6.25 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Ana Isabele Freitas de Araujo Oliveira</td>
+            <td>2206020260711100359</td>
+            <td>2</td>
+            <td>41519</td>
+            <td>NADH 1 Ampola(s), MOUNJARO 60MG 6 Miligrama(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>NADH (1 Ampola), MOUNJARO 90MG (6 Miligrama), COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>André Gomes de Oliveira</td>
+            <td>2071720260711094956</td>
+            <td>2</td>
+            <td>41502</td>
+            <td>L CARNITINA 1 Ampola(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), TESTOSTERONA ENANTATO 0.5 Ampola(s), MOUNJARO 60MG 10 Miligrama(s)</td>
+            <td>L CARNITINA (1 Ampola), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), COENZIMA Q10 (1 Ampola), TESTOSTERONA ENANTATO (0.5 Ampola), MOUNJARO 90MG (10 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Camila de Matos Albano</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 2.5 Miligrama(s), COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Camila Lopes de Sousa</td>
+            <td>1686020260627152215</td>
+            <td>4</td>
+            <td>39463</td>
+            <td>MOUNJARO 60MG 10 Miligrama(s)</td>
+            <td>MOUNJARO 90MG (10 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Donata Galier Lechner</td>
+            <td>2271920260711151809</td>
+            <td>2</td>
+            <td>41701</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 90MG 3.75 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (3.75 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Amanda Romara Gomes Coura</td>
+            <td>1663120260620152932</td>
+            <td>3</td>
+            <td>38243</td>
+            <td>MOUNJARO 60MG 2.5 Miligrama(s), NANDROLONA 0.5 Ampola(s)</td>
+            <td>MOUNJARO 60MG (2.5 Miligrama), NANDROLONA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Herik Henrique dos Santos</td>
+            <td>1396220260416134337</td>
+            <td>11</td>
+            <td>27272</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 3 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (3 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Rodrigo Diniz Barboza da Silva</td>
+            <td>1515920260530142232</td>
+            <td>8</td>
+            <td>34956</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Lucas Henrique Araújo de Melo</td>
+            <td>963020260613151332</td>
+            <td>6</td>
+            <td>37098</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 90MG 5 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 90MG (5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Robert Campisi</td>
+            <td>1854920260711161100</td>
+            <td>2</td>
+            <td>41709</td>
+            <td>TESTOSTERONA ENANTATO 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), PQQ - PIRROLOQUINOLINA QUINONA 1 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 90MG 1.25 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (1.25 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Kelly christine dos santos</td>
+            <td>2179320260523112250</td>
+            <td>6</td>
+            <td>33718</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (2.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Sheila Abila Fernandes</td>
+            <td>2279420260711140752</td>
+            <td>2</td>
+            <td>41659</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 90MG 7.5 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), MOUNJARO 90MG (7.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Elisangela Ruffo</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>MOUNJARO 60MG 1.25 Miligrama(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Anderson dos Santos Barreto</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td></td>
+            <td>Nenhum procedimento na data</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Eduardo Henrique Almeida</td>
+            <td>1960020260530135800</td>
+            <td>8</td>
+            <td>34939</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Fabricio Masaharu Oiwa da Costa</td>
+            <td>2055420260526111411</td>
+            <td>9</td>
+            <td>34137</td>
+            <td>MOUNJARO 60MG 5 Miligrama(s), TESTOSTERONA ENANTATO 0.5 Ampola(s)</td>
+            <td>MOUNJARO 60MG (5 Miligrama), TESTOSTERONA ENANTATO (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Eric Eiji Godoy Uemoto</td>
+            <td>2132020260706175732</td>
+            <td>2</td>
+            <td>40724</td>
+            <td>TESTOSTERONA ENANTATO 0.5 Ampola(s), L CARNITINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 90MG 6.5 Miligrama(s)</td>
+            <td>TESTOSTERONA ENANTATO (0.5 Ampola), L CARNITINA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (6.5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Guilherme Oliveira de Assis</td>
+            <td>2176620260519193904</td>
+            <td>9</td>
+            <td>33045</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), TESTOSTERONA ENANTATO 1 Ampola(s), MOUNJARO 60MG 5 Miligrama(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), TESTOSTERONA ENANTATO (1 Ampola), MOUNJARO 60MG (5 Miligrama)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="falha">
+            <td>❌</td>
+            <td>18-07-2026</td>
+            <td>Thais Dantas Del Picolo Bolonha Gabassi</td>
+            <td>2203720260704171044</td>
+            <td>3</td>
+            <td>40610</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s), MOUNJARO 60MG 3 Miligrama(s)</td>
+            <td>PQQ - PIRROLOQUINOLINA QUINONA (1 Ampola), COENZIMA Q10 (1 Ampola), CURCUMINA (1 Ampola), MOUNJARO 60MG (3 Miligrama)</td>
+            <td>Parcial - Faltando: N ACETILCISTEÍNA</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Lydiane Aparecida Lancelotti Gomes</td>
+            <td>2277420260707132808</td>
+            <td>3</td>
+            <td>40830</td>
+            <td>COENZIMA Q10 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s), CURCUMINA 1 Ampola(s)</td>
+            <td>COENZIMA Q10 (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola), CURCUMINA (1 Ampola), NADH (1 Ampola), MOUNJARO 60MG (6.25 Miligrama), Biompedância (1 Procedimento)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Mariana da Rosa</td>
+            <td>1491620260530154409, 1491620260530154409</td>
+            <td>5, 8</td>
+            <td>34974, 34977</td>
+            <td>NADH 1 Ampola(s), CURCUMINA 1 Ampola(s), COENZIMA Q10 1 Ampola(s), MOUNJARO 60MG 2.5 Miligrama(s)</td>
+            <td>NADH (1 Ampola), CURCUMINA (1 Ampola), COENZIMA Q10 (1 Ampola), MOUNJARO 60MG (3.5 Miligrama), Biompedância (1 Procedimento), ZINCO (1 Ampola), VITAMINA C (1 Ampola), NADH (1 Ampola), CURCUMINA (1 Ampola), COENZIMA Q10 (1 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Thais Toneloto de Paula Novais</td>
+            <td>1805220260516134540</td>
+            <td>5</td>
+            <td>32560</td>
+            <td>NADH 1 Ampola(s), NANDROLONA 0.5 Ampola(s), MORUSIL 1 Ampola(s), ZINCO 2 Ampola(s)</td>
+            <td>NADH (1 Ampola), NANDROLONA (0.5 Ampola), MORUSIL (1 Ampola), ZINCO (2 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>        <tr class="sucesso">
+            <td>✅</td>
+            <td>18-07-2026</td>
+            <td>Juciara Borges Santana Rodrigues</td>
+            <td>1566820260704162615</td>
+            <td>2</td>
+            <td>40599</td>
+            <td>ZINCO 1 Ampola(s), VITAMINA C 1 Ampola(s), N ACETILCISTEÍNA 0.5 Ampola(s)</td>
+            <td>ZINCO (1 Ampola), VITAMINA C (1 Ampola), N ACETILCISTEÍNA (0.5 Ampola)</td>
+            <td>OK - Todos os medicamentos encontrados</td>
+        </tr>
+            </tbody>
+        </table>
+        
+        <div class="footer">
+            Script: verificar_aplicacoes.php | 31/07/2026 02:54:17
+        </div>
+    </div>
+</body>
+</html>
