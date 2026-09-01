@@ -598,8 +598,10 @@ class PrescricaoSistemaController extends Controller
 
             if ($modo == 1) {
                 // reestrutura: valor informado vira a 1ª parcela aberta
+                // o valor efetivamente devido é o tratamento MENOS o crédito em aberto
+                $valor_devido = round((float) $prescricao->valor_tratamento - (float) $prescricao->credito_em_aberto, 2);
                 $total_pago_existente = round($parcelas->sum('valor_pago'), 2);
-                $restante_tratamento = round((float) $prescricao->valor_tratamento - $total_pago_existente, 2);
+                $restante_tratamento = round($valor_devido - $total_pago_existente, 2);
                 if ($vl_total > $restante_tratamento + 0.005) {
                     throw new \Exception('O valor do pagamento (R$ ' . number_format($vl_total, 2, ',', '.') . ') é maior que o valor restante do tratamento (R$ ' . number_format($restante_tratamento, 2, ',', '.') . ').');
                 }
@@ -657,6 +659,28 @@ class PrescricaoSistemaController extends Controller
         }
     }
 
+    private function restaurar_parcelas_snapshot($pagamento)
+    {
+        $snapshot = $pagamento->snapshot_parcelas;
+        if (!is_array($snapshot) || count($snapshot) === 0) {
+            // pagamento NÃO reestruturado: estorno clássico apenas do valor_pago
+            $this->estornar_pagamento_parcelas($pagamento);
+            return;
+        }
+        // pagamento reestruturado: restaura o estado completo das parcelas (valor_parcela, valor_pago e situação)
+        foreach ($snapshot as $item) {
+            $parcela = FinanceiroParcela::find($item['id'] ?? null);
+            if (!$parcela) {
+                continue;
+            }
+            $parcela->valor_parcela = $item['valor_parcela'] ?? $parcela->valor_parcela;
+            $parcela->valor_pago = $item['valor_pago'] ?? 0;
+            $parcela->situacao = $item['situacao']
+                ?? ($parcela->valor_pago >= (float) $parcela->valor_parcela - 0.005 ? 'Paga' : ($parcela->valor_pago > 0 ? 'Parcial' : 'Em Aberto'));
+            $parcela->save();
+        }
+    }
+
     private function apagar_registros_pagamento($pagamento)
     {
         foreach ($pagamento->anexos as $anexo) {
@@ -680,8 +704,16 @@ class PrescricaoSistemaController extends Controller
             $prescricao_id = $pagamento->prescricao_id;
             $vl_estornado = $pagamento->vl_total;
 
+            // Regra LIFO: somente o ÚLTIMO pagamento da prescrição pode ser excluído.
+            // Os pagamentos posteriores foram calculados sobre o estado que este pagamento criou;
+            // excluí-lo fora de ordem deixaria as parcelas inconsistentes.
+            $ultimo = PrescricaoPagamento::where('prescricao_id', $prescricao_id)->orderByDesc('id')->first();
+            if (!$ultimo || $ultimo->id != $pagamento->id) {
+                throw new \Exception('Somente o último pagamento pode ser excluído. Para excluir este, exclua antes os pagamentos mais recentes.');
+            }
+
             DB::transaction(function () use ($pagamento, $prescricao_id, $vl_estornado) {
-                $this->estornar_pagamento_parcelas($pagamento);
+                $this->restaurar_parcelas_snapshot($pagamento);
                 $this->apagar_registros_pagamento($pagamento);
                 $this->registrar_log($prescricao_id, 'financeiro', $pagamento->id, 'Pagamento', 'Pagamento excluído (estorno de R$ ' . number_format($vl_estornado, 2, ',', '.') . ')');
                 $pagamento->delete();
@@ -779,6 +811,16 @@ class PrescricaoSistemaController extends Controller
 
     private function aplicar_pagamento_reestruturar($pagamento, $prescricao, $parcelas, $vl_total)
     {
+        // snapshot do estado COMPLETO das parcelas ANTES da reestruturação,
+        // para permitir restaurar os valores originais ao excluir o pagamento (LIFO).
+        $pagamento->snapshot_parcelas = $parcelas->map(fn($p) => [
+            'id' => $p->id,
+            'valor_parcela' => (float) $p->valor_parcela,
+            'valor_pago' => (float) $p->valor_pago,
+            'situacao' => $p->situacao,
+        ])->values()->toArray();
+        $pagamento->save();
+
         $abertas = $parcelas->filter(fn($p) => (float) $p->valor_parcela - (float) $p->valor_pago > 0.005)->values();
         $first = $abertas->first();
         $demais = $abertas->slice(1)->values();
@@ -798,8 +840,9 @@ class PrescricaoSistemaController extends Controller
             'valor' => $vl_total,
         ]);
 
-        // divide a diferença (restante do tratamento) nas demais parcelas abertas
-        $restante = round((float) $prescricao->valor_tratamento - ($total_pago_existente + $vl_total), 2);
+        // divide a diferença (restante do valor devido = tratamento - crédito em aberto) nas demais parcelas abertas
+        $valor_devido = round((float) $prescricao->valor_tratamento - (float) $prescricao->credito_em_aberto, 2);
+        $restante = round($valor_devido - ($total_pago_existente + $vl_total), 2);
         $n = $demais->count();
         if ($n > 0) {
             if ($restante > 0) {
@@ -829,7 +872,8 @@ class PrescricaoSistemaController extends Controller
         if (!$prescricao) {
             return;
         }
-        $valor = (float) $prescricao->valor_tratamento;
+        // valor efetivamente devido (tratamento MENOS o crédito em aberto)
+        $valor = round((float) $prescricao->valor_tratamento - (float) $prescricao->credito_em_aberto, 2);
         $total_pago = (float) $prescricao->parcelas()->sum('valor_pago');
         $sit = 'Em Aberto';
         if ($prescricao->situacao === 'Cancelada') {

@@ -17,7 +17,12 @@ class PrescricaoPagamento extends Model
         'dt_pagamento',
         'vl_total',
         'obs',
+        'snapshot_parcelas',
         'user_id',
+    ];
+
+    protected $casts = [
+        'snapshot_parcelas' => 'array',
     ];
 
     public function prescricao()

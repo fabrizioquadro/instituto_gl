@@ -148,6 +148,7 @@ switch($prescricao->situacao_financeira){
                     </tr>
                 </thead>
                 <tbody>
+                    @php $ultimo_pagamento_id = $prescricao->pagamentos->max('id'); @endphp
                     @forelse($prescricao->pagamentos as $pagamento)
                         <tr>
                             <td>{{ $pagamento->dt_pagamento ? dataDbForm($pagamento->dt_pagamento) : '-' }}</td>
@@ -167,13 +168,19 @@ switch($prescricao->situacao_financeira){
                                 <button type="button" class="btn btn-sm btn-icon btn-label-primary" title="Editar" onclick="abrir_modal_editar_pagamento({{ $pagamento->id }})">
                                     <span class="tf-icons mdi mdi-pencil"></span>
                                 </button>
-                                <form action="{{ route('sistema.prescricoes.excluir_pagamento') }}" method="post" class="d-inline" onsubmit="return confirm('Excluir este pagamento e estornar os valores das parcelas?');">
-                                    @csrf
-                                    <input type="hidden" name="pagamento_id" value="{{ $pagamento->id }}">
-                                    <button type="submit" class="btn btn-sm btn-icon btn-label-danger" title="Excluir">
-                                        <span class="tf-icons mdi mdi-delete"></span>
+                                @if($pagamento->id === $ultimo_pagamento_id)
+                                    <form action="{{ route('sistema.prescricoes.excluir_pagamento') }}" method="post" class="d-inline" onsubmit="return confirm('Excluir este pagamento e estornar os valores das parcelas?');">
+                                        @csrf
+                                        <input type="hidden" name="pagamento_id" value="{{ $pagamento->id }}">
+                                        <button type="submit" class="btn btn-sm btn-icon btn-label-danger" title="Excluir">
+                                            <span class="tf-icons mdi mdi-delete"></span>
+                                        </button>
+                                    </form>
+                                @else
+                                    <button type="button" class="btn btn-sm btn-icon btn-label-secondary" title="Somente o último pagamento pode ser excluído" disabled>
+                                        <span class="tf-icons mdi mdi-lock"></span>
                                     </button>
-                                </form>
+                                @endif
                             </td>
                         </tr>
                     @empty
