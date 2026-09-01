@@ -339,7 +339,7 @@ $template = "layout.".session()->get('layout');
                 <div class="row mt-2 gy-4">
                     <div class="col-md-12">
                         <div class="form-floating form-floating-outline">
-                            <select id="combo_id" class="select2 form-select">
+                            <select id="combo_id" class="form-select">
                                 <option value="">Opções</option>
                                 @foreach($combos as $combo)
                                     <option value="{{ $combo->id }}">{{ $combo->nome }}</option>
@@ -1106,7 +1106,6 @@ window.addEventListener('load', function(){
             );
         });
         $('#medico').select2({ placeholder: ' ' });
-        $('#combo_id').select2({ placeholder: ' ' });
     }
 });
 </script>
