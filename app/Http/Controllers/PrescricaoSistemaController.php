@@ -413,7 +413,11 @@ class PrescricaoSistemaController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('sistema/prescricoes/acessar_semana', compact('semana', 'semanas', 'parcela', 'semana_paga', 'logs'));
+        // regra de fila: a semana anterior (com medicação) precisa estar Aplicada/Aplicação Parcial
+        $motivo_fila = null;
+        $pode_enviar_fila = $this->pode_enviar_para_fila($semana, $motivo_fila);
+
+        return view('sistema/prescricoes/acessar_semana', compact('semana', 'semanas', 'parcela', 'semana_paga', 'logs', 'pode_enviar_fila', 'motivo_fila'));
     }
 
     public function financeiro($prescricao_id)
@@ -995,7 +999,7 @@ class PrescricaoSistemaController extends Controller
         try {
             $user = auth()->user() ?? session()->get('user');
 
-            $semana = PrescricaoSemana::with('prescricao.paciente', 'prescricao.anexos', 'medicamentos.medicamento', 'medicamentos.lotes')->find($id);
+            $semana = PrescricaoSemana::with('prescricao.paciente', 'prescricao.anexos')->find($id);
             if (!$semana) {
                 throw new \Exception('Semana não encontrada.');
             }
@@ -1005,20 +1009,37 @@ class PrescricaoSistemaController extends Controller
                 return redirect()->route('sistema.prescricoes.acessar_semana', $id);
             }
 
-            if ($semana->situacao != 'Fila de Aplicação' && $semana->user_id_aplicacao != $user->id) {
-                return redirect()->route('sistema.dash')->with('mensagem_erro', 'Este paciente já está sendo atendido!');
+            // LOTE: todas as semanas da prescrição que estão em Fila de Aplicação / Em Atendimento
+            // (caso de entrega de várias semanas de uma vez — uma tabela por semana na tela)
+            $semanas = PrescricaoSemana::with('medicamentos.medicamento', 'medicamentos.lotes', 'prescricao.anexos')
+                ->where('prescricao_id', $semana->prescricao_id)
+                ->whereIn('situacao', ['Fila de Aplicação', 'Em Atendimento'])
+                ->orderBy('nr_semana')
+                ->get();
+
+            if ($semanas->isEmpty()) {
+                return redirect()->route('sistema.dash')->with('mensagem_erro', 'Nenhuma semana em fila de aplicação para esta prescrição.');
             }
 
-            if (!$this->semana_esta_paga($semana) && floatval($prescricao->valor_tratamento) > 0) {
-                return redirect()->route('sistema.dash')->with('mensagem_erro', 'Esta semana não está paga para fazer a aplicação.');
+            // bloqueios por lote: alguma semana em atendimento por outro usuário / alguma não paga
+            foreach ($semanas as $s) {
+                if ($s->situacao == 'Em Atendimento' && $s->user_id_aplicacao && $s->user_id_aplicacao != $user->id) {
+                    return redirect()->route('sistema.dash')->with('mensagem_erro', 'Este paciente já está sendo atendido!');
+                }
+                if (!$this->semana_esta_paga($s) && floatval($prescricao->valor_tratamento) > 0) {
+                    return redirect()->route('sistema.dash')->with('mensagem_erro', 'A Semana ' . $s->nr_semana . ' não está paga para fazer a aplicação.');
+                }
             }
 
-            if ($semana->situacao != 'Em Atendimento') {
-                $semana->situacao = 'Em Atendimento';
-                $semana->dt_hr_atendimento = now();
-                $semana->user_id_aplicacao = $user->id;
-                $semana->save();
-                $this->registrar_log($prescricao->id, 'semana', $semana->id, 'Atendimento', 'Atendimento iniciado por ' . $user->nome);
+            // marca todas as semanas do lote como Em Atendimento (dono = usuário logado)
+            foreach ($semanas as $s) {
+                if ($s->situacao != 'Em Atendimento') {
+                    $s->situacao = 'Em Atendimento';
+                    $s->dt_hr_atendimento = now();
+                    $s->user_id_aplicacao = $user->id;
+                    $s->save();
+                    $this->registrar_log($s->prescricao_id, 'semana', $s->id, 'Atendimento', 'Atendimento iniciado por ' . $user->nome);
+                }
             }
 
             $estoques_abertos = EstoqueAberto::where('clinica_id', $user->clinica_id)
@@ -1027,7 +1048,7 @@ class PrescricaoSistemaController extends Controller
                 ->orderBy('dt_cadastro', 'desc')
                 ->get();
 
-            return view('sistema/prescricoes/enfermagem_acessar', compact('semana', 'prescricao', 'estoques_abertos', 'user'));
+            return view('sistema/prescricoes/enfermagem_acessar', compact('semanas', 'prescricao', 'estoques_abertos', 'user'));
         } catch (\Exception $e) {
             return redirect()->route('sistema.dash')->with('mensagem_erro', $e->getMessage());
         }
@@ -1168,25 +1189,47 @@ class PrescricaoSistemaController extends Controller
         try {
             $user = auth()->user() ?? session()->get('user');
 
-            $semana = PrescricaoSemana::with('medicamentos.medicamento')->find($request->semana_id);
-            if (!$semana) {
-                throw new \Exception('Semana não encontrada.');
+            // semanas a aplicar (lote multi-semana). Aceita 'semanas[]' (lote) ou 'semana_id' (retrocompat)
+            $ids = $request->semanas ?: [$request->semana_id];
+            $ids = array_values(array_filter(array_map('intval', (array) $ids)));
+            if (count($ids) === 0) {
+                throw new \Exception('Nenhuma semana informada.');
             }
-            $prescricao_id = $semana->prescricao_id;
 
-            // REGRA: obrigar a conferir o pedido médico (abrir anexo) antes de aplicar
+            $semanas = PrescricaoSemana::with('medicamentos.medicamento')
+                ->whereIn('id', $ids)
+                ->orderBy('nr_semana')
+                ->get();
+            if ($semanas->count() !== count(array_unique($ids))) {
+                throw new \Exception('Alguma semana não foi encontrada.');
+            }
+
+            $prescricao_id = $semanas->first()->prescricao_id;
+            foreach ($semanas as $sem) {
+                if ($sem->prescricao_id != $prescricao_id) {
+                    throw new \Exception('As semanas informadas pertencem a prescrições diferentes.');
+                }
+                // somente o usuário que iniciou o atendimento pode registrar aplicações
+                if ($sem->user_id_aplicacao && $sem->user_id_aplicacao != $user->id) {
+                    throw new \Exception('Este atendimento está sendo realizado por outro profissional. Apenas o usuário que iniciou pode registrar as aplicações.');
+                }
+            }
+
+            // REGRA: obrigar a conferir o pedido médico (abrir anexo) antes de aplicar — vale para o lote
             $vai_aplicar_controlado = false;
-            foreach ($semana->medicamentos as $m) {
-                if ($m->situacao != 'Aberta') {
-                    continue;
-                }
-                $pend = $request->{'controle_pendente_' . $m->id} ?? null;
-                if ($pend == 'Sim') {
-                    continue;
-                }
-                if ($m->medicamento && in_array($m->medicamento->unidade, ['Ampola', 'Miligrama'])) {
-                    $vai_aplicar_controlado = true;
-                    break;
+            foreach ($semanas as $sem) {
+                foreach ($sem->medicamentos as $m) {
+                    if ($m->situacao != 'Aberta') {
+                        continue;
+                    }
+                    $pend = $request->{'controle_pendente_' . $m->id} ?? null;
+                    if ($pend == 'Sim') {
+                        continue;
+                    }
+                    if ($m->medicamento && in_array($m->medicamento->unidade, ['Ampola', 'Miligrama'])) {
+                        $vai_aplicar_controlado = true;
+                        break 2;
+                    }
                 }
             }
             if ($vai_aplicar_controlado) {
@@ -1199,89 +1242,177 @@ class PrescricaoSistemaController extends Controller
                 }
             }
 
-            $semana_pendente = false;
-            $aplicou = false;
+            $obs_aplicacao = $request->obs_aplicacao;
 
-            foreach ($semana->medicamentos as $medAplic) {
-                if ($medAplic->situacao != 'Aberta') {
-                    continue;
-                }
-                $medicamento = $medAplic->medicamento;
-                if (!$medicamento) {
-                    continue;
-                }
-
-                $var_pendente = 'controle_pendente_' . $medAplic->id;
-                $controle_pendente = $request->$var_pendente ?? null;
-                if ($controle_pendente == 'Sim') {
-                    $semana_pendente = true;
-                    $medAplic->situacao = 'Pendente';
-                    $medAplic->save();
-                    continue;
-                }
-
-                // copia os horários da semana para a medicação (podem variar por aplicação)
-                $medAplic->dt_hr_chegada = $semana->dt_hr_chegada;
-                $medAplic->dt_hr_atendimento = $semana->dt_hr_atendimento;
-
-                $var_lote = 'lote_' . $medAplic->id;
-                $lote = $request->$var_lote ?? null;
-                $var_codigo = 'codigo_barras_' . $medAplic->id;
-                $codigo_barras = $request->$var_codigo ?? null;
-
-                // quantidade a retirar do estoque (regra 0.5: ampola inteira vs fração)
-                $quantidade_retirar = $request->{'quantidade_retirar_' . $medAplic->id} ?? $medAplic->quantidade;
-                $quantidade_retirar = (float) $quantidade_retirar;
-
-                if ($medicamento->unidade == 'Ampola') {
-                    if (empty($lote) || empty($codigo_barras)) {
-                        throw new \Exception('O campo Lote e Código de Barras são obrigatórios para a aplicação de ' . $medicamento->nome);
+            // aplica todas as semanas do lote de forma atômica (se algo falhar, desfaz tudo)
+            $semanas_aplicadas = [];
+            \DB::transaction(function () use ($request, $user, $semanas, $prescricao_id, $obs_aplicacao, &$semanas_aplicadas) {
+                foreach ($semanas as $semana) {
+                    [$aplicou, $pendente] = $this->aplicar_semana($request, $user, $semana, $obs_aplicacao);
+                    if (!$aplicou && !$pendente) {
+                        continue;
                     }
-                    $estoque = Estoque::where('medicamento_id', $medicamento->id)
-                        ->where('lote', $lote)
-                        ->where('codigo_barras', $codigo_barras)
-                        ->where('clinica_id', $user->clinica_id)
+                    $semana->situacao = $pendente ? 'Aplicação Parcial' : 'Aplicada';
+                    $semana->data_aplicada = date('Y-m-d');
+                    $semana->dt_hr_finalizacao = now();
+                    $semana->save();
+                    $this->registrar_log($prescricao_id, 'semana', $semana->id, 'Aplicação', 'Aplicação realizada' . ($pendente ? ' (parcial)' : ''));
+                    $semanas_aplicadas[] = $semana->id;
+                }
+                $this->recalcular_situacao_prescricao($prescricao_id);
+            });
+
+            if (count($semanas_aplicadas) === 0) {
+                throw new \Exception('Nenhuma aplicação foi registrada.');
+            }
+
+            // enfileira o envio para a Feegow — 1 envio por semana aplicada (assíncrono, não bloqueia o sistema)
+            foreach ($semanas_aplicadas as $semana_id) {
+                try {
+                    (new \App\Http\Controllers\ApiFlegowController())->enfileirar_aplicacao_prescricao($semana_id);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Falha ao enfileirar envio Feegow da semana ' . $semana_id . ': ' . $e->getMessage());
+                }
+            }
+
+            return redirect()->route('sistema.dash')->with('mensagem', 'Aplicação Realizada');
+        } catch (\Exception $e) {
+            return redirect()->route('sistema.dash')->with('mensagem_erro', $e->getMessage());
+        }
+    }
+
+    /**
+     * Processa as medicações abertas de UMA semana (marca aplicadas/pendentes e dá baixa de estoque/lote).
+     * Retorna [aplicou, pendente].
+     */
+    private function aplicar_semana($request, $user, $semana, $obs_aplicacao)
+    {
+        $pendente = false;
+        $aplicou = false;
+
+        foreach ($semana->medicamentos as $medAplic) {
+            if ($medAplic->situacao != 'Aberta') {
+                continue;
+            }
+            $medicamento = $medAplic->medicamento;
+            if (!$medicamento) {
+                continue;
+            }
+
+            $var_pendente = 'controle_pendente_' . $medAplic->id;
+            $controle_pendente = $request->$var_pendente ?? null;
+            if ($controle_pendente == 'Sim') {
+                $pendente = true;
+                $medAplic->situacao = 'Pendente';
+                $medAplic->save();
+                continue;
+            }
+
+            // copia os horários da semana para a medicação (podem variar por aplicação)
+            $medAplic->dt_hr_chegada = $semana->dt_hr_chegada;
+            $medAplic->dt_hr_atendimento = $semana->dt_hr_atendimento;
+
+            $var_lote = 'lote_' . $medAplic->id;
+            $lote = $request->$var_lote ?? null;
+            $var_codigo = 'codigo_barras_' . $medAplic->id;
+            $codigo_barras = $request->$var_codigo ?? null;
+
+            // quantidade a retirar do estoque (regra 0.5: ampola inteira vs fração)
+            $quantidade_retirar = $request->{'quantidade_retirar_' . $medAplic->id} ?? $medAplic->quantidade;
+            $quantidade_retirar = (float) $quantidade_retirar;
+
+            if ($medicamento->unidade == 'Ampola') {
+                if (empty($lote) || empty($codigo_barras)) {
+                    throw new \Exception('O campo Lote e Código de Barras são obrigatórios para a aplicação de ' . $medicamento->nome);
+                }
+                $estoque = Estoque::where('medicamento_id', $medicamento->id)
+                    ->where('lote', $lote)
+                    ->where('codigo_barras', $codigo_barras)
+                    ->where('clinica_id', $user->clinica_id)
+                    ->first();
+                if ($estoque && $estoque->dt_vencimento && $estoque->dt_vencimento < date('Y-m-d')) {
+                    throw new \Exception('O lote ' . $lote . ' do medicamento ' . $medicamento->nome . ' está vencido desde ' . dataDbForm($estoque->dt_vencimento) . '.');
+                }
+
+                PrescricaoLote::create([
+                    'prescricao_semana_medicamento_id' => $medAplic->id,
+                    'quantidade' => $quantidade_retirar,
+                    'lote' => $lote,
+                    'codigo_barras' => $codigo_barras,
+                    'estoque_aberto_id' => null,
+                ]);
+                $medAplic->user_id_aplicacao = $user->id;
+                $medAplic->situacao = 'Aplicada';
+                $medAplic->obs = $obs_aplicacao;
+                $medAplic->aplicado_em = now();
+                $medAplic->save();
+
+                Estoque::create([
+                    'clinica_id' => $user->clinica_id,
+                    'medicamento_id' => $medicamento->id,
+                    'origem' => 'Procedimento',
+                    'tipo' => 'Saida',
+                    'quantidade' => $quantidade_retirar,
+                    'valor' => 0,
+                    'total' => 0,
+                    'lote' => $lote,
+                    'dt_vencimento' => $estoque->dt_vencimento ?? null,
+                    'codigo_barras' => $codigo_barras,
+                ]);
+                $aplicou = true;
+            } elseif ($medicamento->unidade == 'Miligrama') {
+                $var_controle = 'controle_med_' . $medAplic->id;
+                $controle = $request->$var_controle ?? null;
+                if ($controle != '2_codigo' && (empty($lote) || empty($codigo_barras))) {
+                    throw new \Exception('O campo Lote e Código de Barras são obrigatórios para a aplicação de ' . $medicamento->nome);
+                }
+                if ($lote && $codigo_barras && $controle != '2_codigo') {
+                    $aberto = EstoqueAberto::where('codigo_barras', $codigo_barras)->where('clinica_id', $user->clinica_id)->first();
+                    if (!$aberto) {
+                        throw new \Exception('Frasco aberto não encontrado para o código ' . $codigo_barras);
+                    }
+                    $estoque_lote = Estoque::where('medicamento_id', $aberto->medicamento_id)
+                        ->where('lote', $aberto->lote)
+                        ->where('codigo_barras', $aberto->codigo_barras)
+                        ->where('clinica_id', $aberto->clinica_id)
                         ->first();
-                    if ($estoque && $estoque->dt_vencimento && $estoque->dt_vencimento < date('Y-m-d')) {
-                        throw new \Exception('O lote ' . $lote . ' do medicamento ' . $medicamento->nome . ' está vencido desde ' . dataDbForm($estoque->dt_vencimento) . '.');
+                    if ($estoque_lote && $estoque_lote->dt_vencimento && $estoque_lote->dt_vencimento < date('Y-m-d')) {
+                        throw new \Exception('O lote ' . $aberto->lote . ' do medicamento ' . $medicamento->nome . ' está vencido desde ' . dataDbForm($estoque_lote->dt_vencimento) . '.');
                     }
-
+                    $aberto->qt_utilizado += $medAplic->quantidade;
+                    $aberto->qt_restante -= $medAplic->quantidade;
+                    if ($aberto->qt_restante <= 0) {
+                        $aberto->situacao = 'Finalizado';
+                    }
+                    $aberto->save();
                     PrescricaoLote::create([
                         'prescricao_semana_medicamento_id' => $medAplic->id,
-                        'quantidade' => $quantidade_retirar,
-                        'lote' => $lote,
-                        'codigo_barras' => $codigo_barras,
-                        'estoque_aberto_id' => null,
+                        'quantidade' => $medAplic->quantidade,
+                        'lote' => $aberto->lote,
+                        'codigo_barras' => $aberto->codigo_barras,
+                        'estoque_aberto_id' => $aberto->id,
                     ]);
                     $medAplic->user_id_aplicacao = $user->id;
                     $medAplic->situacao = 'Aplicada';
-                    $medAplic->obs = $request->obs_aplicacao;
+                    $medAplic->obs = $obs_aplicacao;
                     $medAplic->aplicado_em = now();
-                    $medAplic->save();
-
-                    Estoque::create([
-                        'clinica_id' => $user->clinica_id,
-                        'medicamento_id' => $medicamento->id,
-                        'origem' => 'Procedimento',
-                        'tipo' => 'Saida',
-                        'quantidade' => $quantidade_retirar,
-                        'valor' => 0,
-                        'total' => 0,
-                        'lote' => $lote,
-                        'dt_vencimento' => $estoque->dt_vencimento ?? null,
-                        'codigo_barras' => $codigo_barras,
-                    ]);
-                    $aplicou = true;
-                } elseif ($medicamento->unidade == 'Miligrama') {
-                    $var_controle = 'controle_med_' . $medAplic->id;
-                    $controle = $request->$var_controle ?? null;
-                    if ($controle != '2_codigo' && (empty($lote) || empty($codigo_barras))) {
-                        throw new \Exception('O campo Lote e Código de Barras são obrigatórios para a aplicação de ' . $medicamento->nome);
+                    if ($aberto->medicamento_id != $medAplic->medicamento_id) {
+                        $medAplic->medicamento_id = $aberto->medicamento_id;
                     }
-                    if ($lote && $codigo_barras && $controle != '2_codigo') {
-                        $aberto = EstoqueAberto::where('codigo_barras', $codigo_barras)->where('clinica_id', $user->clinica_id)->first();
+                    $medAplic->save();
+                    $aplicou = true;
+                } elseif ($controle == '2_codigo') {
+                    $codigo_b1 = $request->{'cod_med_1_' . $medAplic->id} ?? null;
+                    $quantidade1 = (float) ($request->{'quant_med_1_' . $medAplic->id} ?? 0);
+                    $codigo_b2 = $request->{'cod_med_2_' . $medAplic->id} ?? null;
+                    $quantidade2 = (float) ($request->{'quant_med_2_' . $medAplic->id} ?? 0);
+                    if (empty($codigo_b1) || empty($codigo_b2)) {
+                        throw new \Exception('O Código de Barras dos dois frascos são obrigatórios para a aplicação de ' . $medicamento->nome);
+                    }
+                    foreach ([[$codigo_b1, $quantidade1], [$codigo_b2, $quantidade2]] as [$cod, $qtd]) {
+                        $aberto = EstoqueAberto::where('codigo_barras', $cod)->where('clinica_id', $user->clinica_id)->first();
                         if (!$aberto) {
-                            throw new \Exception('Frasco aberto não encontrado para o código ' . $codigo_barras);
+                            throw new \Exception('Frasco aberto não encontrado para o código ' . $cod);
                         }
                         $estoque_lote = Estoque::where('medicamento_id', $aberto->medicamento_id)
                             ->where('lote', $aberto->lote)
@@ -1289,101 +1420,43 @@ class PrescricaoSistemaController extends Controller
                             ->where('clinica_id', $aberto->clinica_id)
                             ->first();
                         if ($estoque_lote && $estoque_lote->dt_vencimento && $estoque_lote->dt_vencimento < date('Y-m-d')) {
-                            throw new \Exception('O lote ' . $aberto->lote . ' do medicamento ' . $medicamento->nome . ' está vencido desde ' . dataDbForm($estoque_lote->dt_vencimento) . '.');
+                            throw new \Exception('O lote ' . $aberto->lote . ' de um dos frascos de ' . $medicamento->nome . ' está vencido.');
                         }
-                        $aberto->qt_utilizado += $medAplic->quantidade;
-                        $aberto->qt_restante -= $medAplic->quantidade;
+                        $aberto->qt_utilizado += $qtd;
+                        $aberto->qt_restante -= $qtd;
                         if ($aberto->qt_restante <= 0) {
                             $aberto->situacao = 'Finalizado';
                         }
                         $aberto->save();
                         PrescricaoLote::create([
                             'prescricao_semana_medicamento_id' => $medAplic->id,
-                            'quantidade' => $medAplic->quantidade,
+                            'quantidade' => $qtd,
                             'lote' => $aberto->lote,
                             'codigo_barras' => $aberto->codigo_barras,
                             'estoque_aberto_id' => $aberto->id,
                         ]);
-                        $medAplic->user_id_aplicacao = $user->id;
-                        $medAplic->situacao = 'Aplicada';
-                        $medAplic->obs = $request->obs_aplicacao;
-                        $medAplic->aplicado_em = now();
-                        if ($aberto->medicamento_id != $medAplic->medicamento_id) {
-                            $medAplic->medicamento_id = $aberto->medicamento_id;
-                        }
-                        $medAplic->save();
-                        $aplicou = true;
-                    } elseif ($controle == '2_codigo') {
-                        $codigo_b1 = $request->{'cod_med_1_' . $medAplic->id} ?? null;
-                        $quantidade1 = (float) ($request->{'quant_med_1_' . $medAplic->id} ?? 0);
-                        $codigo_b2 = $request->{'cod_med_2_' . $medAplic->id} ?? null;
-                        $quantidade2 = (float) ($request->{'quant_med_2_' . $medAplic->id} ?? 0);
-                        if (empty($codigo_b1) || empty($codigo_b2)) {
-                            throw new \Exception('O Código de Barras dos dois frascos são obrigatórios para a aplicação de ' . $medicamento->nome);
-                        }
-                        foreach ([[$codigo_b1, $quantidade1], [$codigo_b2, $quantidade2]] as [$cod, $qtd]) {
-                            $aberto = EstoqueAberto::where('codigo_barras', $cod)->where('clinica_id', $user->clinica_id)->first();
-                            if (!$aberto) {
-                                throw new \Exception('Frasco aberto não encontrado para o código ' . $cod);
-                            }
-                            $estoque_lote = Estoque::where('medicamento_id', $aberto->medicamento_id)
-                                ->where('lote', $aberto->lote)
-                                ->where('codigo_barras', $aberto->codigo_barras)
-                                ->where('clinica_id', $aberto->clinica_id)
-                                ->first();
-                            if ($estoque_lote && $estoque_lote->dt_vencimento && $estoque_lote->dt_vencimento < date('Y-m-d')) {
-                                throw new \Exception('O lote ' . $aberto->lote . ' de um dos frascos de ' . $medicamento->nome . ' está vencido.');
-                            }
-                            $aberto->qt_utilizado += $qtd;
-                            $aberto->qt_restante -= $qtd;
-                            if ($aberto->qt_restante <= 0) {
-                                $aberto->situacao = 'Finalizado';
-                            }
-                            $aberto->save();
-                            PrescricaoLote::create([
-                                'prescricao_semana_medicamento_id' => $medAplic->id,
-                                'quantidade' => $qtd,
-                                'lote' => $aberto->lote,
-                                'codigo_barras' => $aberto->codigo_barras,
-                                'estoque_aberto_id' => $aberto->id,
-                            ]);
-                        }
-                        $medAplic->user_id_aplicacao = $user->id;
-                        $medAplic->situacao = 'Aplicada';
-                        $medAplic->obs = $request->obs_aplicacao;
-                        $medAplic->aplicado_em = now();
-                        if ($aberto->medicamento_id != $medAplic->medicamento_id) {
-                            $medAplic->medicamento_id = $aberto->medicamento_id;
-                        }
-                        $medAplic->save();
-                        $aplicou = true;
                     }
-                } elseif ($medicamento->unidade == 'Procedimento') {
                     $medAplic->user_id_aplicacao = $user->id;
                     $medAplic->situacao = 'Aplicada';
-                    $medAplic->obs = $codigo_barras;
+                    $medAplic->obs = $obs_aplicacao;
                     $medAplic->aplicado_em = now();
+                    if ($aberto->medicamento_id != $medAplic->medicamento_id) {
+                        $medAplic->medicamento_id = $aberto->medicamento_id;
+                    }
                     $medAplic->save();
                     $aplicou = true;
                 }
+            } elseif ($medicamento->unidade == 'Procedimento') {
+                $medAplic->user_id_aplicacao = $user->id;
+                $medAplic->situacao = 'Aplicada';
+                $medAplic->obs = $codigo_barras;
+                $medAplic->aplicado_em = now();
+                $medAplic->save();
+                $aplicou = true;
             }
-
-            if (!$aplicou && !$semana_pendente) {
-                throw new \Exception('Nenhuma aplicação foi registrada.');
-            }
-
-            $semana->situacao = $semana_pendente ? 'Aplicação Parcial' : 'Aplicada';
-            $semana->data_aplicada = date('Y-m-d');
-            $semana->dt_hr_finalizacao = now();
-            $semana->save();
-
-            $this->recalcular_situacao_prescricao($prescricao_id);
-            $this->registrar_log($prescricao_id, 'semana', $semana->id, 'Aplicação', 'Aplicação realizada' . ($semana_pendente ? ' (parcial)' : ''));
-
-            return redirect()->route('sistema.dash')->with('mensagem', 'Aplicação Realizada');
-        } catch (\Exception $e) {
-            return redirect()->route('sistema.dash')->with('mensagem_erro', $e->getMessage());
         }
+
+        return [$aplicou, $pendente];
     }
 
     private function recalcular_situacao_prescricao($prescricao_id)
@@ -1409,6 +1482,34 @@ class PrescricaoSistemaController extends Controller
         $prescricao->save();
     }
 
+    /**
+     * Retorna a semana anterior (por nr_semana) que possui medicações (pula semanas de pausa).
+     */
+    private function semana_anterior_aplicacao($semana)
+    {
+        return PrescricaoSemana::where('prescricao_id', $semana->prescricao_id)
+            ->where('nr_semana', '<', $semana->nr_semana)
+            ->whereHas('medicamentos')
+            ->orderByDesc('nr_semana')
+            ->first();
+    }
+
+    /**
+     * Regra: para enviar uma semana à fila de aplicação, a semana anterior (com medicação)
+     * precisa estar como 'Aplicada', 'Aplicação Parcial', 'Fila de Aplicação' ou 'Em Atendimento'
+     * (não pode estar 'Agendada') — assim várias semanas da prescrição podem ficar na fila
+     * (caso de entrega de medicação para aplicar em casa / adiantamento durante atendimento).
+     */
+    private function pode_enviar_para_fila($semana, &$motivo = null)
+    {
+        $anterior = $this->semana_anterior_aplicacao($semana);
+        if ($anterior && !in_array($anterior->situacao, ['Aplicada', 'Aplicação Parcial', 'Fila de Aplicação', 'Em Atendimento'])) {
+            $motivo = 'A semana anterior (Semana ' . $anterior->nr_semana . ') está como "' . $anterior->situacao . '". Para enviar esta semana à fila de aplicação, a semana anterior precisa estar como Aplicada, Aplicação Parcial, Fila de Aplicação ou Em Atendimento.';
+            return false;
+        }
+        return true;
+    }
+
     public function enviar_fila_aplicacao(Request $request)
     {
         try {
@@ -1417,6 +1518,11 @@ class PrescricaoSistemaController extends Controller
             $semana = PrescricaoSemana::find($request->semana_id);
             if (!$semana) {
                 throw new \Exception('Semana não encontrada.');
+            }
+
+            $motivo = null;
+            if (!$this->pode_enviar_para_fila($semana, $motivo)) {
+                throw new \Exception($motivo);
             }
 
             $semana->situacao = 'Fila de Aplicação';
@@ -1448,6 +1554,11 @@ class PrescricaoSistemaController extends Controller
             $semana = PrescricaoSemana::find($request->semana_id);
             if (!$semana) {
                 throw new \Exception('Semana não encontrada.');
+            }
+
+            $motivo = null;
+            if (!$this->pode_enviar_para_fila($semana, $motivo)) {
+                throw new \Exception($motivo);
             }
 
             $semana->situacao = 'Fila de Aplicação';

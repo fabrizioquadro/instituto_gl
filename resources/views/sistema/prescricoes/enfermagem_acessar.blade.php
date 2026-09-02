@@ -6,28 +6,22 @@ $template = "layout.".session()->get('layout');
 @section('conteudo')
 
 @php
-switch($semana->situacao){
-    case 'Agendada': $badge = 'bg-label-warning'; break;
-    case 'Fila de Aplicação': $badge = 'bg-label-primary'; break;
-    case 'Em Atendimento': $badge = 'bg-label-primary'; break;
-    case 'Aplicada': $badge = 'bg-label-success'; break;
-    case 'Aplicação Parcial': $badge = 'bg-label-warning'; break;
-    case 'Cancelada': $badge = 'bg-label-danger'; break;
-    default: $badge = 'bg-label-secondary';
-}
 $tem_controlado = false;
-foreach($semana->medicamentos as $m){
-    if($m->situacao == 'Aberta' && $m->medicamento && in_array($m->medicamento->unidade, ['Ampola', 'Miligrama'])){
-        $tem_controlado = true;
-        break;
+foreach($semanas as $sem){
+    foreach($sem->medicamentos as $m){
+        if($m->situacao == 'Aberta' && $m->medicamento && in_array($m->medicamento->unidade, ['Ampola', 'Miligrama'])){
+            $tem_controlado = true;
+            break 2;
+        }
     }
 }
+$prescricao = $semanas->first()->prescricao;
 @endphp
 
 <div class="card card-border-shadow-primary mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
-            <h4 class="card-title">Aplicação — Semana {{ $semana->nr_semana }}</h4>
+            <h4 class="card-title">Aplicação — Prescrição #{{ $semanas->first()->prescricao_id }}</h4>
             <a href="{{ route('sistema.dash') }}" class="btn btn-outline-dark btn-sm">Voltar à Fila</a>
         </div>
 
@@ -51,36 +45,49 @@ foreach($semana->medicamentos as $m){
                 <table class="table table-sm table-borderless mb-0">
                     <tr>
                         <th class="w-25">Paciente</th>
-                        <td><b>{{ $semana->prescricao->paciente->nm_paciente ?? '-' }}</b></td>
+                        <td><b>{{ $prescricao->paciente->nm_paciente ?? '-' }}</b></td>
                     </tr>
                     <tr>
                         <th>Prescrição</th>
-                        <td>#{{ $semana->prescricao_id }}</td>
-                    </tr>
-                    <tr>
-                        <th>Data Prevista</th>
-                        <td>{{ $semana->data_prevista ? dataDbForm($semana->data_prevista) : '-' }}</td>
+                        <td>#{{ $prescricao->id }}</td>
                     </tr>
                     <tr>
                         <th>Médico</th>
-                        <td>{{ $semana->prescricao->medico ?? '-' }}</td>
+                        <td>{{ $prescricao->medico ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Enfermeiro(a)</th>
+                        <td>{{ $user->nome ?? '-' }}</td>
                     </tr>
                 </table>
             </div>
             <div class="col-md-6">
                 <table class="table table-sm table-borderless mb-0">
                     <tr>
-                        <th class="w-25">Situação</th>
-                        <td><span class="badge rounded-pill {{ $badge }}">{{ $semana->situacao }}</span></td>
+                        <th class="w-25">Semanas do lote</th>
+                        <td>
+                            @foreach($semanas as $sem)
+                                @php
+                                switch($sem->situacao){
+                                    case 'Aplicada': $b2 = 'bg-label-success'; break;
+                                    case 'Aplicação Parcial': $b2 = 'bg-label-warning'; break;
+                                    case 'Em Atendimento': $b2 = 'bg-label-info'; break;
+                                    case 'Fila de Aplicação': $b2 = 'bg-label-primary'; break;
+                                    default: $b2 = 'bg-label-secondary';
+                                }
+                                @endphp
+                                <span class="badge rounded-pill {{ $b2 }} me-1">Semana {{ $sem->nr_semana }}</span>
+                            @endforeach
+                        </td>
                     </tr>
-                    <tr>
-                        <th>Enfermeiro(a)</th>
-                        <td>{{ $user->nome ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <th>Obs</th>
-                        <td>{{ $semana->obs ?? '-' }}</td>
-                    </tr>
+                    @foreach($semanas as $sem)
+                        @if($sem->obs)
+                        <tr>
+                            <th class="w-25">Obs Semana {{ $sem->nr_semana }}</th>
+                            <td>{{ $sem->obs }}</td>
+                        </tr>
+                        @endif
+                    @endforeach
                 </table>
             </div>
         </div>
@@ -92,9 +99,9 @@ foreach($semana->medicamentos as $m){
     <div class="card-body">
         <h5 class="card-title mb-0">Anexos / Pedido Médico</h5>
         <hr>
-        @if($semana->prescricao->anexos->count())
+        @if($prescricao->anexos->count())
             <div class="d-flex flex-wrap gap-2">
-                @foreach($semana->prescricao->anexos as $anexo)
+                @foreach($prescricao->anexos as $anexo)
                     @if($anexo->tipo == 'prescricao_medica')
                         <div class="d-inline-flex align-items-center border rounded px-2 py-1">
                             <span class="mdi mdi-file-document-outline me-1"></span>{{ $anexo->nm_anexo }}
@@ -116,7 +123,7 @@ foreach($semana->medicamentos as $m){
         @if($tem_controlado)
             <div class="alert alert-info d-flex align-items-center mt-3 mb-0">
                 <i class="mdi mdi-information-outline me-2"></i>
-                <div>Esta semana contém medicamentos <b>Ampola/Miligrama</b>. É <b>obrigatório abrir/conferir o pedido médico (anexo)</b> antes de registrar a aplicação.</div>
+                <div>O lote contém medicamentos <b>Ampola/Miligrama</b>. É <b>obrigatório abrir/conferir o pedido médico (anexo)</b> antes de registrar a aplicação.</div>
             </div>
         @endif
     </div>
@@ -125,21 +132,29 @@ foreach($semana->medicamentos as $m){
 {{-- APLICAÇÕES --}}
 <form action="{{ route('sistema.prescricoes.set_aplicacao_enfermagem') }}" method="post" id="formulario_aplicacao">
     @csrf
-    <input type="hidden" name="semana_id" value="{{ $semana->id }}">
+    @foreach($semanas as $semana)
+        <input type="hidden" name="semanas[]" value="{{ $semana->id }}">
+    @endforeach
+    @foreach($semanas as $semana)
     <div class="card card-border-shadow-primary mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Medicações / Aplicação</h5>
-                <button type="button" class="btn btn-sm btn-outline-info waves-effect" onclick="abre_modal_abrir_frasco()">
+                <h5 class="card-title mb-0">Semana {{ $semana->nr_semana }} — Medicações / Aplicação</h5>
+                <button type="button" class="btn btn-sm btn-outline-info waves-effect" onclick="abre_modal_abrir_frasco({{ $semana->id }})">
                     <span class="tf-icons mdi mdi-flask-outline me-1"></span> Abrir Frasco
                 </button>
             </div>
             <hr>
             <div class="table-responsive">
-                <table class="table table-sm">
+                <table class="table table-sm" id="tabela_medicamentos_semana_{{ $semana->id }}" data-semana-nr="{{ $semana->nr_semana }}">
                     <thead class="table-light">
                         <tr>
-                            <th>Pendente</th>
+                            <th>
+                                <div class="form-check d-flex align-items-center gap-1 mb-0" style="white-space:nowrap">
+                                    <input class="form-check-input master_pendentes" type="checkbox" id="selecionar_todos_pendentes_{{ $semana->id }}" onclick="marcar_todos_pendentes(this, {{ $semana->id }})" title="Marcar/desmarcar todos como pendentes">
+                                    <label class="form-check-label" for="selecionar_todos_pendentes_{{ $semana->id }}" style="cursor:pointer">Pendente</label>
+                                </div>
+                            </th>
                             <th>Medicamento</th>
                             <th>Qtd. Prescrita</th>
                             <th>Retirar do Estoque</th>
@@ -204,7 +219,7 @@ foreach($semana->medicamentos as $m){
                                         <input required class="form-control form-control-sm codigo_barras" id="codigo_barras_{{ $medAplic->id }}" name="codigo_barras_{{ $medAplic->id }}" placeholder="Ler código de barras" onfocus="aguardando_codigo({{ $medAplic->id }})"
                                             onblur="{{ $med->unidade == 'Miligrama' ? "busca_lote_por_codigo_frasco(this, {$med->id}, {$user->clinica_id}, get_quantidade_aplicacao({$medAplic->id}))" : "busca_lote_por_codigo(this, {$med->id}, {$user->clinica_id}, get_quantidade_aplicacao({$medAplic->id}))" }}"/>
                                     @else
-                                        <input class="form-control form-control-sm codigo_barras" id="codigo_barras_{{ $medAplic->id }}" name="codigo_barras_{{ $medAplic->id }}" placeholder="Ler código de barras"/>
+                                        <span class="text-muted"><i class="mdi mdi-check-circle-outline me-1"></i>Sem código (procedimento)</span>
                                     @endif
                                 </td>
                                 <td id="td_aplicacao_lote_{{ $medAplic->id }}">
@@ -230,7 +245,12 @@ foreach($semana->medicamentos as $m){
                     </tbody>
                 </table>
             </div>
-            <div class="row mt-3">
+        </div>
+    </div>
+    @endforeach
+    <div class="card card-border-shadow-primary mb-4">
+        <div class="card-body">
+            <div class="row">
                 <div class="col-md-12">
                     <div class="form-floating form-floating-outline">
                         <textarea class="form-control h-px-75" name="obs_aplicacao" id="obs_aplicacao"></textarea>
@@ -253,7 +273,7 @@ foreach($semana->medicamentos as $m){
         <div class="modal-content">
             <form action="{{ route('sistema.prescricoes.abrir_frasco') }}" method="post">
                 @csrf
-                <input type="hidden" name="prescricao_semana_id" value="{{ $semana->id }}">
+                <input type="hidden" name="prescricao_semana_id" id="frasco_semana_id" value="">
                 <input type="hidden" name="lote" id="frasco_lote" value="">
                 <div class="modal-header">
                     <h5 class="modal-title text-primary">Abrir Frasco</h5>
@@ -264,10 +284,19 @@ foreach($semana->medicamentos as $m){
                         <label class="form-label">Medicamento (frasco):</label>
                         <select class="form-select" id="modal_medicamento_frasco" name="medicamento_id" onchange="modal_get_lotes_medicamento(this)">
                             <option value="">Opções</option>
-                            @foreach($semana->medicamentos as $medAplic)
-                                @if($medAplic->medicamento && $medAplic->medicamento->unidade == 'Miligrama')
-                                    <option value="{{ $medAplic->medicamento->id }}">{{ $medAplic->medicamento->nome }}</option>
-                                @endif
+                            @php
+                            $meds_mg = collect();
+                            foreach($semanas as $sem){
+                                foreach($sem->medicamentos as $ma){
+                                    if($ma->medicamento && $ma->medicamento->unidade == 'Miligrama'){
+                                        $meds_mg->push($ma->medicamento);
+                                    }
+                                }
+                            }
+                            $meds_mg = $meds_mg->unique('id');
+                            @endphp
+                            @foreach($meds_mg as $mg)
+                                <option value="{{ $mg->id }}">{{ $mg->nome }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -374,8 +403,9 @@ foreach($semana->medicamentos as $m){
 
 <script>
 let modal_abrir_frasco_2, modal_2_codigo_obj, modal_confirmar_aplicacao_obj;
+let qtd_semanas = {{ $semanas->count() }};
 let precisa_conferir_anexo = {{ $tem_controlado ? 'true' : 'false' }};
-let anexo_conferido = {{ ($tem_controlado && $semana->prescricao->anexos->contains(fn($a) => $a->tipo == 'prescricao_medica' && $a->visualizado_em)) ? 'true' : 'false' }};
+let anexo_conferido = {{ ($tem_controlado && $prescricao->anexos->contains(fn($a) => $a->tipo == 'prescricao_medica' && $a->visualizado_em)) ? 'true' : 'false' }};
 
 function get_quantidade_aplicacao(med_aplic_id){
     let sel = document.getElementById('quantidade_retirar_' + med_aplic_id);
@@ -387,12 +417,45 @@ function get_quantidade_aplicacao(med_aplic_id){
 function controle_pendente(med_aplic_id, cb){
     let cod = document.getElementById('codigo_barras_' + med_aplic_id);
     let lote = document.getElementById('lote_' + med_aplic_id);
+    let status = document.getElementById('status_lote_' + med_aplic_id);
     if(cb.checked){
-        if(cod){ cod.removeAttribute('required'); }
-        if(lote){ lote.removeAttribute('required'); }
+        // pendente: limpa e desabilita o código de barras (não pode preencher)
+        if(cod){ cod.value = ''; cod.disabled = true; cod.removeAttribute('required'); }
+        if(lote){ lote.value = ''; }
+        if(status){ status.className = 'badge bg-secondary'; status.textContent = 'Pendente'; }
     } else {
-        if(cod){ cod.setAttribute('required', 'required'); }
-        if(lote){ lote.setAttribute('required', 'required'); }
+        if(cod){ cod.disabled = false; }
+        // re-adiciona required somente se o medicamento tem lote (não é Procedimento)
+        if(cod && lote){ cod.setAttribute('required', 'required'); }
+        if(status){ status.className = 'badge bg-secondary'; status.textContent = 'Aguardando código'; }
+    }
+    atualizar_master_da_tabela(cb);
+}
+
+function marcar_todos_pendentes(master, semana_id){
+    // captura o estado desejado UMA vez (o controle_pendente atualiza o master durante o loop)
+    let marcar = master.checked;
+    let tabela = document.getElementById('tabela_medicamentos_semana_' + semana_id);
+    let cbs = tabela ? tabela.querySelectorAll('input[name^="controle_pendente_"]') : [];
+    cbs.forEach(cb => {
+        cb.checked = marcar;
+        let id = cb.name.replace('controle_pendente_', '');
+        controle_pendente(id, cb);
+    });
+}
+
+function atualizar_master_da_tabela(cb){
+    if(!cb) return;
+    let tabela = cb.closest('table');
+    if(!tabela) return;
+    let master = tabela.querySelector('input.master_pendentes');
+    let cbs = tabela.querySelectorAll('input[name^="controle_pendente_"]');
+    let total = cbs.length;
+    let marcados = 0;
+    cbs.forEach(x => { if(x.checked) marcados++; });
+    if(master){
+        master.checked = total > 0 && marcados === total;
+        master.indeterminate = marcados > 0 && marcados < total;
     }
 }
 
@@ -495,7 +558,8 @@ function atualizar_botao_confirmar(){
 }
 
 // ---------- ABRIR FRASCO ----------
-function abre_modal_abrir_frasco(){
+function abre_modal_abrir_frasco(semana_id){
+    if(semana_id){ document.getElementById('frasco_semana_id').value = semana_id; }
     modal_abrir_frasco_2 = new bootstrap.Modal(document.getElementById('modal_abrir_frasco'));
     modal_abrir_frasco_2.show();
 }
@@ -590,31 +654,32 @@ function abrir_confirmacao_aplicacao(){
 
     let html = '';
     document.querySelectorAll('#formulario_aplicacao tbody tr').forEach(function(tr){
+        let semanaNr = tr.closest('table') ? tr.closest('table').getAttribute('data-semana-nr') : null;
         let cb = tr.querySelector('input[name^="controle_pendente_"]');
+        // linhas sem checkbox (já aplicadas / semana vazia) são ignoradas; pendentes são puladas
+        if(!cb || cb.checked) return;
+        let id = cb.name.replace('controle_pendente_', '');
         let nomeEl = tr.querySelector('td:nth-child(2) b');
-        let qtdPresc = tr.querySelector('#quantidade_prescrita_' + (cb ? cb.name.replace('controle_pendente_', '') : 'x'));
-        if(!cb || !cb.checked){
-            let codEl = tr.querySelector('input[name^="codigo_barras_"]');
-            let loteEl = tr.querySelector('input[name^="lote_"]');
-            let retirarEl = tr.querySelector('select[name^="quantidade_retirar_"]');
-            if(codEl && (loteEl || true)){
-                let id = codEl.name.replace('codigo_barras_', '');
-                let nome = nomeEl ? nomeEl.textContent : 'Medicamento';
-                let presc = qtdPresc ? qtdPresc.textContent.trim() : '-';
-                let retirar = retirarEl ? retirarEl.value : presc;
-                let codigo = codEl.value || '-';
-                let lote = loteEl ? loteEl.value || '-' : '-';
-                // verifica 2 códigos
-                let hidden = tr.querySelector('input[name="controle_med_' + id + '"]');
-                if(hidden && hidden.value == '2_codigo'){
-                    let c1 = tr.querySelector('input[name="cod_med_1_' + id + '"]').value;
-                    let c2 = tr.querySelector('input[name="cod_med_2_' + id + '"]').value;
-                    codigo = c1 + ' / ' + c2;
-                    lote = (tr.querySelector('input[name="lote_med_1_' + id + '"]').value || '-') + ' / ' + (tr.querySelector('input[name="lote_med_2_' + id + '"]').value || '-');
-                }
-                html += '<tr><td>' + nome + '</td><td>' + presc + '</td><td>' + retirar + '</td><td>' + codigo + '</td><td>' + lote + '</td></tr>';
-            }
+        let qtdPresc = tr.querySelector('#quantidade_prescrita_' + id);
+        let codEl = tr.querySelector('input[name="codigo_barras_' + id + '"]');
+        let loteEl = tr.querySelector('input[name="lote_' + id + '"]');
+        let retirarEl = tr.querySelector('select[name^="quantidade_retirar_"]');
+        let nome = nomeEl ? nomeEl.textContent : 'Medicamento';
+        if(semanaNr && qtd_semanas > 1){ nome = 'Semana ' + semanaNr + ' — ' + nome; }
+        let presc = qtdPresc ? qtdPresc.textContent.trim() : '-';
+        let retirar = retirarEl ? retirarEl.value : presc;
+        // medicamento tipo Procedimento não tem código/lote — aplica sem código (nome vai para a Feegow)
+        let codigo = codEl ? (codEl.value || '-') : '-';
+        let lote = loteEl ? (loteEl.value || '-') : '-';
+        // verifica 2 códigos
+        let hidden = tr.querySelector('input[name="controle_med_' + id + '"]');
+        if(hidden && hidden.value == '2_codigo'){
+            let c1 = tr.querySelector('input[name="cod_med_1_' + id + '"]').value;
+            let c2 = tr.querySelector('input[name="cod_med_2_' + id + '"]').value;
+            codigo = c1 + ' / ' + c2;
+            lote = (tr.querySelector('input[name="lote_med_1_' + id + '"]').value || '-') + ' / ' + (tr.querySelector('input[name="lote_med_2_' + id + '"]').value || '-');
         }
+        html += '<tr><td>' + nome + '</td><td>' + presc + '</td><td>' + retirar + '</td><td>' + codigo + '</td><td>' + lote + '</td></tr>';
     });
 
     if(!html){

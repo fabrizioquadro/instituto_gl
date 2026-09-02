@@ -70,13 +70,16 @@ $template = "layout.".session()->get('layout');
                                                 <i class="mdi mdi-dots-vertical"></i>
                                             </button>
                                             <div class="dropdown-menu" data-popper-placement="bottom-end">
-                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.enfermagem_acessar', $s->id) }}"><i class="mdi mdi-eye me-1"></i> Abrir Atendimento</a>
+                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.enfermagem_acessar', $s->id) }}"><i class="mdi mdi-eye me-1"></i> Iniciar Atendimento</a>
                                                 <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.acessar_semana', $s->id) }}"><i class="mdi mdi-book-open-page-variant me-1"></i> Visualizar (Sem Vincular)</a>
                                             </div>
                                         </div>
                                     </td>
                                     <td>{{ $chegada }}</td>
-                                    <td>{{ $s->prescricao->paciente->nm_paciente }}</td>
+                                    <td>
+                                        {{ $s->prescricao->paciente->nm_paciente }}
+                                        <a href="#" onclick="abrir_obs_semana(this);return false;" title="Ver Observações do Paciente e da Semana" style="text-decoration:none;" data-paciente="{{ $s->prescricao->paciente->nm_paciente }}" data-obs-paciente="{{ $s->prescricao->paciente->obs }}" data-obs-semana="{{ $s->obs }}"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a>
+                                    </td>
                                     <td>{{ $s->nr_semana }}/{{ $s->prescricao->semanas_count }}</td>
                                     <td>{{ $meds ?: '-' }}</td>
                                     <td>{{ $s->prescricao->medico ?? '-' }}</td>
@@ -123,14 +126,17 @@ $template = "layout.".session()->get('layout');
                                             </button>
                                             <div class="dropdown-menu" data-popper-placement="bottom-end">
                                                 @if($s->user_id_aplicacao == $user->id)
-                                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.enfermagem_acessar', $s->id) }}"><i class="mdi mdi-eye me-1"></i> Abrir Atendimento</a>
+                                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.enfermagem_acessar', $s->id) }}"><i class="mdi mdi-eye me-1"></i> Acessar Atendimento</a>
                                                 @endif
                                                 <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.acessar_semana', $s->id) }}"><i class="mdi mdi-book-open-page-variant me-1"></i> Visualizar (Sem Vincular)</a>
                                             </div>
                                         </div>
                                     </td>
                                     <td>{{ $chegada }}</td>
-                                    <td>{{ $s->prescricao->paciente->nm_paciente }}</td>
+                                    <td>
+                                        {{ $s->prescricao->paciente->nm_paciente }}
+                                        <a href="#" onclick="abrir_obs_semana(this);return false;" title="Ver Observações do Paciente e da Semana" style="text-decoration:none;" data-paciente="{{ $s->prescricao->paciente->nm_paciente }}" data-obs-paciente="{{ $s->prescricao->paciente->obs }}" data-obs-semana="{{ $s->obs }}"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a>
+                                    </td>
                                     <td>{{ $s->nr_semana }}/{{ $s->prescricao->semanas_count }}</td>
                                     <td>{{ $meds ?: '-' }}</td>
                                     <td>{{ $s->prescricao->medico ?? '-' }}</td>
@@ -174,7 +180,10 @@ $template = "layout.".session()->get('layout');
                                 @endphp
                                 <tr>
                                     <td>{{ $s->data_aplicada ? dataDbForm($s->data_aplicada) : '-' }}</td>
-                                    <td>{{ $s->prescricao->paciente->nm_paciente }}</td>
+                                    <td>
+                                        {{ $s->prescricao->paciente->nm_paciente }}
+                                        <a href="#" onclick="abrir_obs_semana(this);return false;" title="Ver Observações do Paciente e da Semana" style="text-decoration:none;" data-paciente="{{ $s->prescricao->paciente->nm_paciente }}" data-obs-paciente="{{ $s->prescricao->paciente->obs }}" data-obs-semana="{{ $s->obs }}"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a>
+                                    </td>
                                     <td>{{ $s->nr_semana }}/{{ $s->prescricao->semanas_count }}</td>
                                     <td>{{ $meds ?: '-' }}</td>
                                     <td>{{ $s->prescricao->medico ?? '-' }}</td>
@@ -214,6 +223,45 @@ $template = "layout.".session()->get('layout');
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let modal_obs_semana_obj;
+function abrir_obs_semana(el){
+    let paciente = el.dataset.paciente || 'Paciente';
+    let obsPaciente = el.dataset.obsPaciente || '';
+    let obsSemana = el.dataset.obsSemana || '';
+    document.getElementById('modal_obs_semana_titulo').innerText = 'Observações: ' + paciente;
+    document.getElementById('modal_obs_semana_paciente').value = obsPaciente ? obsPaciente : 'Nenhuma observação registrada para este paciente.';
+    document.getElementById('modal_obs_semana_semana').value = obsSemana ? obsSemana : 'Nenhuma observação registrada para esta semana.';
+    modal_obs_semana_obj = new bootstrap.Modal(document.getElementById('modal_obs_semana'));
+    modal_obs_semana_obj.show();
+}
+</script>
+
+<!-- Modal Observações (Paciente + Semana) -->
+<div class="modal fade" id="modal_obs_semana" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal_obs_semana_titulo">Observações</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Observações do Paciente</label>
+                    <textarea id="modal_obs_semana_paciente" class="form-control" rows="4" readonly style="resize:none; background-color:#f8f9fa;"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Observações da Semana</label>
+                    <textarea id="modal_obs_semana_semana" class="form-control" rows="4" readonly style="resize:none; background-color:#f8f9fa;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>

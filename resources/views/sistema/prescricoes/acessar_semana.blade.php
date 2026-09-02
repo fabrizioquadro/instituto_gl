@@ -310,7 +310,12 @@ switch($semana->situacao){
     <div class="card-body">
         <h4 class="card-title mb-0">Fila de Aplicação</h4>
         <hr>
-        @if($semana_paga)
+        @if(!$pode_enviar_fila)
+            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                <i class="mdi mdi-alert-circle-outline me-2"></i>
+                <div>{{ $motivo_fila }}</div>
+            </div>
+        @elseif($semana_paga)
             <form action="{{ route('sistema.prescricoes.enviar_fila_aplicacao') }}" method="post">
                 @csrf
                 <input type="hidden" name="semana_id" value="{{ $semana->id }}">

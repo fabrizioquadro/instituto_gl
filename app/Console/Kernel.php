@@ -12,7 +12,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Robô de envio para a Feegow (prescrições V2): roda a cada minuto.
+        // No servidor, agendar: * * * * * php /caminho/artisan schedule:run
+        $schedule->command('feegow:fila')->everyMinute()->withoutOverlapping();
     }
 
     /**

@@ -23,6 +23,7 @@ class Anexo extends Model
         'extensao',
         'visualizado_em',
         'visualizado_por',
+        'enviado_feegow',
     ];
 
     public function prescricao()

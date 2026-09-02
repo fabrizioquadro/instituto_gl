@@ -14,6 +14,7 @@ $template = "layout.".session()->get('layout');
                     <table class="tabela-index table" id="table-index">
                         <thead class="table-light">
                             <tr>
+                                <th></th>
                                 <th>Chegada</th>
                                 <th>Paciente</th>
                                 <th>Procedimentos</th>
@@ -56,6 +57,17 @@ $template = "layout.".session()->get('layout');
 
                             @endphp
                             <tr>
+                                <td>
+                                    <div class="dropdown">
+                                        <button type="button" class="btn p-0 dropdown-toggle hide-arrow show" data-bs-toggle="dropdown" aria-expanded="true">
+                                            <i class="mdi mdi-dots-vertical"></i>
+                                        </button>
+                                        <div class="dropdown-menu" data-popper-placement="bottom-end">
+                                            <a class="dropdown-item waves-effect" href="{{ route('sistema.dashboard.enfermagem_acessar_procedimento', $procedimento->id) }}"><i class="mdi mdi-eye me-1"></i> Abrir Atendimento</a>
+                                            <a class="dropdown-item waves-effect" href="{{ route('sistema.dashboard.enfermagem_visualizar_procedimento', $procedimento->id) }}"><i class="mdi mdi-book-open-page-variant me-1"></i> Visualizar (Sem Vincular)</a>
+                                        </div>
+                                    </div>
+                                </td>
                                 <td> <span style='display: none'>{{ $procedimento->updated_at }}</span> {{ $chegada }}</td>
                                 <td>
                                     {{ $procedimento->paciente->nm_paciente }}
@@ -77,6 +89,7 @@ $template = "layout.".session()->get('layout');
                     <table class="tabela-index table" id="table-index">
                         <thead class="table-light">
                             <tr>
+                                <th></th>
                                 <th>Chegada</th>
                                 <th>Paciente</th>
                                 <th>Procedimentos</th>
@@ -119,6 +132,19 @@ $template = "layout.".session()->get('layout');
 
                             @endphp
                             <tr>
+                                <td>
+                                    <div class="dropdown">
+                                        <button type="button" class="btn p-0 dropdown-toggle hide-arrow show" data-bs-toggle="dropdown" aria-expanded="true">
+                                            <i class="mdi mdi-dots-vertical"></i>
+                                        </button>
+                                        <div class="dropdown-menu" data-popper-placement="bottom-end">
+                                            @if($procedimento->user_id_aplicacao == $user->id)
+                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.dashboard.enfermagem_acessar_procedimento', $procedimento->id) }}"><i class="mdi mdi-eye me-1"></i> Abrir Atendimento</a>
+                                            @endif
+                                            <a class="dropdown-item waves-effect" href="{{ route('sistema.dashboard.enfermagem_visualizar_procedimento', $procedimento->id) }}"><i class="mdi mdi-book-open-page-variant me-1"></i> Visualizar (Sem Vincular)</a>
+                                        </div>
+                                    </div>
+                                </td>
                                 <td> <span style='display: none'>{{ $procedimento->updated_at }}</span> {{ $chegada }}</td>
                                 <td>
                                     {{ $procedimento->paciente->nm_paciente }}
@@ -140,6 +166,7 @@ $template = "layout.".session()->get('layout');
                     <table class="tabela-index table" id="table-index">
                         <thead class="table-light">
                             <tr>
+                                <th></th>
                                 <th>Chegada</th>
                                 <th>Paciente</th>
                                 <th>Procedimentos</th>
@@ -193,6 +220,7 @@ $template = "layout.".session()->get('layout');
                                             </button>
                                             <div class="dropdown-menu" data-popper-placement="bottom-end">
                                                 <a class="dropdown-item waves-effect" href="{{ route('sistema.dashboard.enfermagem_acessar_procedimento', $procedimento->id) }}"><i class="mdi mdi-eye me-1"></i> Abrir Atendimento</a>
+                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.dashboard.enfermagem_visualizar_procedimento', $procedimento->id) }}"><i class="mdi mdi-book-open-page-variant me-1"></i> Visualizar (Sem Vincular)</a>
                                             </div>
                                         </div>
                                     @endif

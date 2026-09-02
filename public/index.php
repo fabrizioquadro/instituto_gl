@@ -7,6 +7,18 @@ define('LARAVEL_START', microtime(true));
 
 /*
 |--------------------------------------------------------------------------
+| Increase Execution Time Limit
+|--------------------------------------------------------------------------
+|
+| Alguns dashboards/relatórios consultam o banco remoto e podem passar do
+| limite padrão do PHP (120s). Elevamos o limite para 300s por requisição.
+|
+*/
+
+ini_set('max_execution_time', 300);
+
+/*
+|--------------------------------------------------------------------------
 | Check If The Application Is Under Maintenance
 |--------------------------------------------------------------------------
 |

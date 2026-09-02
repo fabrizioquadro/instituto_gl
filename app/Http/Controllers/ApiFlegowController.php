@@ -6,6 +6,12 @@ use Illuminate\Http\Request;
 use App\Models\Aplicacao;
 use App\Models\Procedimento;
 use App\Models\ProcedimentoAnexo;
+use App\Models\Anexo;
+use App\Models\FeegowFila;
+use App\Models\Prescricao;
+use App\Models\PrescricaoSemana;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class ApiFlegowController extends Controller
 {
@@ -568,6 +574,258 @@ class ApiFlegowController extends Controller
 
         return $retorno['content']['nascimento'];
 
+    }
+
+    // ============================================================
+    // FILA DE ENVIO PARA A FEEGOW (PRESCRIÇÕES V2)
+    // ============================================================
+
+    private function postFeegow($apiUrl, $parametros)
+    {
+        $ch = curl_init($apiUrl . '?' . http_build_query($parametros));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "x-access-token: $this->token",
+            "Content-Type: application/json"
+        ]);
+        $response = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+        if ($errno) {
+            throw new \Exception('Erro de conexão com a Feegow (' . $errno . '): ' . $error);
+        }
+        return $response;
+    }
+
+    /**
+     * Monta a nota completa da aplicação de uma semana de prescrição (V2).
+     */
+    private function montar_notas_prescricao($semana)
+    {
+        $p = $semana->prescricao;
+        $paciente = $p->paciente;
+        $fmt = function ($v) {
+            return $v ? date('d/m/Y H:i:s', strtotime($v)) : '-';
+        };
+        $fmtData = function ($v) {
+            return $v ? date('d/m/Y', strtotime($v)) : '-';
+        };
+
+        $linhas = [];
+        $linhas[] = 'PRESCRIÇÃO #' . $p->id . ' - SEMANA ' . $semana->nr_semana;
+        $linhas[] = 'Paciente: ' . ($paciente->nm_paciente ?? '-');
+        $linhas[] = 'Data Prevista: ' . $fmtData($semana->data_prevista);
+        $linhas[] = 'Chegada: ' . $fmt($semana->dt_hr_chegada);
+        $linhas[] = 'Início (Atendimento): ' . $fmt($semana->dt_hr_atendimento);
+        $linhas[] = 'Aplicação (Conclusão): ' . $fmt($semana->dt_hr_finalizacao);
+        $aplicador = $semana->userAplicacao ? $semana->userAplicacao->nome : ($semana->user_id_aplicacao ? 'usuário #' . $semana->user_id_aplicacao : '-');
+        $linhas[] = 'Aplicado por: ' . $aplicador;
+        $linhas[] = 'Situação da Semana: ' . $semana->situacao;
+        $linhas[] = 'Obs: ' . ($semana->obs ?: '-');
+        $linhas[] = '';
+
+        $aplicados = $semana->medicamentos->filter(fn($m) => $m->situacao == 'Aplicada');
+        $pendentes = $semana->medicamentos->filter(fn($m) => $m->situacao == 'Pendente');
+
+        $linhas[] = 'MEDICAMENTOS APLICADOS (' . $aplicados->count() . '):';
+        if ($aplicados->count() == 0) {
+            $linhas[] = '  (nenhum)';
+        }
+        foreach ($aplicados as $m) {
+            $nome = $m->medicamento ? $m->medicamento->nome : ('ID ' . $m->medicamento_id);
+            $qtd = rtrim(rtrim(number_format((float) $m->quantidade, 2, ',', '.'), '0'), ',');
+            $unidade = $m->medicamento ? $m->medicamento->unidade : '-';
+            $lotes = $m->lotes->pluck('lote')->unique()->implode(', ');
+            $cods = $m->lotes->pluck('codigo_barras')->unique()->implode(', ');
+            $aplicMed = $m->userAplicacao ? $m->userAplicacao->nome : ($m->user_id_aplicacao ? 'usuário #' . $m->user_id_aplicacao : '-');
+            $linhas[] = '  - ' . $nome . ' | Qtd: ' . $qtd . ' ' . $unidade . ' | Lote: ' . ($lotes ?: '-') . ' | Código: ' . ($cods ?: '-') . ' | Aplicado por: ' . $aplicMed;
+        }
+
+        $linhas[] = 'MEDICAMENTOS PENDENTES (' . $pendentes->count() . '):';
+        if ($pendentes->count() == 0) {
+            $linhas[] = '  (nenhum)';
+        }
+        foreach ($pendentes as $m) {
+            $nome = $m->medicamento ? $m->medicamento->nome : ('ID ' . $m->medicamento_id);
+            $qtd = rtrim(rtrim(number_format((float) $m->quantidade, 2, ',', '.'), '0'), ',');
+            $linhas[] = '  - ' . $nome . ' | Qtd: ' . $qtd;
+        }
+
+        return implode("\n", $linhas);
+    }
+
+    /**
+     * Enfileira o envio da aplicação de uma semana de prescrição (V2) para a Feegow.
+     * NÃO chama a Feegow aqui — só grava na fila. O robô processa depois.
+     */
+    public function enfileirar_aplicacao_prescricao($semana_id)
+    {
+        $semana = PrescricaoSemana::with([
+            'prescricao.paciente',
+            'medicamentos.medicamento',
+            'medicamentos.lotes',
+            'userAplicacao',
+        ])->find($semana_id);
+
+        if (!$semana || !$semana->prescricao || !$semana->prescricao->paciente) {
+            return;
+        }
+
+        $clinica_id = $semana->prescricao->clinica_id;
+        $local_id = ($clinica_id == 5) ? 2 : (($clinica_id == 6) ? 6 : 1);
+
+        // data/hora real da aplicação (usa a finalização da semana)
+        $dt_aplic = $semana->dt_hr_finalizacao ? date('d-m-Y H:i:s', strtotime($semana->dt_hr_finalizacao)) : date('d-m-Y H:i:s');
+        [$data, $horario] = explode(' ', $dt_aplic);
+
+        $payload = [
+            'prescricao_id' => $semana->prescricao_id,
+            'semana_id' => $semana->id,
+            'evento' => 'aplicacao',
+            'procedimento_id' => 52,
+            'local_id' => $local_id,
+            'paciente_id_feegow' => $semana->prescricao->paciente->paciente_id_feegow,
+            'data' => $data,
+            'horario' => $horario,
+            'notas' => $this->montar_notas_prescricao($semana),
+        ];
+
+        return FeegowFila::create([
+            'prescricao_id' => $semana->prescricao_id,
+            'prescricao_semana_id' => $semana->id,
+            'evento' => 'aplicacao',
+            'procedimento_id' => 52,
+            'payload' => $payload,
+            'situacao' => 'Pendente',
+            'tentativas' => 0,
+            'proxima_tentativa' => null,
+        ]);
+    }
+
+    /**
+     * Processa a fila de envio para a Feegow (chamado pelo robô a cada minuto).
+     */
+    public function processar_fila($limite = 20)
+    {
+        $rows = FeegowFila::where('situacao', 'Pendente')
+            ->where(function ($q) {
+                $q->whereNull('proxima_tentativa')->orWhere('proxima_tentativa', '<=', now());
+            })
+            ->orderBy('id')
+            ->limit($limite)
+            ->get();
+
+        foreach ($rows as $row) {
+            try {
+                $this->enviar_registro_feegow($row);
+                $row->situacao = 'Enviado';
+                $row->enviado_em = now();
+                $row->erro = null;
+                $row->ultima_tentativa = now();
+                $row->save();
+            } catch (\Throwable $e) {
+                $row->tentativas = (int) $row->tentativas + 1;
+                $row->erro = substr($e->getMessage(), 0, 500);
+                $row->proxima_tentativa = now()->addMinutes($this->backoff_minutos($row->tentativas));
+                $row->ultima_tentativa = now();
+                $row->save();
+                Log::error('Feegow fila #' . $row->id . ' erro: ' . $e->getMessage());
+            }
+        }
+
+        return $rows->count();
+    }
+
+    private function backoff_minutos($tentativas)
+    {
+        // 1, 5, 15, 60, 180, 360, 720, 1440 minutos
+        $escalas = [1, 5, 15, 60, 180, 360, 720, 1440];
+        $idx = min((int) $tentativas - 1, count($escalas) - 1);
+        return $escalas[$idx];
+    }
+
+    private function enviar_registro_feegow($row)
+    {
+        $payload = is_array($row->payload) ? $row->payload : [];
+
+        $parametros = [
+            'local_id' => $payload['local_id'] ?? 1,
+            'paciente_id' => $payload['paciente_id_feegow'] ?? 0,
+            'profissional_id' => 0,
+            'especialidade_id' => 0,
+            'procedimento_id' => $payload['procedimento_id'] ?? 52,
+            'data' => $payload['data'] ?? date('d-m-Y'),
+            'horario' => $payload['horario'] ?? date('H:i:s'),
+            'valor' => 0,
+            'plano' => 0,
+            'notas' => $payload['notas'] ?? '',
+        ];
+
+        $response = $this->postFeegow('https://api.feegow.com/v1/api/appoints/new-appoint', $parametros);
+        $decoded = json_decode($response);
+
+        if (!isset($decoded->success) || !$decoded->success) {
+            $msg = isset($decoded->message) ? $decoded->message : 'resposta sem sucesso';
+            throw new \Exception('Feegow new-appoint: ' . $msg . ' | resp: ' . substr($response, 0, 300));
+        }
+
+        $agendamento_id = $decoded->content->agendamento_id ?? null;
+
+        // status update (não crítico — se falhar não bloqueia o envio do agendamento)
+        if ($agendamento_id) {
+            try {
+                $this->postFeegow('https://api.feegow.com/v1/api/appoints/statusUpdate', [
+                    'AgendamentoID' => $agendamento_id,
+                    'StatusID' => '3',
+                    'Obs' => 'Informação enviada pelo sistema',
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Feegow statusUpdate falhou para fila #' . $row->id . ': ' . $e->getMessage());
+            }
+        }
+
+        // anexos (pedido médico) pendentes de envio (não crítico)
+        try {
+            $this->enviar_anexos_prescricao($payload['prescricao_id'] ?? $row->prescricao_id);
+        } catch (\Throwable $e) {
+            Log::warning('Feegow envio de anexos falhou para fila #' . $row->id . ': ' . $e->getMessage());
+        }
+    }
+
+    private function enviar_anexos_prescricao($prescricao_id)
+    {
+        if (!$prescricao_id) {
+            return;
+        }
+        $prescricao = Prescricao::with('paciente')->find($prescricao_id);
+        if (!$prescricao || !$prescricao->paciente) {
+            return;
+        }
+        $paciente_feegow = $prescricao->paciente->paciente_id_feegow;
+
+        $anexos = Anexo::where('prescricao_id', $prescricao_id)
+            ->where('tipo', 'prescricao_medica')
+            ->where('enviado_feegow', 'Não')
+            ->get();
+
+        foreach ($anexos as $anexo) {
+            $file = public_path('prescricoes/' . $prescricao_id . '/anexos/' . $anexo->arquivo);
+            if (!is_file($file)) {
+                continue;
+            }
+            $mime = File::mimeType($file);
+            $base64 = base64_encode(File::get($file));
+            $this->postFeegow('https://api.feegow.com/v1/api/patient/upload-base64', [
+                'paciente_id' => $paciente_feegow,
+                'base64_file' => 'data:' . $mime . ';base64,' . $base64,
+                'arquivo_descricao' => 'Anexo (pedido médico) da prescrição ' . $prescricao_id,
+            ]);
+            $anexo->enviado_feegow = 'Sim';
+            $anexo->save();
+        }
     }
 
 }
