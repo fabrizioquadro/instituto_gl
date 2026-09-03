@@ -24,7 +24,6 @@ $template = "layout.".session()->get('layout');
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
             <h4 class="card-title">Enfermagem</h4>
-            <span class="text-muted">{{ date('d/m/Y H:i') }}</span>
         </div>
         @if($mensagem = Session::get('mensagem'))
             <div class="alert alert-success alert-dismissible mt-3" role="alert">
@@ -58,10 +57,10 @@ $template = "layout.".session()->get('layout');
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($fila as $s)
+                            @forelse($fila as $lote)
                                 @php
-                                $chegada = $s->dt_hr_chegada ? date('d/m/Y H:i', strtotime($s->dt_hr_chegada)) : (isset($s->updated_at) ? date('d/m/Y H:i', strtotime($s->updated_at)) : '-');
-                                $meds = $s->medicamentos->filter(function($m){ return $m->medicamento; })->pluck('medicamento.nome')->implode(', ');
+                                $chegada = $lote['chegada'] ? date('d/m/Y H:i', strtotime($lote['chegada'])) : '-';
+                                $meds = $lote['meds'] ?: '-';
                                 @endphp
                                 <tr>
                                     <td>
@@ -70,19 +69,19 @@ $template = "layout.".session()->get('layout');
                                                 <i class="mdi mdi-dots-vertical"></i>
                                             </button>
                                             <div class="dropdown-menu" data-popper-placement="bottom-end">
-                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.enfermagem_acessar', $s->id) }}"><i class="mdi mdi-eye me-1"></i> Iniciar Atendimento</a>
-                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.acessar_semana', $s->id) }}"><i class="mdi mdi-book-open-page-variant me-1"></i> Visualizar (Sem Vincular)</a>
+                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.enfermagem_acessar', $lote['id']) }}"><i class="mdi mdi-eye me-1"></i> Iniciar Atendimento</a>
+                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.acessar_semana', $lote['id']) }}"><i class="mdi mdi-book-open-page-variant me-1"></i> Visualizar (Sem Vincular)</a>
                                             </div>
                                         </div>
                                     </td>
                                     <td>{{ $chegada }}</td>
                                     <td>
-                                        {{ $s->prescricao->paciente->nm_paciente }}
-                                        <a href="#" onclick="abrir_obs_semana(this);return false;" title="Ver Observações do Paciente e da Semana" style="text-decoration:none;" data-paciente="{{ $s->prescricao->paciente->nm_paciente }}" data-obs-paciente="{{ $s->prescricao->paciente->obs }}" data-obs-semana="{{ $s->obs }}"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a>
+                                        {{ $lote['prescricao']->paciente->nm_paciente }}
+                                        <a href="#" onclick="abrir_obs_semana(this);return false;" title="Ver Observações do Paciente e da Semana" style="text-decoration:none;" data-paciente="{{ $lote['prescricao']->paciente->nm_paciente }}" data-obs-paciente="{{ $lote['obs_paciente'] }}" data-obs-semana="{{ $lote['obs_semanas'] }}"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a>
                                     </td>
-                                    <td>{{ $s->nr_semana }}/{{ $s->prescricao->semanas_count }}</td>
-                                    <td>{{ $meds ?: '-' }}</td>
-                                    <td>{{ $s->prescricao->medico ?? '-' }}</td>
+                                    <td>{{ $lote['semanas_txt'] }}</td>
+                                    <td>{{ $meds }}</td>
+                                    <td>{{ $lote['prescricao']->medico ?? '-' }}</td>
                                     <td><span class="badge rounded-pill bg-label-danger">Aguardando</span></td>
                                 </tr>
                             @empty
@@ -113,10 +112,11 @@ $template = "layout.".session()->get('layout');
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($em_atendimento as $s)
+                            @forelse($em_atendimento as $lote)
                                 @php
-                                $chegada = $s->dt_hr_chegada ? date('d/m/Y H:i', strtotime($s->dt_hr_chegada)) : (isset($s->updated_at) ? date('d/m/Y H:i', strtotime($s->updated_at)) : '-');
-                                $meds = $s->medicamentos->filter(function($m){ return $m->medicamento; })->pluck('medicamento.nome')->implode(', ');
+                                $chegada = $lote['chegada'] ? date('d/m/Y H:i', strtotime($lote['chegada'])) : '-';
+                                $meds = $lote['meds'] ?: '-';
+                                $pode_acessar = $lote['todos_mesmo_dono'] && $lote['user_id_aplicacao'] == $user->id;
                                 @endphp
                                 <tr>
                                     <td>
@@ -125,22 +125,22 @@ $template = "layout.".session()->get('layout');
                                                 <i class="mdi mdi-dots-vertical"></i>
                                             </button>
                                             <div class="dropdown-menu" data-popper-placement="bottom-end">
-                                                @if($s->user_id_aplicacao == $user->id)
-                                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.enfermagem_acessar', $s->id) }}"><i class="mdi mdi-eye me-1"></i> Acessar Atendimento</a>
+                                                @if($pode_acessar)
+                                                    <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.enfermagem_acessar', $lote['id']) }}"><i class="mdi mdi-eye me-1"></i> Acessar Atendimento</a>
                                                 @endif
-                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.acessar_semana', $s->id) }}"><i class="mdi mdi-book-open-page-variant me-1"></i> Visualizar (Sem Vincular)</a>
+                                                <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.acessar_semana', $lote['id']) }}"><i class="mdi mdi-book-open-page-variant me-1"></i> Visualizar (Sem Vincular)</a>
                                             </div>
                                         </div>
                                     </td>
                                     <td>{{ $chegada }}</td>
                                     <td>
-                                        {{ $s->prescricao->paciente->nm_paciente }}
-                                        <a href="#" onclick="abrir_obs_semana(this);return false;" title="Ver Observações do Paciente e da Semana" style="text-decoration:none;" data-paciente="{{ $s->prescricao->paciente->nm_paciente }}" data-obs-paciente="{{ $s->prescricao->paciente->obs }}" data-obs-semana="{{ $s->obs }}"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a>
+                                        {{ $lote['prescricao']->paciente->nm_paciente }}
+                                        <a href="#" onclick="abrir_obs_semana(this);return false;" title="Ver Observações do Paciente e da Semana" style="text-decoration:none;" data-paciente="{{ $lote['prescricao']->paciente->nm_paciente }}" data-obs-paciente="{{ $lote['obs_paciente'] }}" data-obs-semana="{{ $lote['obs_semanas'] }}"><i class="mdi mdi-information-outline text-info" style="font-size:1.2rem;"></i></a>
                                     </td>
-                                    <td>{{ $s->nr_semana }}/{{ $s->prescricao->semanas_count }}</td>
-                                    <td>{{ $meds ?: '-' }}</td>
-                                    <td>{{ $s->prescricao->medico ?? '-' }}</td>
-                                    <td>{{ $s->userAplicacao->nome ?? '-' }}</td>
+                                    <td>{{ $lote['semanas_txt'] }}</td>
+                                    <td>{{ $meds }}</td>
+                                    <td>{{ $lote['prescricao']->medico ?? '-' }}</td>
+                                    <td>{{ $lote['userAplicacao']->nome ?? '-' }}</td>
                                     <td><span class="badge rounded-pill bg-label-success">Atendimento</span></td>
                                 </tr>
                             @empty

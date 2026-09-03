@@ -8,7 +8,12 @@ $template = "layout.".session()->get('layout');
     <div class="card-body">
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Prescrições</h4>
-            <a href="{{ route('sistema.prescricoes.adicionar') }}" class="btn btn-primary">Adicionar</a>
+            <div>
+                <a href="{{ route('sistema.prescricoes.bio_coleta') }}" class="btn btn-outline-primary waves-effect">
+                    <span class="tf-icons mdi mdi-test-tube me-1"></span>Bio/Coleta
+                </a>
+                <a href="{{ route('sistema.prescricoes.adicionar') }}" class="btn btn-primary">Adicionar</a>
+            </div>
         </div>
         @if($mensagem = Session::get('mensagem'))
             <div class="alert alert-success alert-dismissible mt-3" role="alert">

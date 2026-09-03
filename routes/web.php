@@ -277,6 +277,8 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/prescricoes/index_pesq', [PrescricaoSistemaController::class, 'index_pesq'])->name('sistema.prescricoes.index_pesq');
         Route::get('/prescricoes/adicionar', [PrescricaoSistemaController::class, 'adicionar'])->name('sistema.prescricoes.adicionar');
         Route::post('/prescricoes/insert', [PrescricaoSistemaController::class, 'insert'])->name('sistema.prescricoes.insert');
+        Route::get('/prescricoes/bio_coleta', [PrescricaoSistemaController::class, 'bio_coleta'])->name('sistema.prescricoes.bio_coleta');
+        Route::post('/prescricoes/bio_coleta/insert', [PrescricaoSistemaController::class, 'insert_bio_coleta'])->name('sistema.prescricoes.bio_coleta.insert');
         Route::get('/prescricoes/acessar/{id}', [PrescricaoSistemaController::class, 'acessar'])->name('sistema.prescricoes.acessar');
         // semanas
         Route::get('/prescricoes/acessar_semana/{id}', [PrescricaoSistemaController::class, 'acessar_semana'])->name('sistema.prescricoes.acessar_semana');

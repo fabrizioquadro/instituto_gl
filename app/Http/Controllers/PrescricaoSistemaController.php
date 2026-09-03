@@ -207,6 +207,9 @@ class PrescricaoSistemaController extends Controller
             }
 
             $valor_tratamento = (float) valorFormDb($request->valor_tratamento ?? '0');
+            if ($valor_tratamento <= 0) {
+                return redirect()->back()->withInput()->with('mensagem_erro', 'Informe o Valor do Tratamento (R$). É obrigatório e deve ser maior que zero.');
+            }
             $credito_em_aberto = (float) valorFormDb($request->credito_em_aberto ?? '0');
             // valor efetivamente a parcelar = tratamento - crédito em aberto
             $valor_parcelar = max(0, round($valor_tratamento - $credito_em_aberto, 2));
@@ -364,6 +367,138 @@ class PrescricaoSistemaController extends Controller
         }
     }
 
+    // ---------- BIO/COLETA (procedimentos grátis) ----------
+
+    public function bio_coleta()
+    {
+        $user = auth()->user() ?? session()->get('user');
+
+        $api = api();
+        $medicos = $api->get_medicos();
+
+        // Bioimpedância e Coleta = medicamentos do tipo Procedimento com aplicação (grátis)
+        $medicamentos = Medicamento::where('unidade', 'Procedimento')
+            ->where('aplicacao', 'Sim')
+            ->where(function ($q) {
+                $q->where('nome', 'like', 'Bioimped%')
+                  ->orWhere('nome', 'like', 'Coleta');
+            })
+            ->orderBy('nome')
+            ->get();
+
+        return view('sistema/prescricoes/bio_coleta', compact('medicos', 'medicamentos', 'user'));
+    }
+
+    public function insert_bio_coleta(Request $request)
+    {
+        try {
+            $user = auth()->user() ?? session()->get('user');
+
+            $data_prevista = $request->data_prevista;
+            if (!$data_prevista) {
+                throw new \Exception('Informe a Data Prevista.');
+            }
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data_prevista)) {
+                throw new \Exception('Data Prevista inválida.');
+            }
+            if ($data_prevista < date('Y-m-d')) {
+                throw new \Exception('A Data Prevista não pode estar no passado.');
+            }
+            if (!$request->paciente_id) {
+                throw new \Exception('Informe o paciente.');
+            }
+            if (!$request->medico) {
+                throw new \Exception('Informe o médico.');
+            }
+
+            // medicamentos escolhidos (devem estar na lista grátis de Bio/Coleta)
+            $ids = array_values(array_filter(array_map('intval', (array) $request->medicamentos)));
+            if (count($ids) === 0) {
+                throw new \Exception('Selecione ao menos um procedimento (Bioimpedância e/ou Coleta).');
+            }
+            $medicamentos = Medicamento::where('unidade', 'Procedimento')
+                ->where('aplicacao', 'Sim')
+                ->where(function ($q) {
+                    $q->where('nome', 'like', 'Bioimped%')
+                      ->orWhere('nome', 'like', 'Coleta');
+                })
+                ->whereIn('id', $ids)
+                ->get();
+            if ($medicamentos->count() !== count(array_unique($ids))) {
+                throw new \Exception('Algum procedimento selecionado não é válido.');
+            }
+
+            $destino = $request->destino === 'agendada' ? 'agendada' : 'fila';
+            $situacao_semana = $destino === 'fila' ? 'Fila de Aplicação' : 'Agendada';
+
+            $prescricaoId = null;
+            DB::transaction(function () use ($request, $user, $data_prevista, $medicamentos, $destino, $situacao_semana, &$prescricaoId) {
+                $prescricao = Prescricao::create([
+                    'paciente_id' => $request->paciente_id,
+                    'clinica_id' => $user->clinica_id ?? null,
+                    'user_id_cadastro' => $user->id ?? null,
+                    'medico' => $request->medico,
+                    'tipo_atendimento' => $request->tipo_atendimento ?: 'Coleta/Bio',
+                    'agendamento' => null,
+                    'obs' => 'Bio/Coleta (procedimento grátis)',
+                    'data_prescricao' => date('Y-m-d'),
+                    'qt_semanas' => 1,
+                    'qt_semanas_aplicacao' => 1,
+                    'qt_parcelas' => 0,
+                    'semana_atual' => 0,
+                    'valor_tratamento' => 0,
+                    'credito_em_aberto' => 0,
+                    'situacao' => $destino === 'fila' ? 'Em Andamento' : 'Agendada',
+                    'situacao_financeira' => 'Pago',
+                ]);
+                $prescricaoId = $prescricao->id;
+
+                $semana = PrescricaoSemana::create([
+                    'prescricao_id' => $prescricao->id,
+                    'nr_semana' => 1,
+                    'data_prevista' => $data_prevista,
+                    'data_aplicada' => null,
+                    'tem_aplicacao' => true,
+                    'situacao' => $situacao_semana,
+                    'dt_hr_chegada' => $destino === 'fila' ? now() : null,
+                    'obs' => null,
+                ]);
+                $this->registrar_log($prescricao->id, 'semana', $semana->id, 'Criação', 'Semana 1 criada (Bio/Coleta)');
+
+                foreach ($medicamentos as $med) {
+                    PrescricaoSemanaMedicamento::create([
+                        'prescricao_semana_id' => $semana->id,
+                        'medicamento_id' => $med->id,
+                        'combo_id' => null,
+                        'clinica_id_aplicacao' => $user->clinica_id ?? null,
+                        'is_soro' => false,
+                        'gera_aplicacao' => true,
+                        'quantidade' => 1,
+                        'situacao' => 'Aberta',
+                        'data_prevista' => $data_prevista,
+                    ]);
+                    $this->registrar_log($prescricao->id, 'semana', $semana->id, 'Adição de Medicamento', 'Medicação "' . $med->nome . '" adicionada na semana 1 (Bio/Coleta)');
+                }
+
+                $this->registrar_log(
+                    $prescricao->id,
+                    'prescricao',
+                    $prescricao->id,
+                    'Criação',
+                    'Prescrição Bio/Coleta criada — ' . $medicamentos->pluck('nome')->implode(' + ') . ($destino === 'fila' ? ' (enviada para a Fila de Aplicação)' : ' (agendada)')
+                );
+            });
+
+            $mensagem = $destino === 'fila'
+                ? 'Bio/Coleta cadastrada e enviada para a Fila de Aplicação!'
+                : 'Bio/Coleta cadastrada (Agendada)!';
+
+            return redirect()->route('sistema.dash')->with('mensagem', $mensagem);
+        } catch (\Exception $e) {
+            return redirect()->back()->withInput()->with('mensagem_erro', $e->getMessage());
+        }
+    }
+
     public function acessar($id)
     {
         $user = auth()->user();
@@ -385,6 +520,13 @@ class PrescricaoSistemaController extends Controller
 
         if (!$prescricao) {
             return redirect()->route('sistema.prescricoes')->with('mensagem_erro', 'Prescrição não encontrada.');
+        }
+
+        // por semana: flag p/ saber se pode ir à fila de aplicação (regra da anterior + pagamento)
+        foreach ($prescricao->semanas as $semana) {
+            $motivo = null;
+            $semana->pode_enviar_fila = $this->pode_enviar_para_fila($semana, $motivo);
+            $semana->semana_paga = $this->semana_esta_paga($semana);
         }
 
         return view('sistema/prescricoes/acessar', compact('prescricao'));
@@ -882,6 +1024,9 @@ class PrescricaoSistemaController extends Controller
         $sit = 'Em Aberto';
         if ($prescricao->situacao === 'Cancelada') {
             $sit = 'Cancelado';
+        } elseif ($valor <= 0) {
+            // tratamento sem valor (ex.: Bio/Coleta grátis) = nada a pagar
+            $sit = 'Pago';
         } elseif ($valor > 0 && $total_pago >= $valor - 0.005) {
             $sit = 'Pago';
         } elseif ($total_pago > 0) {
@@ -919,11 +1064,11 @@ class PrescricaoSistemaController extends Controller
                 ->values();
         };
 
-        // Aguardando (fila de aplicação)
-        $fila = $base('Fila de Aplicação');
+        // Aguardando (fila de aplicação) — agrupadas por prescrição (lote)
+        $fila = $this->agrupar_lote_dash($base('Fila de Aplicação'));
 
-        // Atendimentos
-        $em_atendimento = $base('Em Atendimento');
+        // Atendimentos — agrupadas por prescrição (lote)
+        $em_atendimento = $this->agrupar_lote_dash($base('Em Atendimento'));
 
         // Aplicadas do dia
         $atendidos_dia = $base(['Aplicada', 'Aplicação Parcial'])
@@ -957,6 +1102,60 @@ class PrescricaoSistemaController extends Controller
         return view('sistema/prescricoes/dash', compact('fila', 'em_atendimento', 'atendidos_dia', 'atendimentos_por_enfermeira', 'user'));
     }
 
+    /**
+     * Agrupa as semanas do dash por prescrição (lote): quando uma prescrição tem várias
+     * semanas na MESMA fila/atendimento, vira UMA linha com a coluna Semana "4,5,6 / 8"
+     * (nrs das semanas do lote / total de semanas da prescrição).
+     */
+    private function agrupar_lote_dash($semanas)
+    {
+        return $semanas
+            ->groupBy(function ($s) {
+                return $s->prescricao_id;
+            })
+            ->map(function ($grupo) {
+                $grupo = $grupo->sortBy('nr_semana')->values();
+                $primeira = $grupo->first();
+                $prescricao = $primeira->prescricao;
+
+                // nrs das semanas do lote (ex.: "4,5,6") + total de semanas da prescrição (ex.: 8)
+                $nrs = $grupo->pluck('nr_semana');
+                $total = $prescricao->semanas_count ?: $prescricao->qt_semanas;
+                $semanas_txt = $nrs->implode(',') . ' / ' . $total;
+
+                // medicações únicas de todas as semanas do lote
+                $meds = $grupo->flatMap(function ($s) {
+                    return $s->medicamentos->filter(function ($m) {
+                        return $m->medicamento;
+                    })->pluck('medicamento.nome');
+                })->unique()->values()->implode(', ');
+
+                // observações das semanas do lote (para o modal)
+                $obs_semanas = $grupo->map(function ($s) {
+                    if (!$s->obs) {
+                        return null;
+                    }
+                    return 'Semana ' . $s->nr_semana . ': ' . $s->obs;
+                })->filter()->values()->implode(' | ');
+
+                return [
+                    'semanas' => $grupo,
+                    'id' => $primeira->id, // id de referência p/ abrir o lote
+                    'prescricao' => $prescricao,
+                    'semanas_txt' => $semanas_txt,
+                    'chegada' => $grupo->min('dt_hr_chegada'),
+                    'meds' => $meds,
+                    'obs_paciente' => $prescricao->paciente->obs ?? '',
+                    'obs_semanas' => $obs_semanas,
+                    // todas as semanas do lote iniciadas pelo MESMO usuário
+                    'todos_mesmo_dono' => $grupo->pluck('user_id_aplicacao')->unique()->count() <= 1,
+                    'user_id_aplicacao' => $primeira->user_id_aplicacao,
+                    'userAplicacao' => $primeira->userAplicacao,
+                ];
+            })
+            ->values();
+    }
+
     public function iniciar_atendimento($id)
     {
         try {
@@ -985,6 +1184,9 @@ class PrescricaoSistemaController extends Controller
             $semana->save();
 
             $this->registrar_log($semana->prescricao_id, 'semana', $semana->id, 'Atendimento', 'Atendimento iniciado por ' . $user->nome);
+
+            // REGRA anexo por SESSÃO: novo início de atendimento zera a conferência
+            session(['anexo_conferido_prescricao_' . $semana->prescricao_id => false]);
 
             return redirect()->route('sistema.prescricoes.enfermagem_acessar', $id)->with('mensagem', 'Atendimento iniciado!');
         } catch (\Exception $e) {
@@ -1042,13 +1244,20 @@ class PrescricaoSistemaController extends Controller
                 }
             }
 
+            // REGRA anexo por SESSÃO: TODA vez que a tela de aplicação é acessada, a conferência
+            // do pedido médico é zerada — o usuário PRECISA abrir o anexo de novo nesta sessão
+            // para liberar o registro (mesmo que já tenha visualizado em acessos anteriores).
+            $chave_anexo = 'anexo_conferido_prescricao_' . $prescricao->id;
+            session([$chave_anexo => false]);
+            $anexo_conferido_sessao = false;
+
             $estoques_abertos = EstoqueAberto::where('clinica_id', $user->clinica_id)
                 ->where('situacao', 'Aberto')
                 ->with('medicamento')
                 ->orderBy('dt_cadastro', 'desc')
                 ->get();
 
-            return view('sistema/prescricoes/enfermagem_acessar', compact('semanas', 'prescricao', 'estoques_abertos', 'user'));
+            return view('sistema/prescricoes/enfermagem_acessar', compact('semanas', 'prescricao', 'estoques_abertos', 'user', 'anexo_conferido_sessao'));
         } catch (\Exception $e) {
             return redirect()->route('sistema.dash')->with('mensagem_erro', $e->getMessage());
         }
@@ -1179,6 +1388,8 @@ class PrescricaoSistemaController extends Controller
             $anexo->visualizado_em = now();
             $anexo->visualizado_por = $user->id ?? null;
             $anexo->save();
+            // conferência por SESSÃO de atendimento (o que libera a aplicação)
+            session(['anexo_conferido_prescricao_' . $anexo->prescricao_id => true]);
             return response()->json(['ok' => true]);
         }
         return response()->json(['ok' => false]);
@@ -1233,22 +1444,20 @@ class PrescricaoSistemaController extends Controller
                 }
             }
             if ($vai_aplicar_controlado) {
-                $anexo_visto = Anexo::where('prescricao_id', $prescricao_id)
-                    ->where('tipo', 'prescricao_medica')
-                    ->whereNotNull('visualizado_em')
-                    ->exists();
+                // conferência do pedido médico é por SESSÃO de atendimento (resetada a cada início)
+                $anexo_visto = (bool) session('anexo_conferido_prescricao_' . $prescricao_id, false);
                 if (!$anexo_visto) {
-                    throw new \Exception('É obrigatório abrir/conferir o pedido médico (anexo) antes de registrar a aplicação.');
+                    throw new \Exception('É obrigatório abrir/conferir o pedido médico (anexo) nesta sessão antes de registrar a aplicação.');
                 }
             }
 
-            $obs_aplicacao = $request->obs_aplicacao;
-
-            // aplica todas as semanas do lote de forma atômica (se algo falhar, desfaz tudo)
+            // obs por semana (podem ser diferentes) — campo: obs_aplicacao_{id_semana}
+            // retrocompat: aceita também obs_aplicacao único (campo geral antigo)
             $semanas_aplicadas = [];
-            \DB::transaction(function () use ($request, $user, $semanas, $prescricao_id, $obs_aplicacao, &$semanas_aplicadas) {
+            \DB::transaction(function () use ($request, $user, $semanas, $prescricao_id, &$semanas_aplicadas) {
                 foreach ($semanas as $semana) {
-                    [$aplicou, $pendente] = $this->aplicar_semana($request, $user, $semana, $obs_aplicacao);
+                    $obs_semana = $request->{'obs_aplicacao_' . $semana->id} ?? $request->obs_aplicacao;
+                    [$aplicou, $pendente] = $this->aplicar_semana($request, $user, $semana, $obs_semana);
                     if (!$aplicou && !$pendente) {
                         continue;
                     }

@@ -245,20 +245,20 @@ $prescricao = $semanas->first()->prescricao;
                     </tbody>
                 </table>
             </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="form-floating form-floating-outline">
+                        <textarea class="form-control h-px-75" name="obs_aplicacao_{{ $semana->id }}" id="obs_aplicacao_{{ $semana->id }}"></textarea>
+                        <label for="obs_aplicacao_{{ $semana->id }}">Obs. da Aplicação (Semana {{ $semana->nr_semana }}):</label>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     @endforeach
     <div class="card card-border-shadow-primary mb-4">
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="form-floating form-floating-outline">
-                        <textarea class="form-control h-px-75" name="obs_aplicacao" id="obs_aplicacao"></textarea>
-                        <label for="obs_aplicacao">Obs. da Aplicação:</label>
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex justify-content-end mt-3">
+            <div class="d-flex justify-content-end">
                 <button type="button" id="btn_registrar_aplicacao" class="btn btn-primary" onclick="abrir_confirmacao_aplicacao()">
                     <span class="tf-icons mdi mdi-syringe me-1"></span> Registrar Aplicação
                 </button>
@@ -395,7 +395,7 @@ $prescricao = $semanas->first()->prescricao;
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" id="btn_confirmar_submissao" class="btn btn-primary" onclick="confirmar_aplicacao()">Confirmar e Salvar</button>
+                <button type="button" id="btn_confirmar_submissao" class="btn btn-primary" onclick="confirmar_aplicacao()" {{ ($tem_controlado && !$anexo_conferido_sessao) ? 'disabled' : '' }}>Confirmar e Salvar</button>
             </div>
         </div>
     </div>
@@ -405,7 +405,7 @@ $prescricao = $semanas->first()->prescricao;
 let modal_abrir_frasco_2, modal_2_codigo_obj, modal_confirmar_aplicacao_obj;
 let qtd_semanas = {{ $semanas->count() }};
 let precisa_conferir_anexo = {{ $tem_controlado ? 'true' : 'false' }};
-let anexo_conferido = {{ ($tem_controlado && $prescricao->anexos->contains(fn($a) => $a->tipo == 'prescricao_medica' && $a->visualizado_em)) ? 'true' : 'false' }};
+let anexo_conferido = {{ ($tem_controlado && $anexo_conferido_sessao) ? 'true' : 'false' }};
 
 function get_quantidade_aplicacao(med_aplic_id){
     let sel = document.getElementById('quantidade_retirar_' + med_aplic_id);

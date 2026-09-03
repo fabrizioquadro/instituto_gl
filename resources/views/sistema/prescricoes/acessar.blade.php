@@ -183,6 +183,9 @@ switch($prescricao->situacao_financeira){
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.acessar_semana', $semana->id) }}"><i class="mdi mdi-eye me-1"></i> Acessar</a>
+                                        @if(in_array($semana->situacao, ['Agendada', 'Aplicação Parcial']) && $semana->pode_enviar_fila && $semana->semana_paga)
+                                            <a class="dropdown-item waves-effect" href="javascript:void(0)" onclick="confirmar_enviar_fila({{ $semana->id }}, {{ $semana->nr_semana }})"><i class="mdi mdi-send me-1"></i> Enviar para a Fila de Aplicação</a>
+                                        @endif
                                         @if($semana->situacao != 'Cancelada')
                                             <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.editar_semana', $semana->id) }}"><i class="mdi mdi-pencil me-1"></i> Editar</a>
                                             @if(session()->has('administrador') && !in_array($semana->situacao, ['Aplicada', 'Aplicação Parcial', 'Em Atendimento']) && !$semana->medicamentos->where('situacao', 'Aplicada')->count())
@@ -252,6 +255,33 @@ switch($prescricao->situacao_financeira){
     </div>
 </div>
 
+{{-- MODAL CONFIRMA ENVIO À FILA DE APLICAÇÃO --}}
+<div class="modal fade" id="modal_confirmar_enviar_fila" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary d-flex align-items-center">
+                    <span class="mdi mdi-send mdi-24px me-2"></span>Enviar para a Fila de Aplicação
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Confirma o envio da <strong id="txt_semana_enviar_fila"></strong> para a fila de aplicação?</p>
+                <p class="text-muted mb-0">A semana ficará disponível para a enfermagem iniciar o atendimento.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn_confirmar_enviar_fila">Confirmar e Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="form_enviar_fila_aplicacao" method="post" action="{{ route('sistema.prescricoes.enviar_fila_aplicacao') }}" style="display:none;">
+    @csrf
+    <input type="hidden" name="semana_id" id="semana_id_enviar_fila" value="">
+</form>
+
 <style>
 /* O CSS do DataTables (CDN) sobrescreve o padding do table-sm */
 .table.table-sm.dataTable thead th,
@@ -289,6 +319,16 @@ window.addEventListener('load',()=>{
       }
     }
   });
-})
+});
+
+function confirmar_enviar_fila(semana_id, nr_semana){
+    document.getElementById('semana_id_enviar_fila').value = semana_id;
+    document.getElementById('txt_semana_enviar_fila').innerText = 'Semana ' + nr_semana;
+    let modal = new bootstrap.Modal(document.getElementById('modal_confirmar_enviar_fila'));
+    modal.show();
+    document.getElementById('btn_confirmar_enviar_fila').onclick = function(){
+        document.getElementById('form_enviar_fila_aplicacao').submit();
+    };
+}
 </script>
 @endsection

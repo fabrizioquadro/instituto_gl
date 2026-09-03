@@ -1033,7 +1033,13 @@ function valida_e_confirma_prescricao(){
         }
     }
 
-    // 4. financeiro
+    // 4. financeiro — Valor do Tratamento obrigatório e > 0
+    let valorTratamentoEl = document.getElementById('valor_tratamento');
+    let valorTratamentoNum = valorTratamentoEl ? valor_form_db(valorTratamentoEl.value || '0') : 0;
+    if(!(valorTratamentoNum > 0)){
+        erros.push('Informe o Valor do Tratamento (R$) — é obrigatório e deve ser maior que zero.');
+    }
+
     let fin = montar_financeiro_html();
 
     if(erros.length > 0){
