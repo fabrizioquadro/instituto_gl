@@ -522,6 +522,12 @@ class PrescricaoSistemaController extends Controller
             return redirect()->route('sistema.prescricoes')->with('mensagem_erro', 'Prescrição não encontrada.');
         }
 
+        // garante semanas ordenadas pelo número da semana (visualização sem DataTables na tabela)
+        $prescricao->setRelation(
+            'semanas',
+            $prescricao->semanas->sortBy(fn($s) => (int) $s->nr_semana)->values()
+        );
+
         // por semana: flag p/ saber se pode ir à fila de aplicação (regra da anterior + pagamento)
         foreach ($prescricao->semanas as $semana) {
             $motivo = null;
@@ -1036,6 +1042,288 @@ class PrescricaoSistemaController extends Controller
         $prescricao->save();
     }
 
+    /**
+     * Secretaria: visão do dia para o pessoal da secretaria.
+     * Card 1 - Agendados para hoje (semana 'Agendada' com data_prevista = hoje).
+     * Card 2 - Atrasados (semanas 'Agendada' com data_prevista no passado, nunca aplicadas).
+     * Card 3 - Aplicações do dia + fila/em atendimento agora.
+     * As tabelas usam DataTables serverSide (endpoint secretaria_pesq). Aqui só carrega a página e os contadores.
+     */
+    public function secretaria()
+    {
+        $user = auth()->user();
+        if (!$user) {
+            $user = session()->get('user');
+        }
+        $clinica_id = $user->clinica_id;
+        $hoje = date('Y-m-d');
+
+        // contadores leves (quantas PRESCRIÇÕES atendem a cada card) — badges do cabeçalho
+        $contar = function ($crit) use ($clinica_id) {
+            return Prescricao::where('clinica_id', $clinica_id)
+                ->whereHas('semanas', $crit)
+                ->count();
+        };
+
+        $critAgendados = function ($q) use ($hoje) {
+            $q->where('situacao', 'Agendada')->whereDate('data_prevista', $hoje);
+        };
+        $critAtrasados = function ($q) use ($hoje) {
+            $q->where('situacao', 'Agendada')->where('data_prevista', '<', $hoje);
+        };
+        $critAplicacoes = function ($q) use ($hoje) {
+            $q->where(function ($w) use ($hoje) {
+                $w->where(function ($w2) use ($hoje) {
+                    $w2->whereIn('situacao', ['Aplicada', 'Aplicação Parcial'])->whereDate('data_aplicada', $hoje);
+                })->orWhereIn('situacao', ['Fila de Aplicação', 'Em Atendimento']);
+            });
+        };
+
+        $totais = [
+            'agendados' => $contar($critAgendados),
+            'atrasados' => $contar($critAtrasados),
+            'aplicacoes' => $contar($critAplicacoes),
+        ];
+
+        return view('sistema/prescricoes/secretaria', compact('totais', 'user', 'hoje'));
+    }
+
+    /**
+     * DataTables serverSide da Secretaria. Recebe ?card=agendados|atrasados|aplicacoes.
+     * Retorna UMA LINHA POR PRESCRIÇÃO (agrupando as semanas que casam com o critério do card).
+     */
+    public function secretaria_pesq(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user) {
+            $user = session()->get('user');
+        }
+        $clinica_id = $user->clinica_id;
+        $hoje = date('Y-m-d');
+        $card = $request->card ?? 'agendados';
+
+        // critério de semana conforme o card
+        $crit = function ($q) use ($card, $hoje) {
+            if ($card === 'atrasados') {
+                $q->where('situacao', 'Agendada')->where('data_prevista', '<', $hoje);
+            } elseif ($card === 'aplicacoes') {
+                $q->where(function ($w) use ($hoje) {
+                    $w->where(function ($w2) use ($hoje) {
+                        $w2->whereIn('situacao', ['Aplicada', 'Aplicação Parcial'])->whereDate('data_aplicada', $hoje);
+                    })->orWhereIn('situacao', ['Fila de Aplicação', 'Em Atendimento']);
+                });
+            } else {
+                $q->where('situacao', 'Agendada')->whereDate('data_prevista', $hoje);
+            }
+        };
+
+        $base = Prescricao::where('clinica_id', $clinica_id)->whereHas('semanas', $crit);
+        $qt_linhas = (clone $base)->count();
+
+        // busca global (por paciente)
+        $search = $request->input('search.value', '');
+        $query = $base;
+        if (trim($search) !== '') {
+            $query = (clone $base)->whereHas('paciente', function ($q) use ($search) {
+                $q->where('nm_paciente', 'like', '%' . $search . '%');
+            });
+        }
+        $totalFiltered = (clone $query)->count();
+
+        $start = intval($request->input('start', 0));
+        $length = intval($request->input('length', 10));
+        if ($length < 0) {
+            $length = max(1, $qt_linhas); // "todos"
+        }
+
+        $prescricoes = (clone $query)
+            ->orderByDesc('id')
+            ->skip($start)
+            ->take($length)
+            ->get();
+
+        $ids = $prescricoes->pluck('id');
+
+        // semanas dessas prescrições que casam o critério (página atual apenas)
+        $semanas_por_presc = collect();
+        if ($ids->count()) {
+            $semanas_por_presc = PrescricaoSemana::with(['medicamentos.medicamento'])
+                ->whereIn('prescricao_id', $ids)
+                ->where($crit)
+                ->orderBy('nr_semana')
+                ->get()
+                ->groupBy('prescricao_id');
+        }
+
+        $dados = [];
+        foreach ($prescricoes as $prescricao) {
+            $grupo = $semanas_por_presc->get($prescricao->id, collect())->sortBy('nr_semana')->values();
+            $total_semanas = $prescricao->qt_semanas ?: $grupo->max('nr_semana');
+
+            $nrs = $grupo->pluck('nr_semana');
+            $semanas_txt = $nrs->count() ? $nrs->implode(',') . ' / ' . $total_semanas : '-';
+
+            $datas = $grupo->pluck('data_prevista')->filter()->unique()->map(fn($d) => dataDbForm($d))->implode(', ');
+
+            $dias_atraso = null;
+            $mais_antiga = $grupo->min('data_prevista');
+            if ($mais_antiga) {
+                $dias_atraso = (int) \Carbon\Carbon::parse($mais_antiga)->diffInDays(\Carbon\Carbon::today());
+            }
+
+            $situacoes = $grupo->pluck('situacao')->unique();
+            $badge_sit = 'bg-label-secondary';
+            if ($situacoes->contains('Em Atendimento') || $situacoes->contains('Fila de Aplicação')) {
+                $badge_sit = 'bg-label-primary';
+            } elseif ($situacoes->contains('Aplicação Parcial')) {
+                $badge_sit = 'bg-label-warning';
+            } elseif ($situacoes->contains('Aplicada')) {
+                $badge_sit = 'bg-label-success';
+            }
+            $txt_sit = $situacoes->implode(' / ');
+
+            $meds = $grupo->flatMap(function ($s) {
+                return $s->medicamentos->filter(function ($m) {
+                    return $m->medicamento;
+                })->pluck('medicamento.nome');
+            })->unique()->values()->implode(', ');
+
+            $primeira_semana_id = $grupo->first()->id ?? null;
+            $nm_paciente = $prescricao->paciente->nm_paciente ?? '-';
+            $medico = $prescricao->medico ?? '-';
+
+            $acoes = "
+            <div class='dropdown'>
+                <button type='button' class='btn p-0 dropdown-toggle hide-arrow' data-bs-toggle='dropdown' aria-expanded='true'>
+                    <i class='mdi mdi-dots-vertical'></i>
+                </button>
+                <div class='dropdown-menu' data-popper-placement='bottom-end'>
+                    <a class='dropdown-item waves-effect' href='" . route('sistema.prescricoes.acessar', $prescricao->id) . "'><i class='mdi mdi-folder-open me-1'></i> Acessar Prescrição</a>
+                    " . ($primeira_semana_id ? "<a class='dropdown-item waves-effect' href='" . route('sistema.prescricoes.acessar_semana', $primeira_semana_id) . "'><i class='mdi mdi-calendar-week me-1'></i> Acessar Semana</a>" : '') . "
+                </div>
+            </div>
+            ";
+
+            $dado = [];
+            $dado[] = $nm_paciente;
+            $dado[] = '#' . $prescricao->id;
+            $dado[] = $semanas_txt;
+
+            if ($card === 'atrasados') {
+                $dado[] = $datas ?: '-';
+                $dado[] = '<span class="badge rounded-pill bg-label-danger">' . ($dias_atraso ?: 0) . ' dia(s)</span>';
+                $dado[] = $meds ?: '-';
+                $dado[] = $medico;
+                $dado[] = $acoes;
+            } elseif ($card === 'aplicacoes') {
+                $dado[] = '<span class="badge rounded-pill ' . $badge_sit . '">' . ($txt_sit ?: '-') . '</span>';
+                $dado[] = $meds ?: '-';
+                $dado[] = $medico;
+                $dado[] = $acoes;
+            } else {
+                $dado[] = $datas ?: '-';
+                $dado[] = $meds ?: '-';
+                $dado[] = $medico;
+                $dado[] = $acoes;
+            }
+
+            $dados[] = $dado;
+        }
+
+        $json_data = [
+            'draw' => intval($request->input('draw', 0)),
+            'recordsTotal' => intval($qt_linhas),
+            'recordsFiltered' => intval($totalFiltered),
+            'data' => $dados,
+        ];
+
+        return response()->json($json_data);
+    }
+
+    /**
+     * DataTables serverSide — prescrições de UM paciente (busca da Secretaria).
+     * Recebe ?paciente_id=... Retorna JSON no mesmo padrão do index_pesq.
+     */
+    public function secretaria_prescricoes_paciente_pesq(Request $request)
+    {
+        $paciente_id = intval($request->paciente_id ?? 0);
+        if ($paciente_id <= 0) {
+            return response()->json([
+                'draw' => intval($request->input('draw', 0)),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+            ]);
+        }
+
+        $requestData = $request->all();
+
+        $qt_linhas = Prescricao::where('paciente_id', $paciente_id)->count();
+
+        // busca global (médico / tipo / código versão1)
+        $search = $request->input('search.value', '');
+        $query = Prescricao::where('paciente_id', $paciente_id);
+        if (trim($search) !== '') {
+            $query = $query->where(function ($q) use ($search) {
+                $q->where('medico', 'like', '%' . $search . '%')
+                  ->orWhere('tipo_atendimento', 'like', '%' . $search . '%')
+                  ->orWhere('codigo_versao1', 'like', '%' . $search . '%');
+            });
+        }
+        $totalFiltered = (clone $query)->count();
+
+        $start = intval($request->input('start', 0));
+        $length = intval($request->input('length', 10));
+        if ($length < 0) {
+            $length = max(1, $qt_linhas);
+        }
+
+        $prescricoes = (clone $query)
+            ->with(['paciente'])
+            ->orderByDesc('data_prescricao')
+            ->skip($start)
+            ->take($length)
+            ->get();
+
+        $dados = [];
+        foreach ($prescricoes as $prescricao) {
+            $botao = "
+            <div class='dropdown'>
+                <button type='button' class='btn p-0 dropdown-toggle hide-arrow' data-bs-toggle='dropdown' aria-expanded='true'>
+                    <i class='mdi mdi-dots-vertical'></i>
+                </button>
+                <div class='dropdown-menu' data-popper-placement='bottom-end'>
+                    <a class='dropdown-item waves-effect' href='" . route('sistema.prescricoes.acessar', $prescricao->id) . "'><i class='mdi mdi-eye me-1'></i> Acessar</a>
+                    <a class='dropdown-item waves-effect' href='" . route('sistema.prescricoes.imprimir_cadastro', $prescricao->id) . "'><i class='mdi mdi-folder-open me-1'></i> Imprimir Cadastro</a>
+                </div>
+            </div>
+            ";
+
+            $dado = [];
+            $dado[] = $botao;
+            $dado[] = $prescricao->data_prescricao ? dataDbForm($prescricao->data_prescricao) : '-';
+            $dado[] = $prescricao->paciente->nm_paciente ?? '-';
+            $dado[] = $prescricao->medico ?? '-';
+            $dado[] = $prescricao->tipo_atendimento ?? '-';
+
+            $semana_aplicada = $prescricao->get_semana_aplicada();
+            $dado[] = $semana_aplicada ? $semana_aplicada->nr_semana . '/' . $prescricao->qt_semanas : '0/' . $prescricao->qt_semanas;
+
+            $dado[] = $this->badgeSituacao($prescricao->situacao);
+            $dado[] = $this->badgeSituacaoFinanceira($prescricao->situacao_financeira);
+            $dado[] = 'R$ ' . number_format($prescricao->valor_tratamento, 2, ',', '.');
+
+            $dados[] = $dado;
+        }
+
+        return response()->json([
+            'draw' => intval($request->input('draw', 0)),
+            'recordsTotal' => intval($qt_linhas),
+            'recordsFiltered' => intval($totalFiltered),
+            'data' => $dados,
+        ]);
+    }
+
     public function dash()
     {
         $user = auth()->user();
@@ -1457,7 +1745,9 @@ class PrescricaoSistemaController extends Controller
             \DB::transaction(function () use ($request, $user, $semanas, $prescricao_id, &$semanas_aplicadas) {
                 foreach ($semanas as $semana) {
                     $obs_semana = $request->{'obs_aplicacao_' . $semana->id} ?? $request->obs_aplicacao;
-                    [$aplicou, $pendente] = $this->aplicar_semana($request, $user, $semana, $obs_semana);
+                    // flag "Entrega ao Paciente" é por SEMANA: marca os medicamentos aplicados da semana
+                    $entrega_paciente = $request->has('entrega_medicamento_paciente_' . $semana->id);
+                    [$aplicou, $pendente] = $this->aplicar_semana($request, $user, $semana, $obs_semana, $entrega_paciente);
                     if (!$aplicou && !$pendente) {
                         continue;
                     }
@@ -1494,7 +1784,7 @@ class PrescricaoSistemaController extends Controller
      * Processa as medicações abertas de UMA semana (marca aplicadas/pendentes e dá baixa de estoque/lote).
      * Retorna [aplicou, pendente].
      */
-    private function aplicar_semana($request, $user, $semana, $obs_aplicacao)
+    private function aplicar_semana($request, $user, $semana, $obs_aplicacao, $entrega_paciente = false)
     {
         $pendente = false;
         $aplicou = false;
@@ -1513,9 +1803,14 @@ class PrescricaoSistemaController extends Controller
             if ($controle_pendente == 'Sim') {
                 $pendente = true;
                 $medAplic->situacao = 'Pendente';
+                $medAplic->entrega_medicamento_paciente = false;
                 $medAplic->save();
                 continue;
             }
+
+            // quando a semana é "Entrega ao Paciente", os medicamentos aplicados (não pendentes)
+            // são entregues ao paciente para aplicar em casa
+            $medAplic->entrega_medicamento_paciente = $entrega_paciente;
 
             // copia os horários da semana para a medicação (podem variar por aplicação)
             $medAplic->dt_hr_chegada = $semana->dt_hr_chegada;
@@ -1674,6 +1969,10 @@ class PrescricaoSistemaController extends Controller
         if (!$prescricao) {
             return;
         }
+        // protocolo encerrado por administrador permanece Encerrada
+        if ($prescricao->situacao === 'Encerrada') {
+            return;
+        }
         $semanas = $prescricao->semanas;
         $tot = $semanas->count();
         $canceladas = $semanas->where('situacao', 'Cancelada')->count();
@@ -1728,6 +2027,9 @@ class PrescricaoSistemaController extends Controller
             if (!$semana) {
                 throw new \Exception('Semana não encontrada.');
             }
+            if (in_array($semana->situacao, ['Encerrada', 'Cancelada'])) {
+                throw new \Exception('Não é possível enviar para a fila uma semana ' . $semana->situacao . '.');
+            }
 
             $motivo = null;
             if (!$this->pode_enviar_para_fila($semana, $motivo)) {
@@ -1739,6 +2041,11 @@ class PrescricaoSistemaController extends Controller
             $semana->save();
 
             $this->registrar_log($semana->prescricao_id, 'semana', $semana->id, 'Fila de Aplicação', 'Semana ' . $semana->nr_semana . ' enviada para a fila de aplicação');
+
+            // enviado da tela da prescrição? volta para a página da prescrição (não da semana)
+            if ($request->origem == 'prescricao') {
+                return redirect()->route('sistema.prescricoes.acessar', $semana->prescricao_id)->with('mensagem', 'Semana enviada para a fila de aplicação!');
+            }
 
             return redirect()->route('sistema.prescricoes.acessar_semana', $semana->id)->with('mensagem', 'Semana enviada para a fila de aplicação!');
         } catch (\Exception $e) {
@@ -1764,6 +2071,9 @@ class PrescricaoSistemaController extends Controller
             if (!$semana) {
                 throw new \Exception('Semana não encontrada.');
             }
+            if (in_array($semana->situacao, ['Encerrada', 'Cancelada'])) {
+                throw new \Exception('Não é possível enviar para a fila uma semana ' . $semana->situacao . '.');
+            }
 
             $motivo = null;
             if (!$this->pode_enviar_para_fila($semana, $motivo)) {
@@ -1776,7 +2086,91 @@ class PrescricaoSistemaController extends Controller
 
             $this->registrar_log($semana->prescricao_id, 'semana', $semana->id, 'Fila de Aplicação', 'Semana ' . $semana->nr_semana . ' enviada para a fila SEM PAGAMENTO, autorizado por ' . $autorizador->nome);
 
+            // enviado da tela da prescrição? volta para a página da prescrição (não da semana)
+            if ($request->origem == 'prescricao') {
+                return redirect()->route('sistema.prescricoes.acessar', $semana->prescricao_id)->with('mensagem', 'Semana enviada para a fila de aplicação (com autorização)!');
+            }
+
             return redirect()->route('sistema.prescricoes.acessar_semana', $semana->id)->with('mensagem', 'Semana enviada para a fila de aplicação (com autorização)!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('mensagem_erro', $e->getMessage());
+        }
+    }
+
+    /**
+     * Encerra o protocolo de uma prescrição (somente administradores).
+     * Tudo que estiver ABERTO é marcado como 'Encerrada': semanas não aplicadas,
+     * seus medicamentos abertos/pendentes e parcelas abertas. O que já foi aplicado
+     * (semana Aplicada/Aplicação Parcial e medicamentos Aplicados) NÃO é alterado.
+     */
+    public function encerrar_protocolo(Request $request)
+    {
+        try {
+            if (!session()->has('administrador')) {
+                throw new \Exception('Apenas administradores podem encerrar o protocolo.');
+            }
+            $user = auth()->user() ?? session()->get('user');
+
+            $prescricao = Prescricao::with(['semanas.medicamentos', 'parcelas'])->find($request->prescricao_id);
+            if (!$prescricao) {
+                throw new \Exception('Prescrição não encontrada.');
+            }
+            if (in_array($prescricao->situacao, ['Encerrada', 'Cancelada', 'Concluída'])) {
+                throw new \Exception('Esta prescrição já está como "' . $prescricao->situacao . '". Não é possível encerrar novamente.');
+            }
+
+            $situacoes_semana_aberta = ['Agendada', 'Fila de Aplicação', 'Em Atendimento'];
+            $encerrou_semana = false;
+            $encerrou_parcela = false;
+
+            DB::transaction(function () use ($prescricao, $user, $situacoes_semana_aberta, &$encerrou_semana, &$encerrou_parcela) {
+                foreach ($prescricao->semanas as $semana) {
+                    // só encerra semanas NÃO aplicadas e NÃO parciais (histórico preservado)
+                    if (!in_array($semana->situacao, $situacoes_semana_aberta)) {
+                        continue;
+                    }
+                    foreach ($semana->medicamentos as $med) {
+                        if (in_array($med->situacao, ['Aberta', 'Pendente'])) {
+                            $med->situacao = 'Encerrada';
+                            $med->save();
+                        }
+                    }
+                    $semana->situacao = 'Encerrada';
+                    $semana->save();
+                    $encerrou_semana = true;
+                    $this->registrar_log($prescricao->id, 'semana', $semana->id, 'Encerramento', 'Semana ' . $semana->nr_semana . ' encerrada no encerramento do protocolo.');
+                }
+
+                // parcelas abertas também são encerradas (as pagas permanecem como histórico)
+                foreach ($prescricao->parcelas as $parcela) {
+                    if (in_array($parcela->situacao, ['Em Aberto', 'Parcial'])) {
+                        $parcela->situacao = 'Encerrada';
+                        $parcela->save();
+                        $encerrou_parcela = true;
+                        $this->registrar_log($prescricao->id, 'financeiro', $parcela->id, 'Encerramento', 'Parcela ' . $parcela->nr_parcela . ' encerrada no encerramento do protocolo.');
+                    }
+                }
+
+                $prescricao->situacao = 'Encerrada';
+                $prescricao->save();
+
+                $detalhe = [];
+                if ($encerrou_semana) {
+                    $detalhe[] = 'semanas encerradas';
+                }
+                if ($encerrou_parcela) {
+                    $detalhe[] = 'parcelas abertas encerradas';
+                }
+                $this->registrar_log(
+                    $prescricao->id,
+                    'prescricao',
+                    $prescricao->id,
+                    'Encerramento',
+                    'Protocolo encerrado por ' . ($user->nome ?? ('usuário #' . $user->id)) . '.' . (count($detalhe) ? ' (' . implode(', ', $detalhe) . ')' : '')
+                );
+            });
+
+            return redirect()->route('sistema.prescricoes.acessar', $prescricao->id)->with('mensagem', 'Protocolo encerrado com sucesso.');
         } catch (\Exception $e) {
             return redirect()->back()->with('mensagem_erro', $e->getMessage());
         }
@@ -1804,6 +2198,9 @@ class PrescricaoSistemaController extends Controller
             $prescricao = Prescricao::find($request->prescricao_id);
             if (!$prescricao) {
                 throw new \Exception('Prescrição não encontrada.');
+            }
+            if (in_array($prescricao->situacao, ['Encerrada', 'Cancelada'])) {
+                throw new \Exception('Não é possível editar uma prescrição ' . $prescricao->situacao . '.');
             }
 
             $dados_antigos = [
@@ -1842,6 +2239,10 @@ class PrescricaoSistemaController extends Controller
             return redirect()->route('sistema.prescricoes')->with('mensagem_erro', 'Semana não encontrada.');
         }
 
+        if (in_array($semana->situacao, ['Encerrada', 'Cancelada'])) {
+            return redirect()->route('sistema.prescricoes.acessar', $semana->prescricao_id)->with('mensagem_erro', 'Não é possível editar uma semana ' . $semana->situacao . '.');
+        }
+
         $medicamentos = Medicamento::all()->sortBy('nome');
         $combos = Combo::all()->sortBy('nome');
 
@@ -1856,6 +2257,9 @@ class PrescricaoSistemaController extends Controller
             $semana = PrescricaoSemana::find($request->semana_id);
             if (!$semana) {
                 throw new \Exception('Semana não encontrada.');
+            }
+            if (in_array($semana->situacao, ['Encerrada', 'Cancelada'])) {
+                throw new \Exception('Não é possível editar uma semana ' . $semana->situacao . '.');
             }
 
             // data aplicada e situação são controladas pelo sistema (aplicação), não editáveis aqui
@@ -2045,6 +2449,9 @@ class PrescricaoSistemaController extends Controller
             $prescricao = Prescricao::find($request->prescricao_id);
             if (!$prescricao) {
                 throw new \Exception('Prescrição não encontrada.');
+            }
+            if (in_array($prescricao->situacao, ['Encerrada', 'Cancelada', 'Concluída'])) {
+                throw new \Exception('Não é possível adicionar semanas em uma prescrição ' . $prescricao->situacao . '.');
             }
 
             $contador_procedimentos = intval($request->contador_procedimentos ?? 0);
@@ -2274,6 +2681,9 @@ class PrescricaoSistemaController extends Controller
                     if (!$semana) {
                         continue;
                     }
+                    if (in_array($semana->situacao, ['Encerrada', 'Cancelada'])) {
+                        throw new \Exception('Não é possível adicionar medicamentos em uma semana ' . $semana->situacao . '.');
+                    }
                     $prescricao_id = $semana->prescricao_id;
 
                     // semana já aplicada (total ou parcial): novo medicamento entra como Pendente
@@ -2363,6 +2773,9 @@ class PrescricaoSistemaController extends Controller
 
             if ($med->situacao == 'Aplicada') {
                 throw new \Exception('Não é possível remover uma medicação já aplicada.');
+            }
+            if (in_array($med->situacao, ['Encerrada']) || in_array($semana->situacao, ['Encerrada'])) {
+                throw new \Exception('Não é possível remover uma medicação de um protocolo encerrado.');
             }
 
             PrescricaoLote::where('prescricao_semana_medicamento_id', $med->id)->delete();
@@ -2819,7 +3232,7 @@ class PrescricaoSistemaController extends Controller
 
     private function semana_ja_aplicada($semana)
     {
-        if (in_array($semana->situacao, ['Aplicada', 'Aplicação Parcial', 'Em Atendimento'])) {
+        if (in_array($semana->situacao, ['Aplicada', 'Aplicação Parcial', 'Em Atendimento', 'Encerrada'])) {
             return true;
         }
         return $semana->medicamentos()->where('situacao', 'Aplicada')->exists();
@@ -2869,6 +3282,8 @@ class PrescricaoSistemaController extends Controller
                 return '<span class="badge rounded-pill bg-label-info">' . $situacao . '</span>';
             case 'Concluída':
                 return '<span class="badge rounded-pill bg-label-success">' . $situacao . '</span>';
+            case 'Encerrada':
+                return '<span class="badge rounded-pill bg-label-dark">' . $situacao . '</span>';
             case 'Cancelada':
                 return '<span class="badge rounded-pill bg-label-danger">' . $situacao . '</span>';
             default:

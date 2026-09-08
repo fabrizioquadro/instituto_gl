@@ -110,6 +110,7 @@ $template = "layout.".session()->get('layout');
                         $badge_parcela = 'bg-danger';
                         if($parcela->situacao == 'Paga'){ $badge_parcela = 'bg-success'; }
                         elseif($parcela->situacao == 'Parcial'){ $badge_parcela = 'bg-warning'; }
+                        elseif($parcela->situacao == 'Encerrada'){ $badge_parcela = 'bg-dark'; }
                         @endphp
                         <tr>
                             <td>{{ $parcela->nr_parcela }}</td>
@@ -147,6 +148,7 @@ $template = "layout.".session()->get('layout');
                         $badge_pag = 'bg-danger';
                         if($semana->parcela->situacao == 'Paga'){ $badge_pag = 'bg-success'; }
                         elseif($semana->parcela->situacao == 'Parcial'){ $badge_pag = 'bg-warning'; }
+                        elseif($semana->parcela->situacao == 'Encerrada'){ $badge_pag = 'bg-dark'; }
                         @endphp
                         <span class="badge rounded-pill {{ $badge_pag }}">{{ $semana->parcela->situacao }}</span>
                         <small class="text-muted">R$ {{ valorDbForm($semana->parcela->valor_pago) }} / R$ {{ valorDbForm($semana->parcela->valor_parcela) }}</small>
@@ -193,6 +195,7 @@ $template = "layout.".session()->get('layout');
                             <th>Lote Aplicação</th>
                             <th>C.Barras</th>
                             <th>Enfermagem</th>
+                            <th>Entrega ao Paciente</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -215,6 +218,13 @@ $template = "layout.".session()->get('layout');
                                 <th>{{ $lotes_med }}</th>
                                 <th>{{ $codigos_med }}</th>
                                 <th>{{ $med->userAplicacao ? $med->userAplicacao->nome : '' }}</th>
+                                <th>
+                                    @if($med->entrega_medicamento_paciente)
+                                        <span class="badge bg-info">Entregue ao Paciente</span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </th>
                             </tr>
                         @endforeach
                     </tbody>

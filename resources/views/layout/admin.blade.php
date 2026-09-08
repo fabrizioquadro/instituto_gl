@@ -198,16 +198,25 @@ $user = session()->get('user');
                         <li class="menu-header fw-medium mt-4">
                             <span class="menu-header-text">Sistema</span>
                         </li>
+                        {{-- Dashboard oculto por enquanto --}}
+                        {{--
                         <li class="menu-item">
                             <a href="{{ route('sistema.dashboard') }}" class="menu-link">
                                 <i class="menu-icon tf-icons mdi mdi-home-outline"></i>
                                 <div data-i18n="Dashboard">Dashboard</div>
                             </a>
                         </li>
+                        --}}
+                        <li class="menu-item">
+                            <a href="{{ route('sistema.secretaria') }}" class="menu-link">
+                                <i class="menu-icon tf-icons mdi mdi-calendar-clock"></i>
+                                <div data-i18n="Secretaria">Secretaria</div>
+                            </a>
+                        </li>
                         <li class="menu-item">
                             <a href="{{ route('sistema.dash') }}" class="menu-link">
                                 <i class="menu-icon tf-icons mdi mdi-view-dashboard-outline"></i>
-                                <div data-i18n="Dash">Dash</div>
+                                <div data-i18n="Enfermagem">Enfermagem</div>
                             </a>
                         </li>
                         <li class="menu-item">

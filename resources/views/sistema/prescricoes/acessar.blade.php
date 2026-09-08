@@ -10,6 +10,7 @@ switch($prescricao->situacao){
     case 'Agendada': $badge_situacao = 'bg-label-warning'; break;
     case 'Em Andamento': $badge_situacao = 'bg-label-info'; break;
     case 'Concluída': $badge_situacao = 'bg-label-success'; break;
+    case 'Encerrada': $badge_situacao = 'bg-label-dark'; break;
     case 'Cancelada': $badge_situacao = 'bg-label-danger'; break;
     default: $badge_situacao = 'bg-label-secondary';
 }
@@ -26,9 +27,11 @@ switch($prescricao->situacao_financeira){
         <div class="d-flex justify-content-between align-items-center">
             <h4 class="card-title">Prescrição #{{ $prescricao->id }}</h4>
             <div>
+                @if(!in_array($prescricao->situacao, ['Encerrada', 'Cancelada']))
                 <a href="{{ route('sistema.prescricoes.editar_prescricao', $prescricao->id) }}" class="btn btn-outline-secondary btn-sm">
                     <span class="tf-icons mdi mdi-pencil me-1"></span> Editar
                 </a>
+                @endif
                 <a href="{{ route('sistema.prescricoes.imprimir_paciente', $prescricao->id) }}" target="_blank" class="btn btn-outline-info btn-sm">
                     <span class="tf-icons mdi mdi-cloud-print me-1"></span> Imprimir Prontuário
                 </a>
@@ -142,8 +145,10 @@ switch($prescricao->situacao_financeira){
         <div class="d-flex justify-content-between">
             <h4 class="card-title mb-0">Semanas</h4>
             <div>
+                @if(!in_array($prescricao->situacao, ['Encerrada', 'Cancelada', 'Concluída']))
                 <a href="{{ route('sistema.prescricoes.adicionar_medicamentos', $prescricao->id) }}" class="btn btn-outline-dark btn-sm">+ Medicamentos</a>
                 <a href="{{ route('sistema.prescricoes.adicionar_semana', $prescricao->id) }}" class="btn btn-primary btn-sm">+ Semanas</a>
+                @endif
             </div>
         </div>
         <hr>
@@ -171,6 +176,7 @@ switch($prescricao->situacao_financeira){
                             case 'Em Atendimento': $badge = 'bg-label-primary'; break;
                             case 'Aplicada': $badge = 'bg-label-success'; break;
                             case 'Aplicação Parcial': $badge = 'bg-label-warning'; break;
+                            case 'Encerrada': $badge = 'bg-label-dark'; break;
                             case 'Cancelada': $badge = 'bg-label-danger'; break;
                             default: $badge = 'bg-label-secondary';
                         }
@@ -186,7 +192,7 @@ switch($prescricao->situacao_financeira){
                                         @if(in_array($semana->situacao, ['Agendada', 'Aplicação Parcial']) && $semana->pode_enviar_fila && $semana->semana_paga)
                                             <a class="dropdown-item waves-effect" href="javascript:void(0)" onclick="confirmar_enviar_fila({{ $semana->id }}, {{ $semana->nr_semana }})"><i class="mdi mdi-send me-1"></i> Enviar para a Fila de Aplicação</a>
                                         @endif
-                                        @if($semana->situacao != 'Cancelada')
+                                        @if(!in_array($semana->situacao, ['Cancelada', 'Encerrada']))
                                             <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.editar_semana', $semana->id) }}"><i class="mdi mdi-pencil me-1"></i> Editar</a>
                                             @if(session()->has('administrador') && !in_array($semana->situacao, ['Aplicada', 'Aplicação Parcial', 'Em Atendimento']) && !$semana->medicamentos->where('situacao', 'Aplicada')->count())
                                                 <a class="dropdown-item waves-effect" href="{{ route('sistema.prescricoes.excluir_semana', $semana->id) }}"><i class="mdi mdi-trash-can-outline me-1"></i> Excluir</a>
@@ -219,6 +225,7 @@ switch($prescricao->situacao_financeira){
                                         $badge_med = 'bg-label-secondary';
                                         if($st_med == 'Aplicada'){ $badge_med = 'bg-label-success'; }
                                         elseif($st_med == 'Aberta'){ $badge_med = 'bg-label-warning'; }
+                                        elseif($st_med == 'Encerrada'){ $badge_med = 'bg-label-dark'; }
                                         elseif($st_med == 'Cancelada'){ $badge_med = 'bg-label-danger'; }
                                         @endphp
                                         <div class="d-flex justify-content-between align-items-center">
@@ -238,6 +245,7 @@ switch($prescricao->situacao_financeira){
                                     $badge_pag = 'bg-danger';
                                     if($par->situacao == 'Paga'){ $badge_pag = 'bg-success'; }
                                     elseif($par->situacao == 'Parcial'){ $badge_pag = 'bg-warning'; }
+                                    elseif($par->situacao == 'Encerrada'){ $badge_pag = 'bg-dark'; }
                                     elseif($par->situacao == 'Cancelada'){ $badge_pag = 'bg-secondary'; }
                                     @endphp
                                     <span class="badge rounded-pill {{ $badge_pag }}">{{ $par->situacao }}</span>
@@ -280,47 +288,67 @@ switch($prescricao->situacao_financeira){
 <form id="form_enviar_fila_aplicacao" method="post" action="{{ route('sistema.prescricoes.enviar_fila_aplicacao') }}" style="display:none;">
     @csrf
     <input type="hidden" name="semana_id" id="semana_id_enviar_fila" value="">
+    <input type="hidden" name="origem" value="prescricao">
 </form>
 
+{{-- ENCERRAR PROTOCOLO (somente administradores) --}}
+@if(session()->has('administrador') && !in_array($prescricao->situacao, ['Encerrada', 'Cancelada', 'Concluída']))
+<div class="card card-border-shadow-primary mb-4 border-danger">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="card-title text-danger mb-1">Encerrar Protocolo</h5>
+                <p class="text-muted mb-0">Marca como <b>Encerrada</b> toda a prescrição: semanas não aplicadas, medicamentos abertos/pendentes e parcelas em aberto. O que já foi <b>aplicado</b> não é alterado.</p>
+            </div>
+            <button type="button" class="btn btn-danger" onclick="abrir_modal_encerrar_protocolo()">
+                <span class="tf-icons mdi mdi-close-octagon-outline me-1"></span> Encerrar Protocolo
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal_encerrar_protocolo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger d-flex align-items-center">
+                    <span class="mdi mdi-close-octagon-outline mdi-24px me-2"></span>Encerrar Protocolo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Confirma o <b>encerramento do protocolo</b> da prescrição <b>#{{ $prescricao->id }}</b>?</p>
+                <ul class="mb-2">
+                    <li>Semanas <b>não aplicadas</b> (Agendada / Fila / Em Atendimento) → <b>Encerrada</b>;</li>
+                    <li>Medicamentos <b>Aberto/Pendente</b> dessas semanas → <b>Encerrada</b>;</li>
+                    <li>Parcelas <b>Em Aberto/Parcial</b> → <b>Encerrada</b>;</li>
+                    <li>Semanas/medicamentos já <b>aplicados</b> permanecem como histórico.</li>
+                </ul>
+                <p class="text-muted mb-0">Esta ação não pode ser desfeita pela tela. Confirma?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ route('sistema.prescricoes.encerrar_protocolo') }}" method="post">
+                    @csrf
+                    <input type="hidden" name="prescricao_id" value="{{ $prescricao->id }}">
+                    <button type="submit" class="btn btn-danger">Encerrar Protocolo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <style>
-/* O CSS do DataTables (CDN) sobrescreve o padding do table-sm */
-.table.table-sm.dataTable thead th,
-.table.table-sm.dataTable thead td,
-.table.table-sm.dataTable tbody th,
-.table.table-sm.dataTable tbody td {
+/* tabela simples (sem DataTables): mantém espaçamento compacto do table-sm */
+.table-sm thead th,
+.table-sm thead td,
+.table-sm tbody th,
+.table-sm tbody td {
     padding: 0.3125rem 0.625rem !important;
 }
 </style>
 <script>
-window.addEventListener('load',()=>{
-  $('#table-semanas').DataTable({
-    order: [[0, 'asc']],
-    "language": {
-			"sEmptyTable": "Nenhum registro encontrado",
-      "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",
-      "sInfoEmpty": "Mostrando 0 até 0 de 0 registros",
-      "sInfoFiltered": "(Filtrados de _MAX_ registros)",
-      "sInfoPostFix": "",
-      "sInfoThousands": ".",
-      "sLengthMenu": "_MENU_ resultados por página",
-      "sLoadingRecords": "Carregando...",
-      "sProcessing": "Processando...",
-      "sZeroRecords": "Nenhum registro encontrado",
-      "sSearch": "Pesquisar",
-      "oPaginate": {
-        "sNext": "Próximo",
-        "sPrevious": "Anterior",
-        "sFirst": "Primeiro",
-        "sLast": "Último"
-      },
-      "oAria": {
-        "sSortAscending": ": Ordenar colunas de forma ascendente",
-        "sSortDescending": ": Ordenar colunas de forma descendente"
-      }
-    }
-  });
-});
-
 function confirmar_enviar_fila(semana_id, nr_semana){
     document.getElementById('semana_id_enviar_fila').value = semana_id;
     document.getElementById('txt_semana_enviar_fila').innerText = 'Semana ' + nr_semana;
@@ -329,6 +357,11 @@ function confirmar_enviar_fila(semana_id, nr_semana){
     document.getElementById('btn_confirmar_enviar_fila').onclick = function(){
         document.getElementById('form_enviar_fila_aplicacao').submit();
     };
+}
+
+function abrir_modal_encerrar_protocolo(){
+    let modal = new bootstrap.Modal(document.getElementById('modal_encerrar_protocolo'));
+    modal.show();
 }
 </script>
 @endsection

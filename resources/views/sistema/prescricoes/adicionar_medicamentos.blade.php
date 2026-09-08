@@ -49,7 +49,7 @@ $template = "layout.".session()->get('layout');
                 <div class="col-md-3">
                     <h5 class="card-title">Semanas</h5>
                     @foreach($prescricao->semanas as $semana)
-                        @if($semana->situacao != 'Cancelada')
+                        @if(!in_array($semana->situacao, ['Cancelada', 'Encerrada']))
                             @php
                             $ja_aplicada = in_array($semana->situacao, ['Aplicada', 'Aplicação Parcial']);
                             $badge_semana = 'bg-label-secondary';
@@ -58,6 +58,7 @@ $template = "layout.".session()->get('layout');
                             elseif($semana->situacao == 'Fila de Aplicação'){ $badge_semana = 'bg-label-info'; }
                             elseif($semana->situacao == 'Aplicada'){ $badge_semana = 'bg-label-success'; }
                             elseif($semana->situacao == 'Aplicação Parcial'){ $badge_semana = 'bg-label-primary'; }
+                            elseif($semana->situacao == 'Encerrada'){ $badge_semana = 'bg-label-dark'; }
                             @endphp
                             <div class="form-check mt-3">
                                 <input class="form-check-input" type="checkbox" {{ $ja_aplicada ? '' : 'checked' }} value="{{ $semana->id }}" id="semanas_{{ $semana->id }}" name="semanas[]">

@@ -12,6 +12,7 @@ switch($semana->situacao){
     case 'Em Atendimento': $badge = 'bg-label-primary'; break;
     case 'Aplicada': $badge = 'bg-label-success'; break;
     case 'Aplicação Parcial': $badge = 'bg-label-warning'; break;
+    case 'Encerrada': $badge = 'bg-label-dark'; break;
     case 'Cancelada': $badge = 'bg-label-danger'; break;
     default: $badge = 'bg-label-secondary';
 }
@@ -115,6 +116,7 @@ switch($semana->situacao){
                         $badge_med = 'bg-label-secondary';
                         if($st_med == 'Aplicada'){ $badge_med = 'bg-label-success'; }
                         elseif($st_med == 'Aberta'){ $badge_med = 'bg-label-warning'; }
+                        elseif($st_med == 'Encerrada'){ $badge_med = 'bg-label-dark'; }
                         elseif($st_med == 'Cancelada'){ $badge_med = 'bg-label-danger'; }
                         @endphp
                         <tr>
@@ -201,6 +203,7 @@ switch($semana->situacao){
             switch($parcela->situacao){
                 case 'Paga': $badge_fin = 'bg-success'; break;
                 case 'Parcial': $badge_fin = 'bg-warning'; break;
+                case 'Encerrada': $badge_fin = 'bg-dark'; break;
                 case 'Cancelada': $badge_fin = 'bg-secondary'; break;
                 default: $badge_fin = 'bg-danger';
             }
@@ -374,6 +377,7 @@ switch($semana->situacao){
                         elseif($s->situacao == 'Em Atendimento'){ $badge = 'bg-label-primary'; }
                         elseif($s->situacao == 'Aplicada'){ $badge = 'bg-label-success'; }
                         elseif($s->situacao == 'Aplicação Parcial'){ $badge = 'bg-label-warning'; }
+                        elseif($s->situacao == 'Encerrada'){ $badge = 'bg-label-dark'; }
                         elseif($s->situacao == 'Cancelada'){ $badge = 'bg-label-danger'; }
                         @endphp
                         <tr @if($s->id == $semana->id) class="table-active" @endif>

@@ -108,7 +108,7 @@ $prescricao = $semanas->first()->prescricao;
                             <a href="{{ url('public/prescricoes/' . $anexo->prescricao_id . '/anexos/' . $anexo->arquivo) }}" target="_blank" class="btn btn-sm btn-outline-primary ms-2" onclick="marcar_anexo_visualizado({{ $anexo->id }})">
                                 Visualizar
                             </a>
-                            @if($anexo->visualizado_em)
+                            @if($anexo_conferido_sessao)
                                 <span class="badge bg-success ms-1" id="badge_anexo_{{ $anexo->id }}">Conferido</span>
                             @else
                                 <span class="badge bg-label-warning ms-1" id="badge_anexo_{{ $anexo->id }}">Pendente de conferência</span>
@@ -138,15 +138,21 @@ $prescricao = $semanas->first()->prescricao;
     @foreach($semanas as $semana)
     <div class="card card-border-shadow-primary mb-4">
         <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h5 class="card-title mb-0">Semana {{ $semana->nr_semana }} — Medicações / Aplicação</h5>
-                <button type="button" class="btn btn-sm btn-outline-info waves-effect" onclick="abre_modal_abrir_frasco({{ $semana->id }})">
-                    <span class="tf-icons mdi mdi-flask-outline me-1"></span> Abrir Frasco
-                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="form-check form-switch mb-0" title="Marque quando os medicamentos desta semana forem entregues ao paciente para aplicar em casa.">
+                        <input class="form-check-input" type="checkbox" role="switch" id="entrega_medicamento_paciente_{{ $semana->id }}" name="entrega_medicamento_paciente_{{ $semana->id }}" value="1">
+                        <label class="form-check-label fw-semibold" for="entrega_medicamento_paciente_{{ $semana->id }}" style="cursor:pointer">Entrega ao Paciente</label>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-info waves-effect" onclick="abre_modal_abrir_frasco({{ $semana->id }})">
+                        <span class="tf-icons mdi mdi-flask-outline me-1"></span> Abrir Frasco
+                    </button>
+                </div>
             </div>
             <hr>
             <div class="table-responsive">
-                <table class="table table-sm" id="tabela_medicamentos_semana_{{ $semana->id }}" data-semana-nr="{{ $semana->nr_semana }}">
+                <table class="table table-sm" id="tabela_medicamentos_semana_{{ $semana->id }}" data-semana-nr="{{ $semana->nr_semana }}" data-semana-id="{{ $semana->id }}">
                     <thead class="table-light">
                         <tr>
                             <th>
@@ -654,7 +660,9 @@ function abrir_confirmacao_aplicacao(){
 
     let html = '';
     document.querySelectorAll('#formulario_aplicacao tbody tr').forEach(function(tr){
-        let semanaNr = tr.closest('table') ? tr.closest('table').getAttribute('data-semana-nr') : null;
+        let tabela = tr.closest('table');
+        let semanaNr = tabela ? tabela.getAttribute('data-semana-nr') : null;
+        let semanaId = tabela ? tabela.getAttribute('data-semana-id') : null;
         let cb = tr.querySelector('input[name^="controle_pendente_"]');
         // linhas sem checkbox (já aplicadas / semana vazia) são ignoradas; pendentes são puladas
         if(!cb || cb.checked) return;
@@ -665,6 +673,11 @@ function abrir_confirmacao_aplicacao(){
         let loteEl = tr.querySelector('input[name="lote_' + id + '"]');
         let retirarEl = tr.querySelector('select[name^="quantidade_retirar_"]');
         let nome = nomeEl ? nomeEl.textContent : 'Medicamento';
+        // se a semana está com "Entrega ao Paciente" marcado, indica no item da confirmação
+        let entregaCb = semanaId ? document.getElementById('entrega_medicamento_paciente_' + semanaId) : null;
+        if(entregaCb && entregaCb.checked){
+            nome += ' <span class="badge bg-info ms-1">Entrega ao Paciente</span>';
+        }
         if(semanaNr && qtd_semanas > 1){ nome = 'Semana ' + semanaNr + ' — ' + nome; }
         let presc = qtdPresc ? qtdPresc.textContent.trim() : '-';
         let retirar = retirarEl ? retirarEl.value : presc;

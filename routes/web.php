@@ -271,6 +271,9 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/procedimentos/editar_medico_set', [ProcedimentoSistemaController::class, 'editar_medico_set'])->name('sistema.procedimentos.editar_medico_set');
 
         // Prescrições (V2)
+        Route::get('/secretaria', [PrescricaoSistemaController::class, 'secretaria'])->name('sistema.secretaria');
+        Route::get('/secretaria/pesq', [PrescricaoSistemaController::class, 'secretaria_pesq'])->name('sistema.secretaria.pesq');
+        Route::get('/secretaria/prescricoes_paciente_pesq', [PrescricaoSistemaController::class, 'secretaria_prescricoes_paciente_pesq'])->name('sistema.secretaria.prescricoes_paciente_pesq');
         Route::get('/dash', [PrescricaoSistemaController::class, 'dash'])->name('sistema.dash');
         Route::get('/dash/iniciar_atendimento/{id}', [PrescricaoSistemaController::class, 'iniciar_atendimento'])->name('sistema.dash.iniciar_atendimento');
         Route::get('/prescricoes', [PrescricaoSistemaController::class, 'index'])->name('sistema.prescricoes');
@@ -298,6 +301,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::post('/prescricoes/update_semana', [PrescricaoSistemaController::class, 'update_semana'])->name('sistema.prescricoes.update_semana');
         Route::get('/prescricoes/excluir_semana/{id}', [PrescricaoSistemaController::class, 'excluir_semana'])->name('sistema.prescricoes.excluir_semana');
         Route::post('/prescricoes/delete_semana', [PrescricaoSistemaController::class, 'delete_semana'])->name('sistema.prescricoes.delete_semana');
+        Route::post('/prescricoes/encerrar_protocolo', [PrescricaoSistemaController::class, 'encerrar_protocolo'])->name('sistema.prescricoes.encerrar_protocolo');
         Route::get('/prescricoes/adicionar_semana/{prescricao_id}', [PrescricaoSistemaController::class, 'adicionar_semana'])->name('sistema.prescricoes.adicionar_semana');
         Route::post('/prescricoes/insert_semana', [PrescricaoSistemaController::class, 'insert_semana'])->name('sistema.prescricoes.insert_semana');
         Route::get('/prescricoes/adicionar_medicamentos/{prescricao_id}', [PrescricaoSistemaController::class, 'adicionar_medicamentos'])->name('sistema.prescricoes.adicionar_medicamentos');

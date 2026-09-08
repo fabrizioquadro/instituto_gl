@@ -19,6 +19,7 @@ class PrescricaoSemanaMedicamento extends Model
         'clinica_id_aplicacao',
         'is_soro',
         'gera_aplicacao',
+        'entrega_medicamento_paciente',
         'quantidade',
         'situacao',
         'data_prevista',
@@ -32,6 +33,7 @@ class PrescricaoSemanaMedicamento extends Model
     protected $casts = [
         'is_soro' => 'boolean',
         'gera_aplicacao' => 'boolean',
+        'entrega_medicamento_paciente' => 'boolean',
     ];
 
     public function semana()

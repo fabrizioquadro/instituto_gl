@@ -110,6 +110,7 @@ switch($prescricao->situacao_financeira){
                         $badge_p = 'bg-danger';
                         if($parcela->situacao == 'Paga'){ $badge_p = 'bg-success'; }
                         elseif($parcela->situacao == 'Parcial'){ $badge_p = 'bg-warning'; }
+                        elseif($parcela->situacao == 'Encerrada'){ $badge_p = 'bg-dark'; }
                         elseif($parcela->situacao == 'Cancelada'){ $badge_p = 'bg-secondary'; }
                         $saldo = max(0, $parcela->valor_parcela - $parcela->valor_pago);
                         @endphp

@@ -629,6 +629,18 @@ class ApiFlegowController extends Controller
 
         $aplicados = $semana->medicamentos->filter(fn($m) => $m->situacao == 'Aplicada');
         $pendentes = $semana->medicamentos->filter(fn($m) => $m->situacao == 'Pendente');
+        $entregues = $aplicados->filter(fn($m) => $m->entrega_medicamento_paciente);
+
+        // Flag "Entrega ao Paciente": medicamentos entregues para aplicação em casa
+        if ($entregues->count() > 0) {
+            $nomesEntregues = $entregues->map(function ($m) {
+                $nome = $m->medicamento ? $m->medicamento->nome : ('ID ' . $m->medicamento_id);
+                $qtd = rtrim(rtrim(number_format((float) $m->quantidade, 2, ',', '.'), '0'), ',');
+                return $nome . ' (Qtd: ' . $qtd . ')';
+            })->implode('; ');
+            $linhas[] = 'ENTREGA AO PACIENTE (aplicação em casa): ' . $nomesEntregues;
+            $linhas[] = '';
+        }
 
         $linhas[] = 'MEDICAMENTOS APLICADOS (' . $aplicados->count() . '):';
         if ($aplicados->count() == 0) {
@@ -641,7 +653,8 @@ class ApiFlegowController extends Controller
             $lotes = $m->lotes->pluck('lote')->unique()->implode(', ');
             $cods = $m->lotes->pluck('codigo_barras')->unique()->implode(', ');
             $aplicMed = $m->userAplicacao ? $m->userAplicacao->nome : ($m->user_id_aplicacao ? 'usuário #' . $m->user_id_aplicacao : '-');
-            $linhas[] = '  - ' . $nome . ' | Qtd: ' . $qtd . ' ' . $unidade . ' | Lote: ' . ($lotes ?: '-') . ' | Código: ' . ($cods ?: '-') . ' | Aplicado por: ' . $aplicMed;
+            $ent = $m->entrega_medicamento_paciente ? ' | ENTREGUE AO PACIENTE' : '';
+            $linhas[] = '  - ' . $nome . ' | Qtd: ' . $qtd . ' ' . $unidade . ' | Lote: ' . ($lotes ?: '-') . ' | Código: ' . ($cods ?: '-') . ' | Aplicado por: ' . $aplicMed . $ent;
         }
 
         $linhas[] = 'MEDICAMENTOS PENDENTES (' . $pendentes->count() . '):';

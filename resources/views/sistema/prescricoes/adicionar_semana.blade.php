@@ -66,6 +66,7 @@ $template = "layout.".session()->get('layout');
                                     elseif(in_array($s->situacao, ['Fila de Aplicação', 'Em Atendimento'])){ $badge_s = 'bg-label-info'; }
                                     elseif($s->situacao == 'Aplicada'){ $badge_s = 'bg-label-success'; }
                                     elseif($s->situacao == 'Aplicação Parcial'){ $badge_s = 'bg-label-primary'; }
+                                    elseif($s->situacao == 'Encerrada'){ $badge_s = 'bg-label-dark'; }
                                     elseif($s->situacao == 'Cancelada'){ $badge_s = 'bg-label-danger'; }
                                     @endphp
                                     <tr>
@@ -87,6 +88,7 @@ $template = "layout.".session()->get('layout');
                                                 $badge_pag = 'bg-danger';
                                                 if($s->parcela->situacao == 'Paga'){ $badge_pag = 'bg-success'; }
                                                 elseif($s->parcela->situacao == 'Parcial'){ $badge_pag = 'bg-warning'; }
+                                                elseif($s->parcela->situacao == 'Encerrada'){ $badge_pag = 'bg-dark'; }
                                                 @endphp
                                                 <span class="badge rounded-pill {{ $badge_pag }}">{{ $s->parcela->situacao }}</span>
                                                 <div class="small text-muted">R$ {{ number_format($s->parcela->valor_pago, 2, ',', '.') }} / R$ {{ number_format($s->parcela->valor_parcela, 2, ',', '.') }}</div>
