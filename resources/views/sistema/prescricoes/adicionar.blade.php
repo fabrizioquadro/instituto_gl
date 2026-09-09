@@ -163,9 +163,14 @@ $template = "layout.".session()->get('layout');
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <h6 class="card-title mb-0">Medicações</h6>
-                            <button type="button" onclick="adicionar_medicamento(1)" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
-                                <span class="tf-icons mdi mdi-plus me-1"></span> Medicamento
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" onclick="adicionar_combo_semana(1)" class="btn btn-sm rounded-pill btn-outline-info waves-effect">
+                                    <span class="tf-icons mdi mdi-cube-outline me-1"></span> Combo
+                                </button>
+                                <button type="button" onclick="adicionar_medicamento(1)" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
+                                    <span class="tf-icons mdi mdi-plus me-1"></span> Medicamento
+                                </button>
+                            </div>
                         </div>
                         <div class="table-responsive mt-2">
                             <table class="table table-sm">
@@ -488,9 +493,14 @@ function adicionar_procedimento(dt = '', obs = '', pausa = false){
             </div>
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <h6 class="card-title mb-0">Medicações</h6>
-                <button type="button" onclick="adicionar_medicamento(${contador})" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
-                    <span class="tf-icons mdi mdi-plus me-1"></span> Medicamento
-                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" onclick="adicionar_combo_semana(${contador})" class="btn btn-sm rounded-pill btn-outline-info waves-effect">
+                        <span class="tf-icons mdi mdi-cube-outline me-1"></span> Combo
+                    </button>
+                    <button type="button" onclick="adicionar_medicamento(${contador})" class="btn btn-sm rounded-pill btn-outline-dark waves-effect">
+                        <span class="tf-icons mdi mdi-plus me-1"></span> Medicamento
+                    </button>
+                </div>
             </div>
             <div class="table-responsive mt-2">
                 <table class="table table-sm">
@@ -571,13 +581,29 @@ function gerador_remover_medicamento(m){
     if(el){ el.remove(); }
 }
 
-// ---------- COMBOS NO GERADOR ----------
+// ---------- COMBOS (GERADOR E SEMANAS) ----------
 let modalCombo;
+let combo_target = 'gerador'; // 'gerador' ou o nº do card de semana
 
 function gerador_adicionar_combo(){
+    combo_target = 'gerador';
     modalCombo = new bootstrap.Modal(document.getElementById('modal_combos'));
     modalGerador.hide();
     modalCombo.show();
+}
+
+// abre o modal de combos para inserir em UM card de semana específico
+function adicionar_combo_semana(n){
+    combo_target = n;
+    modalCombo = new bootstrap.Modal(document.getElementById('modal_combos'));
+    modalCombo.show();
+}
+
+// adiciona os medicamentos do combo na tabela de medicações da semana n
+function adicionar_combo_na_semana(n, combo_meds){
+    let meds = combo_meds.map(m => ({ mid: m.medicamento_id, qtd: m.quantidade }));
+    aplicar_medicamentos_na_semana(n, meds);
+    recalcular_financeiro();
 }
 
 function gerador_adicionar_medicamentos_combo(medicamento){
@@ -614,9 +640,15 @@ document.getElementById('adicionar_gerador_combo').addEventListener('click', ()=
         "{{ route('adm.combos.buscar_medicamentos') }}",
         { combo_id: combo_id },
         function(json){
-            json.medicamentos.forEach(m => gerador_adicionar_medicamentos_combo(m));
+            if(combo_target === 'gerador'){
+                json.medicamentos.forEach(m => gerador_adicionar_medicamentos_combo(m));
+            } else {
+                adicionar_combo_na_semana(combo_target, json.medicamentos);
+            }
             modalCombo.hide();
-            modalGerador.show();
+            if(combo_target === 'gerador'){
+                modalGerador.show();
+            }
         }
     );
 });
