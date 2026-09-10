@@ -6,10 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\Aplicacao;
 use App\Models\Procedimento;
 use App\Models\ProcedimentoAnexo;
+use Illuminate\Support\Facades\Log;
 
 class ApiFlegowController extends Controller
 {
-    protected $token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJmZWVnb3ciLCJhdWQiOiJwdWJsaWNhcGkiLCJpYXQiOjE3NTE4OTczODYsImxpY2Vuc2VJRCI6MjMyMjR9.ZC8gSWEiCJsLa7AoFUOT074zaRNECddfXJNT_zi8RvI";
+    protected $token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJmZWVnb3ciLCJhdWQiOiJwdWJsaWNhcGkiLCJpYXQiOjE3ODkwNzA4NDAsImxpY2Vuc2VJRCI6IjIzMjI0In0.Fo0TdMeHkI9DeAdB4TSxPgy43h2A2zx-CTlhd_71RQ4";
 
     public function get_unidades(){
         $apiUrl = "https://api.feegow.com/v1/api/company/list-unity";
@@ -38,22 +39,31 @@ class ApiFlegowController extends Controller
         //vamos montar o array de retorno com as unidades
         $array_retorno = array();
 
+        if(!is_array($retorno) || !isset($retorno['content']) || !is_array($retorno['content'])){
+            Log::error('Feegow company/list-unity: resposta invalida ou vazia.');
+            return $array_retorno;
+        }
+
         //vamos buscar as matriz
-        foreach($retorno['content']['matriz'] as $unidade){
-            $array = array();
-            $array['unidade_id'] = $unidade['unidade_id'];
-            $array['nome'] = $unidade['nome_fantasia'];
-            $array['cnpj'] = $unidade['cnpj'];
-            $array_retorno[] = $array;
+        if(isset($retorno['content']['matriz']) && is_array($retorno['content']['matriz'])){
+            foreach($retorno['content']['matriz'] as $unidade){
+                $array = array();
+                $array['unidade_id'] = $unidade['unidade_id'];
+                $array['nome'] = $unidade['nome_fantasia'];
+                $array['cnpj'] = $unidade['cnpj'];
+                $array_retorno[] = $array;
+            }
         }
 
         //vamos buscar as unidades
-        foreach($retorno['content']['unidades'] as $unidade){
-            $array = array();
-            $array['unidade_id'] = $unidade['unidade_id'];
-            $array['nome'] = $unidade['nome_fantasia'];
-            $array['cnpj'] = $unidade['cnpj'];
-            $array_retorno[] = $array;
+        if(isset($retorno['content']['unidades']) && is_array($retorno['content']['unidades'])){
+            foreach($retorno['content']['unidades'] as $unidade){
+                $array = array();
+                $array['unidade_id'] = $unidade['unidade_id'];
+                $array['nome'] = $unidade['nome_fantasia'];
+                $array['cnpj'] = $unidade['cnpj'];
+                $array_retorno[] = $array;
+            }
         }
 
         return $array_retorno;
@@ -137,11 +147,20 @@ class ApiFlegowController extends Controller
         $response = curl_exec($ch);
 
         if (curl_errno($ch)) {
-            echo 'Erro na requisição: ' . curl_error($ch);
+            Log::error('Feegow patient/list: erro na requisicao - '.curl_error($ch));
+            curl_close($ch);
+            return $array_retorno;
         } else {
             $retorno = json_decode($response, true);
         }
         curl_close($ch);
+
+        if(!is_array($retorno) || !isset($retorno['content']) || !is_array($retorno['content'])){
+            Log::error('Feegow patient/list: resposta invalida ou vazia.', [
+                'resposta' => substr((string) $response, 0, 500),
+            ]);
+            return $array_retorno;
+        }
 
         foreach($retorno['content'] as $paciente){
             $array = array();
@@ -165,6 +184,9 @@ class ApiFlegowController extends Controller
         // Define explicitamente o método GET (opcional)
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
 
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "x-access-token: $this->token",
             "Content-Type: application/json"
@@ -172,15 +194,26 @@ class ApiFlegowController extends Controller
 
         $response = curl_exec($ch);
 
-        if (curl_errno($ch)) {
-            echo 'Erro na requisição: ' . curl_error($ch);
-        } else {
-            $retorno = json_decode($response, true);
-        }
-        curl_close($ch);
-
         //vamos montar o array de retorno com os pacientes
         $array_retorno = array();
+
+        if (curl_errno($ch)) {
+            Log::error('Feegow professional/list: erro na requisicao - '.curl_error($ch));
+            curl_close($ch);
+            return $array_retorno;
+        }
+
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $retorno = json_decode($response, true);
+
+        if(!is_array($retorno) || !isset($retorno['content']) || !is_array($retorno['content'])){
+            Log::error('Feegow professional/list: resposta invalida ou vazia (HTTP '.$http_code.'). Verifique o token da API.', [
+                'resposta' => substr((string) $response, 0, 500),
+            ]);
+            return $array_retorno;
+        }
 
         foreach($retorno['content'] as $paciente){
             $array = array();
