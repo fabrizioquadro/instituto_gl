@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 
 class ApiFlegowController extends Controller
 {
-    protected $token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJmZWVnb3ciLCJhdWQiOiJwdWJsaWNhcGkiLCJpYXQiOjE3NTE4OTczODYsImxpY2Vuc2VJRCI6MjMyMjR9.ZC8gSWEiCJsLa7AoFUOT074zaRNECddfXJNT_zi8RvI";
+    protected $token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJmZWVnb3ciLCJhdWQiOiJwdWJsaWNhcGkiLCJpYXQiOjE3ODkwNzA4NDAsImxpY2Vuc2VJRCI6IjIzMjI0In0.Fo0TdMeHkI9DeAdB4TSxPgy43h2A2zx-CTlhd_71RQ4";
 
     public function get_unidades(){
         $apiUrl = "https://api.feegow.com/v1/api/company/list-unity";
