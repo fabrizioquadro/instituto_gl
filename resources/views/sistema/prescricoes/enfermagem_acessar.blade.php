@@ -255,7 +255,7 @@ $prescricao = $semanas->first()->prescricao;
                 <div class="col-md-12">
                     <div class="form-floating form-floating-outline">
                         <textarea class="form-control h-px-75" name="obs_aplicacao_{{ $semana->id }}" id="obs_aplicacao_{{ $semana->id }}"></textarea>
-                        <label for="obs_aplicacao_{{ $semana->id }}">Obs. da Aplicação (Semana {{ $semana->nr_semana }}):</label>
+                        <label for="obs_aplicacao_{{ $semana->id }}">Observações da Enfermagem</label>
                     </div>
                 </div>
             </div>

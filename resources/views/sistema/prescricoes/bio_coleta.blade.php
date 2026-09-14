@@ -104,15 +104,12 @@ $template = "layout.".session()->get('layout');
                 </div>
             </div>
 
-            {{-- DESTINO --}}
+            {{-- DESTINO FIXO: sempre Fila de Aplicação --}}
             <div class="row mt-4">
-                <div class="col-md-6">
-                    <div class="form-floating form-floating-outline">
-                        <select id="destino" name="destino" class="form-select">
-                            <option value="fila" selected>Enviar para Fila de Aplicação</option>
-                            <option value="agendada">Somente cadastrar (Agendada)</option>
-                        </select>
-                        <label for="destino">Destino:</label>
+                <div class="col-md-6 d-flex align-items-center">
+                    <div class="alert alert-info mb-0 py-2 w-100">
+                        <span class="tf-icons mdi mdi-information-outline me-1"></span>
+                        Destino: <strong>Fila de Aplicação</strong> (envio automático)
                     </div>
                 </div>
                 <div class="col-md-6 d-flex align-items-end justify-content-end">

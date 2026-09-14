@@ -32,14 +32,8 @@ switch($prescricao->situacao_financeira){
                     <span class="tf-icons mdi mdi-pencil me-1"></span> Editar
                 </a>
                 @endif
-                <a href="{{ route('sistema.prescricoes.imprimir_paciente', $prescricao->id) }}" target="_blank" class="btn btn-outline-info btn-sm">
-                    <span class="tf-icons mdi mdi-cloud-print me-1"></span> Imprimir Prontuário
-                </a>
                 <a href="{{ route('sistema.prescricoes.imprimir_cadastro', $prescricao->id) }}" target="_blank" class="btn btn-outline-success btn-sm">
                     <span class="tf-icons mdi mdi-folder-open me-1"></span> Imprimir Cadastro
-                </a>
-                <a href="{{ route('sistema.prescricoes.imprimir_detalhes', $prescricao->id) }}" target="_blank" class="btn btn-outline-warning btn-sm">
-                    <span class="tf-icons mdi mdi-printer me-1"></span> Imprimir Detalhes
                 </a>
                 <a href="{{ route('sistema.prescricoes.financeiro', $prescricao->id) }}" class="btn btn-outline-primary btn-sm">
                     <span class="tf-icons mdi mdi-cash me-1"></span> Financeiro Completo

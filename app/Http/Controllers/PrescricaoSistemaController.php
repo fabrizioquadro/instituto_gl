@@ -428,11 +428,12 @@ class PrescricaoSistemaController extends Controller
                 throw new \Exception('Algum procedimento selecionado não é válido.');
             }
 
-            $destino = $request->destino === 'agendada' ? 'agendada' : 'fila';
-            $situacao_semana = $destino === 'fila' ? 'Fila de Aplicação' : 'Agendada';
+            // Destino FIXO: Bio/Coleta sempre vai para a Fila de Aplicação
+            // (o usuário não informa mais o destino)
+            $situacao_semana = 'Fila de Aplicação';
 
             $prescricaoId = null;
-            DB::transaction(function () use ($request, $user, $data_prevista, $medicamentos, $destino, $situacao_semana, &$prescricaoId) {
+            DB::transaction(function () use ($request, $user, $data_prevista, $medicamentos, $situacao_semana, &$prescricaoId) {
                 $prescricao = Prescricao::create([
                     'paciente_id' => $request->paciente_id,
                     'clinica_id' => $user->clinica_id ?? null,
@@ -448,7 +449,7 @@ class PrescricaoSistemaController extends Controller
                     'semana_atual' => 0,
                     'valor_tratamento' => 0,
                     'credito_em_aberto' => 0,
-                    'situacao' => $destino === 'fila' ? 'Em Andamento' : 'Agendada',
+                    'situacao' => 'Em Andamento',
                     'situacao_financeira' => 'Pago',
                 ]);
                 $prescricaoId = $prescricao->id;
@@ -460,7 +461,7 @@ class PrescricaoSistemaController extends Controller
                     'data_aplicada' => null,
                     'tem_aplicacao' => true,
                     'situacao' => $situacao_semana,
-                    'dt_hr_chegada' => $destino === 'fila' ? now() : null,
+                    'dt_hr_chegada' => now(),
                     'obs' => null,
                 ]);
                 $this->registrar_log($prescricao->id, 'semana', $semana->id, 'Criação', 'Semana 1 criada (Bio/Coleta)');
@@ -485,13 +486,11 @@ class PrescricaoSistemaController extends Controller
                     'prescricao',
                     $prescricao->id,
                     'Criação',
-                    'Prescrição Bio/Coleta criada — ' . $medicamentos->pluck('nome')->implode(' + ') . ($destino === 'fila' ? ' (enviada para a Fila de Aplicação)' : ' (agendada)')
+                    'Prescrição Bio/Coleta criada — ' . $medicamentos->pluck('nome')->implode(' + ') . ' (enviada para a Fila de Aplicação)'
                 );
             });
 
-            $mensagem = $destino === 'fila'
-                ? 'Bio/Coleta cadastrada e enviada para a Fila de Aplicação!'
-                : 'Bio/Coleta cadastrada (Agendada)!';
+            $mensagem = 'Bio/Coleta cadastrada e enviada para a Fila de Aplicação!';
 
             return redirect()->route('sistema.dash')->with('mensagem', $mensagem);
         } catch (\Exception $e) {
