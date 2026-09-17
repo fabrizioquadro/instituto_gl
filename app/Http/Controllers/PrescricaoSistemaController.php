@@ -512,7 +512,7 @@ class PrescricaoSistemaController extends Controller
             'semanas.medicamentos.medicamento',
             'semanas.observacoes',
             'semanas.parcela',
-            'parcelas',
+            'parcelas.semana',
             'pagamentos.formas',
             'anexos',
         ])->find($id);
@@ -932,6 +932,154 @@ class PrescricaoSistemaController extends Controller
             return redirect()->back()->with('mensagem', 'Pagamento atualizado com sucesso.');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('mensagem_erro', 'Erro ao atualizar pagamento: ' . $e->getMessage());
+        }
+    }
+
+    // ---------- editar crédito em aberto ----------
+
+    /**
+     * Converte um valor digitado no formato brasileiro (ex.: 1.234,56) em float.
+     * Diferente de valorFormDb(), aceita valor sem as duas casas decimais.
+     */
+    private function valor_br_float($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return 0.0;
+        }
+        $valor = str_replace(['.', ' '], '', $valor);
+        $valor = str_replace(',', '.', $valor);
+        return round((float) $valor, 2);
+    }
+
+    /**
+     * Corrige o crédito em aberto informado no cadastro e REGENERA todas as
+     * parcelas com base no novo valor a parcelar (tratamento - crédito).
+     *
+     * Só é permitido enquanto não existir nenhum pagamento, pois as parcelas
+     * atuais são apagadas e recriadas (novos ids).
+     */
+    public function update_credito_em_aberto(Request $request)
+    {
+        try {
+            $prescricao = Prescricao::find($request->prescricao_id);
+            if (!$prescricao) {
+                throw new \Exception('Prescrição não encontrada.');
+            }
+
+            if (in_array($prescricao->situacao, ['Encerrada', 'Cancelada'])) {
+                throw new \Exception('Não é possível alterar o crédito em aberto de uma prescrição ' . $prescricao->situacao . '.');
+            }
+
+            // regenerar as parcelas substitui o financeiro atual: só é seguro sem pagamentos
+            if ($prescricao->pagamentos()->exists()) {
+                throw new \Exception('Não é possível alterar o crédito em aberto: já existem pagamentos registrados nesta prescrição.');
+            }
+            $tem_valor_pago = FinanceiroParcela::where('prescricao_id', $prescricao->id)
+                ->where('valor_pago', '>', 0)
+                ->exists();
+            if ($tem_valor_pago) {
+                throw new \Exception('Não é possível alterar o crédito em aberto: já existem valores pagos nas parcelas.');
+            }
+
+            $valor_tratamento = round((float) $prescricao->valor_tratamento, 2);
+
+            if (!is_scalar($request->credito_em_aberto)) {
+                throw new \Exception('Valor de crédito em aberto inválido.');
+            }
+            $credito_novo = $this->valor_br_float($request->credito_em_aberto);
+
+            if ($credito_novo < 0) {
+                throw new \Exception('O crédito em aberto não pode ser negativo.');
+            }
+            if ($credito_novo > $valor_tratamento + 0.005) {
+                throw new \Exception('O crédito em aberto (R$ ' . number_format($credito_novo, 2, ',', '.') . ') não pode ser maior que o valor do tratamento (R$ ' . number_format($valor_tratamento, 2, ',', '.') . ').');
+            }
+
+            $valor_parcelar = max(0, round($valor_tratamento - $credito_novo, 2));
+
+            // semanas que geram parcela: reutiliza as mesmas parcelas atuais;
+            // se a prescrição ainda não tem parcelas, usa as semanas com medicação
+            $parcelas_atuais = FinanceiroParcela::where('prescricao_id', $prescricao->id)->orderBy('nr_parcela')->get();
+
+            if ($parcelas_atuais->count() > 0) {
+                $base_geracao = $parcelas_atuais->map(fn($p) => [
+                    'prescricao_semana_id' => $p->prescricao_semana_id,
+                    'dt_vencimento' => $p->dt_vencimento,
+                ])->values()->all();
+            } else {
+                $base_geracao = PrescricaoSemana::where('prescricao_id', $prescricao->id)
+                    ->withCount('medicamentos')
+                    ->orderBy('nr_semana')
+                    ->get()
+                    ->filter(fn($s) => $s->medicamentos_count > 0)
+                    ->map(fn($s) => [
+                        'prescricao_semana_id' => $s->id,
+                        'dt_vencimento' => $s->data_prevista,
+                    ])->values()->all();
+            }
+
+            if ($valor_parcelar > 0 && count($base_geracao) === 0) {
+                throw new \Exception('Não há semanas com medicação para gerar as parcelas desta prescrição.');
+            }
+
+            $credito_antigo = round((float) $prescricao->credito_em_aberto, 2);
+            $valor_parcelar_antigo = max(0, round($valor_tratamento - $credito_antigo, 2));
+            $qt_parcelas_antigo = (int) $prescricao->qt_parcelas;
+            $qt_parcelas_novo = 0;
+
+            DB::transaction(function () use ($prescricao, $credito_novo, $valor_parcelar, $base_geracao, &$qt_parcelas_novo) {
+                // regenera TODAS as parcelas do zero
+                FinanceiroParcela::where('prescricao_id', $prescricao->id)->delete();
+
+                $total = count($base_geracao);
+                if ($total > 0 && $valor_parcelar > 0) {
+                    $base = floor(($valor_parcelar / $total) * 100) / 100;
+                    $resto = round($valor_parcelar - $base * $total, 2);
+                    foreach ($base_geracao as $idx => $b) {
+                        $valor = $idx === $total - 1 ? round($base + $resto, 2) : $base;
+                        FinanceiroParcela::create([
+                            'prescricao_id' => $prescricao->id,
+                            'prescricao_semana_id' => $b['prescricao_semana_id'],
+                            'nr_parcela' => $idx + 1,
+                            'valor_parcela' => $valor,
+                            'valor_pago' => 0,
+                            'situacao' => 'Em Aberto',
+                            'dt_vencimento' => $b['dt_vencimento'] ?: null,
+                        ]);
+                    }
+                    $qt_parcelas_novo = $total;
+                }
+
+                $prescricao->credito_em_aberto = $credito_novo;
+                $prescricao->qt_parcelas = $qt_parcelas_novo;
+                $prescricao->save();
+            });
+
+            $this->recalcular_situacao_financeira($prescricao->id);
+
+            $this->registrar_log(
+                $prescricao->id,
+                'financeiro',
+                $prescricao->id,
+                'Crédito em Aberto',
+                'Crédito em aberto alterado de R$ ' . number_format($credito_antigo, 2, ',', '.') . ' para R$ ' . number_format($credito_novo, 2, ',', '.') . ' — parcelas regeneradas (' . $qt_parcelas_novo . ')',
+                [
+                    'credito_em_aberto' => $credito_antigo,
+                    'valor_a_parcelar' => $valor_parcelar_antigo,
+                    'qt_parcelas' => $qt_parcelas_antigo,
+                ],
+                [
+                    'credito_em_aberto' => $credito_novo,
+                    'valor_a_parcelar' => $valor_parcelar,
+                    'qt_parcelas' => $qt_parcelas_novo,
+                ]
+            );
+
+            return redirect()->route('sistema.prescricoes.acessar', $prescricao->id)
+                ->with('mensagem', 'Crédito em aberto atualizado e parcelas recalculadas.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withInput()->with('mensagem_erro', 'Erro ao atualizar crédito em aberto: ' . $e->getMessage());
         }
     }
 

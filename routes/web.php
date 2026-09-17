@@ -288,6 +288,7 @@ Route::middleware(['verificaAcessoSistema'])->group(function () {
         Route::get('/prescricoes/financeiro/{prescricao_id}', [PrescricaoSistemaController::class, 'financeiro'])->name('sistema.prescricoes.financeiro');
         Route::post('/prescricoes/lancar_pagamento', [PrescricaoSistemaController::class, 'lancar_pagamento'])->name('sistema.prescricoes.lancar_pagamento');
         Route::post('/prescricoes/registrar_pagamento', [PrescricaoSistemaController::class, 'registrar_pagamento'])->name('sistema.prescricoes.registrar_pagamento');
+        Route::post('/prescricoes/credito_em_aberto/update', [PrescricaoSistemaController::class, 'update_credito_em_aberto'])->name('sistema.prescricoes.update_credito_em_aberto');
         Route::get('/prescricoes/enfermagem_acessar/{id}', [PrescricaoSistemaController::class, 'enfermagem_acessar'])->name('sistema.prescricoes.enfermagem_acessar');
         Route::post('/prescricoes/enfermagem/set_aplicacao', [PrescricaoSistemaController::class, 'set_aplicacao_enfermagem'])->name('sistema.prescricoes.set_aplicacao_enfermagem');
         Route::get('/prescricoes/enfermagem/busca_lote_por_codigo', [PrescricaoSistemaController::class, 'busca_lote_por_codigo'])->name('sistema.prescricoes.busca_lote_por_codigo');

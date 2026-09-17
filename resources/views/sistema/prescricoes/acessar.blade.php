@@ -20,6 +20,43 @@ switch($prescricao->situacao_financeira){
     case 'Em Aberto': $badge_fin = 'bg-danger'; break;
     default: $badge_fin = 'bg-secondary';
 }
+
+// ---------- crédito em aberto ----------
+// só pode ser corrigido enquanto não existe nenhum pagamento
+// (o recálculo apaga e recria todas as parcelas)
+$tem_pagamento_credito = $prescricao->pagamentos->count() > 0
+    || $prescricao->parcelas->sum('valor_pago') > 0;
+$pode_editar_credito = !in_array($prescricao->situacao, ['Encerrada', 'Cancelada'])
+    && !$tem_pagamento_credito
+    && (float) $prescricao->valor_tratamento > 0;
+
+// base das parcelas para a prévia do modal: reutiliza as semanas das parcelas atuais;
+// se ainda não existem parcelas, usa as semanas com medicação (mesma regra do cadastro)
+$credito_parcelas = $prescricao->parcelas->sortBy('nr_parcela')->values()->map(function ($p) {
+    return [
+        'parcela' => (int) $p->nr_parcela,
+        'semana' => $p->semana ? (int) $p->semana->nr_semana : null,
+        'vencimento' => $p->dt_vencimento ? date('Y-m-d', strtotime($p->dt_vencimento)) : null,
+        'valor' => (float) $p->valor_parcela,
+        'existe' => true,
+    ];
+});
+
+if ($credito_parcelas->isEmpty()) {
+    $credito_parcelas = $prescricao->semanas
+        ->filter(fn($s) => $s->medicamentos->count() > 0)
+        ->sortBy('nr_semana')
+        ->values()
+        ->map(function ($s, $i) {
+            return [
+                'parcela' => $i + 1,
+                'semana' => (int) $s->nr_semana,
+                'vencimento' => $s->data_prevista ? date('Y-m-d', strtotime($s->data_prevista)) : null,
+                'valor' => 0.0,
+                'existe' => false,
+            ];
+        });
+}
 @endphp
 
 <div class="card card-border-shadow-primary mb-4">
@@ -118,7 +155,14 @@ switch($prescricao->situacao_financeira){
                     </tr>
                     <tr>
                         <th>Crédito em Aberto</th>
-                        <td>R$ {{ number_format($prescricao->credito_em_aberto, 2, ',', '.') }}</td>
+                        <td>
+                            R$ {{ number_format($prescricao->credito_em_aberto, 2, ',', '.') }}
+                            @if($pode_editar_credito)
+                            <button type="button" class="btn btn-sm btn-icon btn-label-primary ms-1" title="Editar Crédito em Aberto" onclick="abrir_modal_editar_credito()">
+                                <span class="tf-icons mdi mdi-pencil"></span>
+                            </button>
+                            @endif
+                        </td>
                     </tr>
                     <tr>
                         <th>Situação</th>
@@ -358,4 +402,171 @@ function abrir_modal_encerrar_protocolo(){
     modal.show();
 }
 </script>
+
+@if($pode_editar_credito)
+{{-- MODAL EDITAR CRÉDITO EM ABERTO --}}
+<div class="modal fade" id="modal_editar_credito" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary d-flex align-items-center">
+                    <span class="mdi mdi-cash-edit mdi-24px me-2"></span>Editar Crédito em Aberto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('sistema.prescricoes.update_credito_em_aberto') }}" method="post" onsubmit="return validar_edicao_credito();">
+                @csrf
+                <input type="hidden" name="prescricao_id" value="{{ $prescricao->id }}">
+                <div class="modal-body">
+                    <div class="alert alert-warning d-flex align-items-start" role="alert">
+                        <i class="mdi mdi-alert-outline me-2"></i>
+                        <div>
+                            @if(count($credito_parcelas) > 0)
+                                Ao salvar, <b>todas as {{ count($credito_parcelas) }} parcelas desta prescrição serão apagadas e geradas novamente</b>
+                                com o novo valor a parcelar. Esta ação não pode ser desfeita.
+                            @else
+                                Ao salvar, <b>as parcelas desta prescrição serão geradas</b> com base no novo valor a parcelar.
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="row gy-3">
+                        <div class="col-md-4">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="credito_valor_tratamento" value="{{ number_format($prescricao->valor_tratamento, 2, ',', '.') }}" readonly/>
+                                <label for="credito_valor_tratamento">Valor Tratamento (R$):</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="novo_credito_em_aberto" name="credito_em_aberto" value="{{ number_format($prescricao->credito_em_aberto, 2, ',', '.') }}" onkeypress="return(MascaraMoeda(this,'.',',',event))" onkeyup="atualizar_previa_credito()"/>
+                                <label for="novo_credito_em_aberto">Crédito em Aberto (R$):</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control fw-bold" type="text" id="credito_valor_parcelar" readonly/>
+                                <label for="credito_valor_parcelar">Valor a Parcelar (R$):</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="card-title mt-4 mb-2">Parcelas — antes × depois</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Parcela</th>
+                                    <th>Semana</th>
+                                    <th>Dt Vencimento</th>
+                                    <th>Valor Atual</th>
+                                    <th>Novo Valor</th>
+                                    <th>Diferença</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela_previa_parcelas_credito"></tbody>
+                        </table>
+                    </div>
+                    <div id="aviso_credito" class="text-danger small"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar e Recalcular Parcelas</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const CREDITO_TRATAMENTO = {{ (float) $prescricao->valor_tratamento }};
+const CREDITO_PARCELAS = @json($credito_parcelas);
+
+function credito_valor_form_db(valor){
+    valor = (valor || '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(valor) || 0;
+}
+
+function credito_moeda(valor){
+    return 'R$ ' + (valor || 0).toFixed(2).replace('.', ',');
+}
+
+function credito_data_br(data){
+    if(!data){ return '-'; }
+    return String(data).substring(0, 10).split('-').reverse().join('/');
+}
+
+// mesma regra de divisão usada no cadastro e no update_credito_em_aberto()
+function calcular_novas_parcelas_credito(valor_parcelar, total){
+    if(total <= 0 || valor_parcelar <= 0){ return []; }
+    let base = Math.floor((valor_parcelar / total) * 100) / 100;
+    let resto = Math.round((valor_parcelar - base * total) * 100) / 100;
+    let valores = [];
+    for(let i = 0; i < total; i++){
+        valores.push(i === total - 1 ? Math.round((base + resto) * 100) / 100 : base);
+    }
+    return valores;
+}
+
+function atualizar_previa_credito(){
+    let input = document.getElementById('novo_credito_em_aberto');
+    let credito = credito_valor_form_db(input ? input.value : '0');
+    let valor_parcelar = Math.max(0, Math.round((CREDITO_TRATAMENTO - credito) * 100) / 100);
+    let novos = calcular_novas_parcelas_credito(valor_parcelar, CREDITO_PARCELAS.length);
+
+    document.getElementById('credito_valor_parcelar').value = credito_moeda(valor_parcelar);
+
+    let tbody = document.getElementById('tabela_previa_parcelas_credito');
+    if(CREDITO_PARCELAS.length === 0){
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Esta prescrição não possui semanas com medicação para gerar parcelas.</td></tr>';
+        return;
+    }
+
+    let html = '';
+    CREDITO_PARCELAS.forEach(function(p, idx){
+        let atual = p.existe ? parseFloat(p.valor) : 0;
+        let novo = novos.length ? novos[idx] : 0;
+        let dif = Math.round((novo - atual) * 100) / 100;
+        let cor = dif > 0 ? 'text-danger' : (dif < 0 ? 'text-success' : 'text-muted');
+        let sinal = dif > 0 ? '+ ' : (dif < 0 ? '- ' : '');
+        html += '<tr>' +
+            '<td class="fw-medium">' + p.parcela + '</td>' +
+            '<td>' + (p.semana ? 'Semana ' + p.semana : '-') + '</td>' +
+            '<td>' + credito_data_br(p.vencimento) + '</td>' +
+            '<td>' + (p.existe ? credito_moeda(atual) : '<span class="text-muted">—</span>') + '</td>' +
+            '<td class="fw-bold">' + (novos.length ? credito_moeda(novo) : '<span class="text-muted">—</span>') + '</td>' +
+            '<td class="' + cor + '">' + (novos.length ? sinal + credito_moeda(Math.abs(dif)) : '—') + '</td>' +
+            '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+function abrir_modal_editar_credito(){
+    document.getElementById('aviso_credito').innerText = '';
+    atualizar_previa_credito();
+    new bootstrap.Modal(document.getElementById('modal_editar_credito')).show();
+}
+
+function validar_edicao_credito(){
+    let aviso = document.getElementById('aviso_credito');
+    aviso.innerText = '';
+
+    let credito = credito_valor_form_db(document.getElementById('novo_credito_em_aberto').value);
+
+    if(credito < 0){
+        aviso.innerText = 'O crédito em aberto não pode ser negativo.';
+        return false;
+    }
+    if(credito > CREDITO_TRATAMENTO + 0.005){
+        aviso.innerText = 'O crédito em aberto não pode ser maior que o valor do tratamento (' + credito_moeda(CREDITO_TRATAMENTO) + ').';
+        return false;
+    }
+    if(CREDITO_PARCELAS.length === 0 && credito < CREDITO_TRATAMENTO - 0.005){
+        aviso.innerText = 'Não há semanas com medicação para gerar as parcelas desta prescrição.';
+        return false;
+    }
+    return confirm('Confirma a alteração do crédito em aberto? Todas as parcelas serão apagadas e geradas novamente.');
+}
+</script>
+@endif
 @endsection
