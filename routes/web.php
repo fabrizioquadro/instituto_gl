@@ -21,6 +21,7 @@ use App\Http\Controllers\DashboardAdmSisController;
 use App\Http\Controllers\EstoqueAdmController;
 use App\Http\Controllers\FinanceiroSistemaController;
 use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\RelatorioPrescricaoController;
 use App\Http\Controllers\MigracaoController;
 use App\Http\Controllers\ComboController;
 use App\Http\Controllers\GrupoController;
@@ -139,6 +140,34 @@ Route::middleware(['verificaAdministrador'])->group(function () {
         Route::get('/relatorios/estoque', [RelatorioController::class, 'estoque'])->name('adm.relatorios.estoque');
         Route::post('/relatorios/estoque/gerar', [RelatorioController::class, 'estoque_gerar'])->name('adm.relatorios.estoque.gerar');
         Route::post('/relatorios/exportar/estoque', [RelatorioController::class, 'exportar_estoque'])->name('adm.relatorios.exportar_estoque');
+
+        /* ------------------------------------------------------------------
+         | RELATÓRIOS 2 — focados nas prescrições (V2) e seus pagamentos.
+         | Transferências, Baixas e Estoque continuam nas rotas acima (V1).
+         ------------------------------------------------------------------ */
+        Route::get('/relatorios2/financeiro', [RelatorioPrescricaoController::class, 'financeiro'])->name('adm.relatorios2.financeiro');
+        Route::post('/relatorios2/financeiro/gerar', [RelatorioPrescricaoController::class, 'financeiro_gerar'])->name('adm.relatorios2.financeiro.gerar');
+        Route::post('/relatorios2/exportar/financeiro', [RelatorioPrescricaoController::class, 'exportar_financeiro'])->name('adm.relatorios2.exportar_financeiro');
+
+        Route::get('/relatorios2/financeiro-simplificado', [RelatorioPrescricaoController::class, 'financeiro_simplificado'])->name('adm.relatorios2.financeiro_simplificado');
+        Route::post('/relatorios2/financeiro-simplificado/gerar', [RelatorioPrescricaoController::class, 'financeiro_simplificado_gerar'])->name('adm.relatorios2.financeiro_simplificado.gerar');
+        Route::post('/relatorios2/exportar/financeiro-simplificado', [RelatorioPrescricaoController::class, 'exportar_financeiro_simplificado'])->name('adm.relatorios2.exportar_financeiro_simplificado');
+
+        Route::get('/relatorios2/vendas', [RelatorioPrescricaoController::class, 'vendas'])->name('adm.relatorios2.vendas');
+        Route::post('/relatorios2/vendas/gerar', [RelatorioPrescricaoController::class, 'vendas_gerar'])->name('adm.relatorios2.vendas.gerar');
+        Route::post('/relatorios2/exportar/vendas', [RelatorioPrescricaoController::class, 'exportar_vendas'])->name('adm.relatorios2.exportar_vendas');
+
+        Route::get('/relatorios2/enfermagem', [RelatorioPrescricaoController::class, 'enfermagem'])->name('adm.relatorios2.enfermagem');
+        Route::post('/relatorios2/enfermagem/gerar', [RelatorioPrescricaoController::class, 'enfermagem_gerar'])->name('adm.relatorios2.enfermagem.gerar');
+        Route::post('/relatorios2/exportar/enfermagem', [RelatorioPrescricaoController::class, 'exportar_enfermagem'])->name('adm.relatorios2.exportar_enfermagem');
+
+        Route::get('/relatorios2/recepcao', [RelatorioPrescricaoController::class, 'recepcao'])->name('adm.relatorios2.recepcao');
+        Route::post('/relatorios2/recepcao/gerar', [RelatorioPrescricaoController::class, 'recepcao_gerar'])->name('adm.relatorios2.recepcao.gerar');
+        Route::post('/relatorios2/exportar/recepcao', [RelatorioPrescricaoController::class, 'exportar_recepcao'])->name('adm.relatorios2.exportar_recepcao');
+
+        Route::get('/relatorios2/caixa', [RelatorioPrescricaoController::class, 'caixa'])->name('adm.relatorios2.caixa');
+        Route::post('/relatorios2/caixa/gerar', [RelatorioPrescricaoController::class, 'caixa_gerar'])->name('adm.relatorios2.caixa.gerar');
+        Route::post('/relatorios2/exportar/caixa', [RelatorioPrescricaoController::class, 'exportar_caixa'])->name('adm.relatorios2.exportar_caixa');
 
         Route::get('/combos', [ComboController::class, 'index'])->name('adm.combos');
         Route::get('/combos/adicionar', [ComboController::class, 'adicionar'])->name('adm.combos.adicionar');

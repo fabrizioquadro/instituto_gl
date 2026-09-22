@@ -195,6 +195,60 @@ $user = session()->get('user');
                                 </li>
                             </ul>
                         </li>
+                        <li class="menu-item">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                                <i class="menu-icon tf-icons mdi mdi-chart-box-outline"></i>
+                                <div data-i18n="Relatórios 2">Relatórios 2</div>
+                            </a>
+                            <ul class="menu-sub">
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios2.financeiro') }}" class="menu-link">
+                                        <div data-i18n="Financeiro">Financeiro</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios2.financeiro_simplificado') }}" class="menu-link">
+                                        <div data-i18n="Financ. Simplificado">Financ. Simplificado</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios2.vendas') }}" class="menu-link">
+                                        <div data-i18n="Vendas">Vendas</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios2.enfermagem') }}" class="menu-link">
+                                        <div data-i18n="Enfermagem">Enfermagem</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios2.recepcao') }}" class="menu-link">
+                                        <div data-i18n="Recepção">Recepção</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios2.caixa') }}" class="menu-link">
+                                        <div data-i18n="Caixa">Caixa</div>
+                                    </a>
+                                </li>
+                                {{-- Transferências, Baixas e Estoque não têm equivalente em prescrição --}}
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.transferencias') }}" class="menu-link">
+                                        <div data-i18n="Transferências">Transferências</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.baixas') }}" class="menu-link">
+                                        <div data-i18n="Baixas">Baixas</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="{{ route('adm.relatorios.estoque') }}" class="menu-link">
+                                        <div data-i18n="Estoque">Estoque</div>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
                         <li class="menu-header fw-medium mt-4">
                             <span class="menu-header-text">Sistema</span>
                         </li>
