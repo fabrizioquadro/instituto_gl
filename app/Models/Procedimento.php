@@ -324,7 +324,7 @@ class Procedimento extends Model
             return collect();
         }
 
-        return SELF::select([
+        $procedimentos = SELF::select([
             'id','codigo','nr_procedimento','tipo_atendimento','st_pagamento',
             'flag_coordenacao','flag_qualidade','dt_hr_chegada','dt_hr_atendimento',
             'dt_hr_finalizacao','inicio_cadastro','data_aplicacao','medico',
@@ -354,6 +354,27 @@ class Procedimento extends Model
                 $query->select('id','codigo_barras','dt_vencimento');
             },
         ])->whereIn('id', $in)->get();
+
+        // Próxima aplicação agendada (data futura) para cada código/protocolo exibido no relatório
+        $codigos = $procedimentos->pluck('codigo')->filter()->unique()->values()->toArray();
+
+        $proximas = collect();
+        if(!empty($codigos)){
+            $proximas = \DB::table('procedimentos')
+                ->selectRaw('codigo, MIN(data_aplicacao) as proxima_aplicacao')
+                ->whereIn('codigo', $codigos)
+                ->whereIn('situacao', ['Agendado', 'Fila de Aplicação', 'Pendente'])
+                ->whereNotNull('data_aplicacao')
+                ->where('data_aplicacao', '>=', date('Y-m-d'))
+                ->groupBy('codigo')
+                ->pluck('proxima_aplicacao', 'codigo');
+        }
+
+        foreach($procedimentos as $procedimento){
+            $procedimento->proxima_aplicacao = $proximas->get($procedimento->codigo);
+        }
+
+        return $procedimentos;
     }
 
 

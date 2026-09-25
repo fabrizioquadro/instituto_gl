@@ -17,6 +17,7 @@
                         <th>Tipo</th>
                         <th>Finalização</th>
                         <th>Aplicação</th>
+                        <th>Próxima Aplicação</th>
                         <th>Paciente</th>
                         <th>Enfermeira</th>
                         <th>Clinica</th>
@@ -119,6 +120,7 @@
                                         <td>{{ $procedimento->tipo_atendimento }}</td>
                                         <td>{{ $finalizacao }}</td>
                                         <td>{{ $data }} {{ $hora }}</td>
+                                        <td>{{ $procedimento->proxima_aplicacao ? dataDbForm($procedimento->proxima_aplicacao) : '' }}</td>
                                         <td>{{ $procedimento->paciente->nm_paciente }}</td>
                                         <td>{{ $aplicacao->enfermeira ? $aplicacao->enfermeira->nome : '' }}</td>
                                         <td>{{ $procedimento->clinica_aplicacao->nome }}</td>
