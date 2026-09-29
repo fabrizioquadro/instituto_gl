@@ -132,7 +132,7 @@
                                         <td>{{ $aplicacao->codigos() }}</td>
                                         <td>{{ $aplicacao->vencimentos() }}</td>
                                         <td>{{ $aplicacao->obs }}</td>
-                                        <td>{{ $procedimento->codigo.'/'.$procedimento->nr_procedimento }}</td>
+                                        <td>{{ $procedimento->codigo.'-'.$procedimento->nr_procedimento.'/'.$procedimento->total_semanas }}</td>
                                         <td>{{ $procedimento->st_pagamento }}</td>
                                         <td>{{ $procedimento->flag_coordenacao == 1 ? 'Sim' : 'Não' }}</td>
                                         <td>{{ $procedimento->flag_qualidade == 1 ? 'Sim' : 'Não' }}</td>

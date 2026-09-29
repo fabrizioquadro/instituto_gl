@@ -355,10 +355,11 @@ class Procedimento extends Model
             },
         ])->whereIn('id', $in)->get();
 
-        // Próxima aplicação agendada (data futura) para cada código/protocolo exibido no relatório
+        // Dados do grupo (mesmo codigo): proxima aplicacao agendada e total de semanas
         $codigos = $procedimentos->pluck('codigo')->filter()->unique()->values()->toArray();
 
         $proximas = collect();
+        $totais   = collect();
         if(!empty($codigos)){
             $proximas = \DB::table('procedimentos')
                 ->selectRaw('codigo, MIN(data_aplicacao) as proxima_aplicacao')
@@ -368,10 +369,17 @@ class Procedimento extends Model
                 ->where('data_aplicacao', '>=', date('Y-m-d'))
                 ->groupBy('codigo')
                 ->pluck('proxima_aplicacao', 'codigo');
+
+            $totais = \DB::table('procedimentos')
+                ->selectRaw('codigo, COUNT(*) as total_semanas')
+                ->whereIn('codigo', $codigos)
+                ->groupBy('codigo')
+                ->pluck('total_semanas', 'codigo');
         }
 
         foreach($procedimentos as $procedimento){
             $procedimento->proxima_aplicacao = $proximas->get($procedimento->codigo);
+            $procedimento->total_semanas = $totais->get($procedimento->codigo) ?? 1;
         }
 
         return $procedimentos;

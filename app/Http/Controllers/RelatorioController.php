@@ -447,7 +447,7 @@ class RelatorioController extends Controller
                             $aplicacao->codigos(),
                             $aplicacao->vencimentos(),
                             $aplicacao->obs,
-                            $procedimento->codigo . '/' . $procedimento->nr_procedimento,
+                            $procedimento->codigo . '-' . $procedimento->nr_procedimento . '/' . $procedimento->total_semanas,
                             $procedimento->st_pagamento,
                             $procedimento->flag_coordenacao == 1 ? 'Sim' : 'Não',
                             $procedimento->flag_qualidade == 1 ? 'Sim' : 'Não'
