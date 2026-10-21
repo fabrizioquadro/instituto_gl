@@ -128,6 +128,10 @@ class Procedimento extends Model
         return $this->belongsTo(User::class,'user_id_aplicacao','id');
     }
 
+    public function autorizador(){
+        return $this->belongsTo(Administrador::class,'autorizador_sem_pagamento','id');
+    }
+
     public function clinica_aplicacao(){
         return $this->belongsTo(Clinica::class,'clinica_id_aplicacao','id');
     }
