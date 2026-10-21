@@ -18,6 +18,9 @@ class DashboardSistemaController extends Controller
         if(!$user){
             $user = session()->get('user');
         }
+        if($user && $user->tipo == "Médico"){
+            return redirect()->route('sistema.medico.dashboard');
+        }
         $dados_pesquisa = array();
         if($user->tipo == "Enfermagem"){
             $procedimentos_aguardando = Procedimento::where('clinica_id_aplicacao', $user->clinica_id)

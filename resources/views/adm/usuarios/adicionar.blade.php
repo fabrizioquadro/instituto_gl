@@ -6,6 +6,12 @@
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Adicionar Usuário</h4>
         </div>
+        @if($mensagem = Session::get('mensagem_erro'))
+            <div class="alert alert-danger alert-dismissible mt-3" role="alert">
+                {{ $mensagem }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
         <hr>
         <form action="{{ route('adm.usuarios.insert') }}" method="post" enctype="multipart/form-data">
             @csrf
@@ -47,8 +53,24 @@
                             <option value="">Opções</option>
                             <option value="Secretária">Secretária</option>
                             <option value="Enfermagem">Enfermagem</option>
+                            <option value="Médico">Médico</option>
                         </select>
                         <label for="tipo">Tipo:</label>
+                    </div>
+                </div>
+                <div class="col-md-6" id="wrap_feegow_profissional" style="display: none">
+                    <div class="form-floating form-floating-outline">
+                        <select id="feegow_profissional_id" name="feegow_profissional_id" class="select2 form-select">
+                            <option value="">Opções</option>
+                            @foreach($medicos as $medico)
+                                <option value="{{ $medico['profissional_id'] }}" data-nome="{{ $medico['profissional_nome'] }}">{{ $medico['profissional_nome'] }}</option>
+                            @endforeach
+                        </select>
+                        <label for="feegow_profissional_id">Médico FEEGOW:</label>
+                        <input type="hidden" id="feegow_profissional_nome" name="feegow_profissional_nome" value=""/>
+                        @if(empty($medicos))
+                            <small class="text-danger">Não foi possível carregar a lista de médicos da FEEGOW.</small>
+                        @endif
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -102,4 +124,31 @@
         </form>
     </div>
 </div>
+<script>
+window.addEventListener('load', function(){
+    var tipo = document.getElementById('tipo');
+    var wrap = document.getElementById('wrap_feegow_profissional');
+    var select = document.getElementById('feegow_profissional_id');
+    var nome = document.getElementById('feegow_profissional_nome');
+
+    function syncNome(){
+        var opcao = select.options[select.selectedIndex];
+        nome.value = (opcao && opcao.value) ? (opcao.dataset.nome || '') : '';
+    }
+
+    function atualizarVisibilidade(){
+        var isMedico = tipo.value === 'Médico';
+        wrap.style.display = isMedico ? '' : 'none';
+        select.required = isMedico;
+        if(!isMedico){
+            select.value = '';
+            syncNome();
+        }
+    }
+
+    tipo.addEventListener('change', atualizarVisibilidade);
+    select.addEventListener('change', syncNome);
+    atualizarVisibilidade();
+});
+</script>
 @endsection

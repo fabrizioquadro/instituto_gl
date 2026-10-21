@@ -30,6 +30,7 @@
                         <th>Clinica</th>
                         <th>Email</th>
                         <th>Tipo</th>
+                        <th>Médico FEEGOW</th>
                         @foreach($opcoes as $opt)
                             <th style="text-transform: capitalize">{{ str_replace('_',' ', $opt) }}</th>
                         @endforeach
@@ -66,6 +67,7 @@
                         <td>{{ $user->clinica->nome }}</td>
                         <td>{{ $user->email }}</td>
                         <td>{{ $user->tipo }}</td>
+                        <td>{{ $user->feegow_profissional_nome }}</td>
                         @foreach($opcoes as $opt)
                             <td>{{ $user->$opt }}</td>
                         @endforeach

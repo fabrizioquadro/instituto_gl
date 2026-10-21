@@ -77,11 +77,12 @@ else{
                         </li>
                         <!-- Dashboards -->
                         <li class="menu-item">
-                            <a href="{{ route('sistema.dashboard') }}" class="menu-link">
+                            <a href="{{ $user->tipo == 'Médico' ? route('sistema.medico.dashboard') : route('sistema.dashboard') }}" class="menu-link">
                                 <i class="menu-icon tf-icons mdi mdi-home-outline"></i>
                                 <div data-i18n="Dashboard">Dashboard</div>
                             </a>
                         </li>
+                        @if($user->tipo != 'Médico')
                         <li class="menu-item">
                             <a href="{{ route('sistema.fila_atendimento') }}" class="menu-link">
                                 <i class="menu-icon tf-icons mdi mdi-human-queue"></i>
@@ -146,6 +147,7 @@ else{
                                     <div data-i18n="Financeiro">Financeiro</div>
                                 </a>
                             </li>
+                        @endif
                         @endif
                     </ul>
                 </aside>
@@ -222,12 +224,14 @@ else{
                                                 <span class="align-middle">Alterar Senha</span>
                                               </a>
                                         </li>
+                                        @if($user->tipo != 'Médico')
                                         <li>
                                             <a class="dropdown-item" href="{{ route('sistema.financeiros.caixa_diario') }}">
                                                 <i class="mdi mdi-cash-register me-2"></i>
                                                 <span class="align-middle">Caixa Diário</span>
                                               </a>
                                         </li>
+                                        @endif
                                         <li>
                                             <div class="dropdown-divider"></div>
                                         </li>

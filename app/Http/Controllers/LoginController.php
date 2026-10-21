@@ -52,6 +52,9 @@ class LoginController extends Controller
                 $request->session()->regenerate();
                 $user = auth()->user();
                 session()->put('layout', 'sistema');
+                if($user->tipo == 'Médico'){
+                    return redirect()->route('sistema.medico.dashboard');
+                }
                 return redirect()->route('sistema.dashboard');
             }
             else{

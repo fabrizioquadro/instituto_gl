@@ -24,6 +24,8 @@ class User extends Authenticatable
         'st_usuario',
         'password',
         'tipo',
+        'feegow_profissional_id',
+        'feegow_profissional_nome',
         'coren',
         'imagem',
         'imagem_carimbo',

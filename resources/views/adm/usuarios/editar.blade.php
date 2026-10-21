@@ -6,6 +6,12 @@
         <div class="d-flex justify-content-between">
             <h4 class="card-title">Editar Usuário</h4>
         </div>
+        @if($mensagem = Session::get('mensagem_erro'))
+            <div class="alert alert-danger alert-dismissible mt-3" role="alert">
+                {{ $mensagem }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
         <hr>
         <form action="{{ route('adm.usuarios.update') }}" method="post" enctype="multipart/form-data">
             @csrf
@@ -40,8 +46,36 @@
                             <option value="">Opções</option>
                             <option @if($user->tipo == "Secretária") selected @endif value="Secretária">Secretária</option>
                             <option @if($user->tipo == "Enfermagem") selected @endif value="Enfermagem">Enfermagem</option>
+                            <option @if($user->tipo == "Médico") selected @endif value="Médico">Médico</option>
                         </select>
                         <label for="tipo">Tipo:</label>
+                    </div>
+                </div>
+                @php
+                    $medico_atual_na_lista = false;
+                    foreach($medicos as $medico){
+                        if((string) $medico['profissional_id'] === (string) $user->feegow_profissional_id){
+                            $medico_atual_na_lista = true;
+                            break;
+                        }
+                    }
+                @endphp
+                <div class="col-md-6" id="wrap_feegow_profissional" style="display: none">
+                    <div class="form-floating form-floating-outline">
+                        <select id="feegow_profissional_id" name="feegow_profissional_id" class="select2 form-select">
+                            <option value="">Opções</option>
+                            @if($user->feegow_profissional_id && !$medico_atual_na_lista)
+                                <option value="{{ $user->feegow_profissional_id }}" data-nome="{{ $user->feegow_profissional_nome }}" selected>{{ $user->feegow_profissional_nome }}</option>
+                            @endif
+                            @foreach($medicos as $medico)
+                                <option @if((string) $medico['profissional_id'] === (string) $user->feegow_profissional_id) selected @endif value="{{ $medico['profissional_id'] }}" data-nome="{{ $medico['profissional_nome'] }}">{{ $medico['profissional_nome'] }}</option>
+                            @endforeach
+                        </select>
+                        <label for="feegow_profissional_id">Médico FEEGOW:</label>
+                        <input type="hidden" id="feegow_profissional_nome" name="feegow_profissional_nome" value="{{ $user->feegow_profissional_nome }}"/>
+                        @if(empty($medicos))
+                            <small class="text-danger">Não foi possível carregar a lista de médicos da FEEGOW.</small>
+                        @endif
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -95,4 +129,31 @@
         </form>
     </div>
 </div>
+<script>
+window.addEventListener('load', function(){
+    var tipo = document.getElementById('tipo');
+    var wrap = document.getElementById('wrap_feegow_profissional');
+    var select = document.getElementById('feegow_profissional_id');
+    var nome = document.getElementById('feegow_profissional_nome');
+
+    function syncNome(){
+        var opcao = select.options[select.selectedIndex];
+        nome.value = (opcao && opcao.value) ? (opcao.dataset.nome || '') : '';
+    }
+
+    function atualizarVisibilidade(){
+        var isMedico = tipo.value === 'Médico';
+        wrap.style.display = isMedico ? '' : 'none';
+        select.required = isMedico;
+        if(!isMedico){
+            select.value = '';
+            syncNome();
+        }
+    }
+
+    tipo.addEventListener('change', atualizarVisibilidade);
+    select.addEventListener('change', syncNome);
+    atualizarVisibilidade();
+});
+</script>
 @endsection

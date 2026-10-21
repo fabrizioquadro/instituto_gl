@@ -10,6 +10,7 @@ use App\Http\Controllers\UsuarioAdmController;
 use App\Http\Controllers\MedicamentoAdmController;
 use App\Http\Controllers\FornecedorAdmController;
 use App\Http\Controllers\DashboardSistemaController;
+use App\Http\Controllers\DashboardMedicoController;
 use App\Http\Controllers\EntradaSistemaController;
 use App\Http\Controllers\BaixaSistemaController;
 use App\Http\Controllers\TransferenciaSistemaController;
@@ -164,9 +165,13 @@ Route::middleware(['verificaAdministrador'])->group(function () {
     });
 });
 
-Route::middleware(['verificaAcessoSistema'])->group(function () {
+Route::middleware(['verificaAcessoSistema','restringeAcessoMedico'])->group(function () {
     Route::prefix('sistema')->group(function(){
         Route::any('/dashboard', [DashboardSistemaController::class, 'index'])->name('sistema.dashboard');
+
+        Route::any('/medico/dashboard', [DashboardMedicoController::class, 'index'])->name('sistema.medico.dashboard');
+        Route::get('/medico/conjunto/{codigo}', [DashboardMedicoController::class, 'conjunto'])->name('sistema.medico.conjunto');
+        Route::get('/medico/procedimento/{id}', [DashboardMedicoController::class, 'procedimento'])->name('sistema.medico.procedimento');
         Route::get('/dashboard/enfermagem_acessar_procedimento/{id}', [DashboardSistemaController::class, 'enfermagem_acessar_procedimento'])->name('sistema.dashboard.enfermagem_acessar_procedimento');
         Route::get('/dashboard/enfermagem_visualizar_procedimento/{id}', [DashboardSistemaController::class, 'enfermagem_visualizar_procedimento'])->name('sistema.dashboard.enfermagem_visualizar_procedimento');
         Route::get('/dashboard/busca_lote_por_codigo', [DashboardSistemaController::class, 'busca_lote_por_codigo'])->name('sistema.dashboard.busca_lote_por_codigo');
