@@ -94,6 +94,7 @@ $template = "layout.".session()->get('layout');
                         <div class="form-floating form-floating-outline">
                             <select required id="medico" name='medico' class="select2 form-select">
                                 <option value="">Opções</option>
+                                <option value="Não Informado">Não Informado</option>
                                 @foreach($medicos as $medico)
                                     <option value="{{ $medico['profissional_nome'] }}">{{ $medico['profissional_nome'] }}</option>
                                 @endforeach
